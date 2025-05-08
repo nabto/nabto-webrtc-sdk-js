@@ -1,4 +1,4 @@
-import { SignalingChannel, createSignalingChannel } from "signaling-base";
+import { SignalingChannel, createSignalingChannel } from "@nabto/webrtc-base";
 import { SignalingClient } from "../SignalingClient";
 
 export class SignalingClientImpl implements SignalingClient {

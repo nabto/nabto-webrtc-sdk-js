@@ -13,7 +13,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.10.0",
   "dependencies": {
-    "signaling-client": "workspace:*"
+    "@nabto/webrtc-client": "workspace:*"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

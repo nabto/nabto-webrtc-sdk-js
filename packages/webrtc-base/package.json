@@ -1,5 +1,5 @@
 {
-  "name": "signaling-base",
+  "name": "@nabto/webrtc-base",
   "version": "1.0.0",
   "description": "",
   "main": "build/index.js",

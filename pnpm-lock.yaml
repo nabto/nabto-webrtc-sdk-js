@@ -10,9 +10,9 @@ importers:
 
   examples/client-example:
     dependencies:
-      signaling-client:
+      '@nabto/webrtc-client':
         specifier: workspace:*
-        version: link:../../packages/signaling-client
+        version: link:../../packages/webrtc-client
     devDependencies:
       ts-node:
         specifier: ^10.9.2
@@ -21,17 +21,17 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
-  packages/signaling-base:
+  packages/webrtc-base:
     devDependencies:
       typescript:
         specifier: ^5.8.3
         version: 5.8.3
 
-  packages/signaling-client:
+  packages/webrtc-client:
     dependencies:
-      signaling-base:
+      '@nabto/webrtc-base':
         specifier: workspace:*
-        version: link:../signaling-base
+        version: link:../webrtc-base
     devDependencies:
       typescript:
         specifier: ^5.8.3
