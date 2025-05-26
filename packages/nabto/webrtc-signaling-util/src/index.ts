@@ -1,7 +1,7 @@
 export type { SignalingCandidate, SignalingDescription, WebrtcSignalingMessage, MessageTransportEventHandler, MessageTransport } from './MessageTransport'
 export { WebrtcSignalingMessageType } from './MessageTransport'
 
-export type { DefaultMessageTransportOptions } from './DefaultMessageTransport'
+export type { DefaultMessageTransportOptions, DefaultMessageTransportDeviceOptions } from './DefaultMessageTransport'
 export { createDefaultMessageTransportClient, createDefaultMessageTransportDevice, DefaultMessageTransportSecurityModes } from './DefaultMessageTransport'
 
 export { PerfectNegotiation } from './PerfectNegotiation'

@@ -48,6 +48,25 @@ export function createDefaultMessageTransportClient(client: SignalingClient, opt
   return DefaultMessageTransportClientImpl.create(client, options);
 }
 
+
+export interface DefaultMessageTransportDeviceOptions {
+  /**
+   * The security mode the use for the device
+   */
+  securityMode: DefaultMessageTransportSecurityModes;
+
+  /**
+   * If the security mode is set to shared secret, a shared secret callback must
+   * be provided. The shared secret callback is invoked once for each channel
+   * when the channel needs to find a shared secret to use for the session.
+   * @param keyId  The keyId from the signed message.
+   * @returns  A shared secret which is used to sign and verify messages on the
+   * channel.
+   */
+  sharedSecretCallback?: (keyId: string) => Promise<string>;
+}
+
+
 /**
  * Create a default message transport for a device application.
  *
@@ -56,6 +75,6 @@ export function createDefaultMessageTransportClient(client: SignalingClient, opt
  * @param options The options to use
  * @returns The created MessageTransport object
  */
-export function createDefaultMessageTransportDevice(device: SignalingDevice, channel: SignalingChannel, options: DefaultMessageTransportOptions): MessageTransport {
+export function createDefaultMessageTransportDevice(device: SignalingDevice, channel: SignalingChannel, options: DefaultMessageTransportDeviceOptions): MessageTransport {
   return DefaultMessageTransportDeviceImpl.create(device, channel, options);
 }

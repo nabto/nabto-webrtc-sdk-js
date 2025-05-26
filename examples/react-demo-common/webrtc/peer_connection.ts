@@ -1,5 +1,5 @@
-import { SignalingChannel, SignalingError } from '@nabto/webrtc-signaling-common';
-import { createDefaultMessageTransportClient, DefaultMessageTransportSecurityModes, PerfectNegotiation, SignalingEventHandler } from "@nabto/webrtc-signaling-util";
+import { SignalingChannel, SignalingError, SignalingErrorCodes } from '@nabto/webrtc-signaling-common';
+import { createDefaultMessageTransportClient, DefaultMessageTransportDeviceOptions, DefaultMessageTransportSecurityModes, PerfectNegotiation, SignalingEventHandler } from "@nabto/webrtc-signaling-util";
 import { createLogger, Logger } from "../log";
 import { createDefaultMessageTransportDevice, MessageTransport, DefaultMessageTransportOptions } from '@nabto/webrtc-signaling-util';
 import { SignalingClient } from '@nabto/webrtc-signaling-client';
@@ -221,20 +221,37 @@ export async function createPeerConnection(options: PeerConnectionOptions): Prom
     const isDevice = options.isDevice;
     const name = options.name ?? (isDevice ? "device" : "client");
 
-    const defaultMessageTransportOptions: DefaultMessageTransportOptions = {
-        securityMode: options.sharedSecret ? DefaultMessageTransportSecurityModes.SHARED_SECRET : DefaultMessageTransportSecurityModes.NONE,
-        sharedSecret: options.sharedSecret
-    }
-
     let signalingConn: SignalingEventHandlerConnection;
     let defaultMessageTransport : MessageTransport
     if (isDevice) {
+        let defaultMessageTransportDeviceOptions : DefaultMessageTransportDeviceOptions
+        if (options.sharedSecret) {
+            const sharedSecret = options.sharedSecret;
+            defaultMessageTransportDeviceOptions = {
+                securityMode: DefaultMessageTransportSecurityModes.SHARED_SECRET,
+                sharedSecretCallback: async (keyId) => {
+                    if (keyId !== "default") {
+                        console.error("The client provided the key id: ${keyId} but the device only supports the keyId 'default'")
+                        throw new SignalingError(SignalingErrorCodes.ACCESS_DENIED, "The only supported key id is 'default'")
+                    }
+                    return sharedSecret;
+                },
+            }
+        } else {
+            defaultMessageTransportDeviceOptions = {
+                securityMode: DefaultMessageTransportSecurityModes.NONE,
+            }
+        }
         if (!options.signalingDevice) {
             throw new Error("createPeerConnection called with isDevice but signaling device not provided");
         }
         signalingConn = options.signalingDevice;
-        defaultMessageTransport = createDefaultMessageTransportDevice(options.signalingDevice, options.signalingChannel, defaultMessageTransportOptions);
+        defaultMessageTransport = createDefaultMessageTransportDevice(options.signalingDevice, options.signalingChannel, defaultMessageTransportDeviceOptions);
     } else {
+        const defaultMessageTransportOptions: DefaultMessageTransportOptions = {
+            securityMode: options.sharedSecret ? DefaultMessageTransportSecurityModes.SHARED_SECRET : DefaultMessageTransportSecurityModes.NONE,
+            sharedSecret: options.sharedSecret
+        }
         if (!options.signalingClient) {
             throw new Error("createPeerConnection called with !isDevice but signaling client not provided");
         }
