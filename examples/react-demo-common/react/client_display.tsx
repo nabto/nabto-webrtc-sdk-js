@@ -105,7 +105,6 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
             }
         });
 
-        client.connect();
         // TODO  setProgressState("connected");
         createPeerConnection({
             signalingClient: client,

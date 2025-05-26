@@ -60,6 +60,8 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
 
     this.ws = new WebSocketConnectionImpl("client");
     this.setupWs(this.ws);
+    this.firstConnect()
+    this.signalingChannel.startRecv();
   }
   sendRoutingMessage(channelId: string, message: string): void {
     this.ws.sendMessage(channelId, message);
@@ -77,14 +79,6 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
   set connectionState(state: SignalingConnectionState) {
     this.connectionState_ = state;
     this.emitSync("connectionstatechange");
-  }
-
-  connect(): void {
-    if (this.connectionState !== SignalingConnectionState.NEW) {
-      throw new Error("Connect can only be called once.")
-    }
-    this.firstConnect()
-    this.signalingChannel.startRecv();
   }
 
   async getIceServers(): Promise<Array<RTCIceServer>> {

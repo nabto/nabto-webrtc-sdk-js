@@ -15,11 +15,10 @@ describe("Test of connection to the signaling service", async () => {
   })
   test('ok', async () => {
     const client = testInstance.createSignalingClient();
-    await client.connect();
+    await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
   })
   test('connectionstate switches to close after calling close.', async () => {
     const client = testInstance.createSignalingClient();
-    client.connect();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
     await client.close();
     const expectedStates: Array<SignalingConnectionState> = [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED, SignalingConnectionState.CLOSED]
@@ -27,7 +26,6 @@ describe("Test of connection to the signaling service", async () => {
   })
   test('connectionstate switches to close after calling close on the signalingchannel.', async () => {
     const client = testInstance.createSignalingClient();
-    client.connect();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
     await client.close();
     const expectedStates: Array<SignalingConnectionState> = [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED, SignalingConnectionState.CLOSED]
@@ -47,7 +45,6 @@ describe("Test of failing http connection to the signaling service", async () =>
   test('http service returns bad request', async () => {
     const client = testInstance.createSignalingClient();
     expect(client.connectionState).to.be.equal(SignalingConnectionState.NEW);
-    client.connect()
     const observedStates = testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.FAILED])
     await expect(testInstance.waitForError(client)).rejects.toThrowError('Bad')
     await observedStates;
@@ -70,7 +67,6 @@ describe("Test of failing websocket connection to the signaling service", async 
   })
   test('websocket service returns error', async () => {
     const client = testInstance.createSignalingClient();
-    client.connect()
     await expect(() => testInstance.waitForError(client)).rejects.toThrowError('error')
   })
 })
@@ -94,7 +90,6 @@ describe("Test reconnection", async() => {
 
     const expectedStates: Array<SignalingConnectionState> = [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED, SignalingConnectionState.WAIT_RETRY, SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]
 
-    client.connect();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
     await testInstance.disconnectClient();
 
@@ -123,20 +118,17 @@ describe("Test connection to a device through the signaling service", async () =
     await testInstance.destroyTest();
   })
   test('Device is offline', async () => {
-    client.connect();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
     expect(client.channelState).toBe(SignalingChannelState.OFFLINE);
   })
 
   test('Device is online', async () => {
     await testInstance.connectDevice();
-    client.connect();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
     expect(client.channelState).toBe(SignalingChannelState.ONLINE);
   })
 
   test('Device becomes online', async () => {
-    client.connect();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
     expect(client.channelState).toBe(SignalingChannelState.OFFLINE);
 
@@ -151,7 +143,6 @@ describe("Test connection to a device through the signaling service", async () =
   })
   test('Device is online', async () => {
     await testInstance.connectDevice();
-    client.connect();
     await testInstance.waitForSignalingChannelState(client, SignalingChannelState.ONLINE);
     expect(client.channelState).toBe(SignalingChannelState.ONLINE);
   })
@@ -169,7 +160,6 @@ describe("Test connection to a device which is offline but is required to be onl
     await testInstance.destroyTest();
   })
   test('Device is offline', async () => {
-    client.connect();
     await expect(testInstance.waitForError(client)).rejects.toThrowError('The requested device is not online')
   })
 })
@@ -190,7 +180,6 @@ describe("Signaling channel states", async () => {
   })
   test("If an error occurs the state is error", async () => {
     expect(client.channelState).to.be.equal(SignalingChannelState.NEW)
-    client.connect();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
     expect(client.channelState).to.be.equal(SignalingChannelState.OFFLINE);
     await testInstance.connectDevice();
@@ -203,7 +192,6 @@ describe("Signaling channel states", async () => {
 
   })
   test("After closed has been called the state is closed", async () => {
-    client.connect();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
     expect(client.channelState).to.be.equal(SignalingChannelState.OFFLINE);
     client.close();

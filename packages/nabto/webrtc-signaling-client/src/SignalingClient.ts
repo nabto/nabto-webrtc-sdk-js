@@ -39,12 +39,6 @@ export interface SignalingClientOptions {
  */
 export interface SignalingClient {
   /**
-   * Start the connect to the Nabto WebRTC Signaling Service. If an error occurs
-   * the on("error", ...) event is fired.
-   */
-  connect(): void;
-
-  /**
    * Close the signaling client, this deregisters callbacks and closes
    * underlying resources.
    */

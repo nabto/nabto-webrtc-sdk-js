@@ -17,7 +17,6 @@ describe("Test that messages are sent reliably.", async () => {
 
   test("observe the device receives all sent messages", async () => {
     await testInstance.connectDevice();
-    await client.connect();
     const signalingChannel = client;
     const messages = ["1", "2", "3"]
     for (const msg of messages) {
@@ -29,7 +28,6 @@ describe("Test that messages are sent reliably.", async () => {
 
   test("observe that the client receives all sent messages", async () => {
     await testInstance.connectDevice();
-    client.connect();
     const signalingChannel = client;
     const messages = ["1", "2", "3"]
 
@@ -47,7 +45,6 @@ describe("Test that messages are sent reliably.", async () => {
   })
 
   test("test that a client sends messages to a device which is connected later", async () => {
-    client.connect();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
     const signalingChannel = client;
     const messages = ["1", "2", "3"]
@@ -61,7 +58,6 @@ describe("Test that messages are sent reliably.", async () => {
   })
 
   test("test that a client receives messages from a device which is connected later", async () => {
-    client.connect();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
     const signalingChannel = client;
     const messages = ["1", "2", "3"]
@@ -81,7 +77,6 @@ describe("Test that messages are sent reliably.", async () => {
   })
 
   test("test that a client resends messages when a device reconnects and the device has lost messages in the process", async () => {
-    client.connect();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
     await testInstance.connectDevice();
     // instruct the device in dropping further received packets.
@@ -106,7 +101,6 @@ describe("Test that messages are sent reliably.", async () => {
     }
   })
   test("test that the client resends messages when the websocket enters a stale state", async () => {
-    client.connect();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
     await testInstance.connectDevice();
 

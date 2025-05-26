@@ -33,7 +33,6 @@ class RTCConnectionHandler {
     this.signalingClient.on("connectionstatechange", () => {
       this.logger(`New SignalingClient connection state: ${this.signalingClient.connectionState}`)
     })
-    this.signalingClient.connect();
   }
 
   close() {
