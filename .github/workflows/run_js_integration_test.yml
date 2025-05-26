@@ -1,0 +1,45 @@
+name: Run Integration tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        directories: [packages/nabto/webrtc-signaling-client, packages/nabto/webrtc-signaling-device]
+    runs-on: ubuntu-latest
+    steps:
+     - name: Checkout repository
+       uses: actions/checkout@v4
+
+     - uses: pnpm/action-setup@v4
+       name: Install pnpm
+       with:
+        run_install: false
+
+     - name: Setup Node.js
+       uses: actions/setup-node@v4
+       with:
+        node-version: 22
+        cache: 'pnpm'
+
+     - uses: oven-sh/setup-bun@v2
+
+     - name: Install integration test server
+       run: bun install
+       working-directory: integration_test_server
+
+     - name: Start integration test server
+       run: bun dev &
+       working-directory: integration_test_server
+
+     - name: Install sdk
+       run: pnpm install
+
+     - name: run lint
+       run: pnpm run lint
+       working-directory: ${{ matrix.directories }}
+
+     - name: Run tests
+       run: pnpm run test:i
+       working-directory: ${{ matrix.directories }}
