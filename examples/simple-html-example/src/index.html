@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nabto WebRTC Example</title>
+</head>
+
+<body>
+    <!-- include the bundling of the external dependencies. -->
+    <script src="../dist/sdk_exports.js"></script>
+    <!-- include the application specific javascript code -->
+    <script src="RTCConnectionHandler.js"></script>
+
+    <h1>Nabto WebRTC Example</h1>
+    <p>Open the console to view logs.</p>
+    <label for="productId">Product ID</label>
+    <input type="text" id="productId" placeholder="Product ID" onchange="saveSetting('productId')"><br>
+    <label for="deviceId">Device ID</label>
+    <input type="text" id="deviceId" placeholder="Device ID" onchange="saveSetting('deviceId')"><br>
+    <label for="sharedSecret">Shared Secret</label>
+    <input type="text" id="sharedSecret" placeholder="Shared Secret" onchange="saveSetting('sharedSecret')"><br>
+
+    <div class="video-container">
+        <video id="remote-video" autoplay muted controls width="480" height="360"></video>
+        <br/>
+        <button id="connect-btn" onclick="connect()">Connect</button>
+        <button id="disconnect-btn" disabled="true" onclick="disconnect()">Disconnect</button>
+    </div>
+    <div class="logs-container">
+        <pre id="logs"></pre>
+    </div>
+</body>
+<script>
+    let rtcConnectionHandler = undefined;
+    function disconnect() {
+        document.getElementById("disconnect-btn").disabled = true;
+        rtcConnectionHandler.close();
+        rtcConnectionHandler = undefined;
+        const videoElement = document.getElementById("remote-video");
+        videoElement.srcObject = null;
+        document.getElementById("connect-btn").disabled = false;
+    }
+
+    async function connect() {
+        document.getElementById("connect-btn").disabled = true;
+        rtcConnectionHandler = new RTCConnectionHandler({
+            productId: localStorage.getItem("productId"),
+            deviceId: localStorage.getItem("deviceId"),
+            sharedSecret: localStorage.getItem("sharedSecret"),
+            /**
+             * @param {RTCTrackEent} track
+             */
+            ontrack: (track) => {
+                const videoElement = document.getElementById("remote-video");
+                if (videoElement.srcObject === null) {
+                    videoElement.srcObject = new MediaStream();
+                }
+                videoElement.srcObject.addTrack(track.track);
+            },
+            /**
+             * @param {string} state
+             */
+            logger: (entry) => {
+                appendLog(entry)
+            },
+            /**
+             * @param {Error} error
+             */
+            onerror: (error) => {
+                appendLog(error);
+                disconnect();
+            }
+        });
+        document.getElementById("disconnect-btn").disabled = false;
+    }
+
+    function appendLog(entry) {
+        const logsElement = document.getElementById("logs");
+        let logLine;
+        if (entry instanceof Error) {
+            logLine = entry.message;
+        } else if (typeof(entry) === "string") {
+            logLine = entry;
+        } else {
+            logLine = JSON.stringify(entry)
+        }
+        logsElement.innerText = logsElement.innerText + logLine + "\n";
+    }
+
+    function saveSetting(name) {
+        const value = document.getElementById(name).value;
+        localStorage.setItem(name, value);
+    }
+
+    function loadSettings() {
+        const settings = ["productId", "deviceId", "sharedSecret"]
+        settings.forEach((item) => {
+            const value = localStorage.getItem(item) || "default"
+            document.getElementById(item).value = value;
+        })
+    }
+
+    window.onload = loadSettings;
+</script>
+
+</html>

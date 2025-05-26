@@ -1,0 +1,33 @@
+{
+  "name": "@nabto/webrtc-signaling-client",
+  "version": "0.0.1",
+  "description": "Implementation of the Nabto WebRTC Signaling protocol for client applications",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest",
+    "lint": "eslint .",
+    "test:i": "vitest --config ./vitest.integration.ts",
+    "install": "tsc"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "isomorphic-ws": "^5.0.0",
+    "zod": "^3.24.1",
+    "@nabto/webrtc-signaling-common": "workspace:*"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "@fastify/websocket": "^11.0.2",
+    "@hey-api/client-fetch": "^0.8.1",
+    "@stylistic/eslint-plugin": "^2.10.1",
+    "@types/ws": "^8.5.14",
+    "eslint": "^9.26.0",
+    "fastify": "^5.2.1",
+    "globals": "^15.15.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.1",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.1.5"
+  }
+}

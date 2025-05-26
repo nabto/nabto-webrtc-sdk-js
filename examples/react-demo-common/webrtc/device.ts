@@ -1,0 +1,139 @@
+import { DeviceTokenGenerator } from "@nabto/webrtc-signaling-util";
+import { SignalingDevice, createSignalingDevice,  SignalingConnectionState } from "@nabto/webrtc-signaling-device";
+import { PeerConnection, createPeerConnection } from "./peer_connection";
+
+type MessageCallback = (sender: string, text: string) => void
+type PeerConnectionStatesCallback = (states: {name: string, state: RTCPeerConnectionState}[]) => void
+type OnConnectionStateChangeCallback = (state: SignalingConnectionState) => void
+type onErrorCallback = (origin: string, error: Error) => void
+
+export type DeviceSettings = {
+    endpointUrl: string;
+    productId: string;
+    deviceId: string;
+    privateKey: string;
+    sharedSecret: string;
+    requireCentralAuth: boolean;
+}
+
+export interface Device {
+    onPeerConnectionStates: PeerConnectionStatesCallback | undefined
+    onSignalingServiceConnectionState: OnConnectionStateChangeCallback | undefined
+    onMessage: MessageCallback | undefined
+    onError: onErrorCallback | undefined
+
+    updateUserMedia(constraints?: MediaStreamConstraints): Promise<MediaStream>
+    broadcast(sender: string, text: string): void
+    close(): void
+}
+
+class DeviceImpl implements Device {
+    onPeerConnectionStates: PeerConnectionStatesCallback | undefined;
+    onSignalingServiceConnectionState: OnConnectionStateChangeCallback | undefined;
+    onMessage: MessageCallback | undefined
+    onError: onErrorCallback | undefined;
+
+    private signaling: SignalingDevice
+    private tokenGen: DeviceTokenGenerator
+    private connections: PeerConnection[] = []
+    private connectionStates = new Map<string, RTCPeerConnectionState>();
+    private stream?: MediaStream;
+
+    constructor(settings: DeviceSettings) {
+        this.tokenGen = new DeviceTokenGenerator(settings.productId, settings.deviceId, settings.privateKey)
+        this.signaling = createSignalingDevice({
+            ...settings,
+            tokenGenerator: async () => { return this.tokenGen.generateToken() }
+        });
+
+        this.signaling.on("connectionstatechange", () => {
+            this.onSignalingServiceConnectionState?.(this.signaling.connectionState)
+        })
+
+        if (settings.sharedSecret === "" && !settings.requireCentralAuth) {
+            throw new Error("Bad configuration, either a shared secret must be set or central authorization should be set to required.")
+        }
+
+        this.signaling.onNewSignalingChannel = async (channel, authorized) => {
+            // Fail if central auth is required and the channel isnt authorized.
+            if (settings.requireCentralAuth) {
+                if (!authorized) {
+                    channel.sendError("UNAUTHORIZED", "The device requires central authorization, but the client is not centrally authorized to access the device.");
+                    channel.close();
+                    return;
+                }
+            }
+
+            channel.on("channelstatechange", () => {
+                console.log(`${id} channel state change to ${channel.channelState}`)
+            });
+
+            const index = this.connections.length;
+            const id = `connection-${index}`;
+            const peerConnection = await createPeerConnection({
+                name: id,
+                signalingDevice: this.signaling,
+                signalingChannel: channel,
+                centralAuth: settings.requireCentralAuth,
+                sharedSecret: settings.sharedSecret,
+                accessToken: await this.tokenGen.generateToken(),
+                isDevice: true
+            });
+
+            this.onNewPeer(id, peerConnection);
+        };
+    }
+
+    async updateUserMedia(constraints?: MediaStreamConstraints): Promise<MediaStream> {
+        this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+        this.stream.getTracks().forEach(t => {
+            t.addEventListener("ended", () => {
+                this.onError?.(t.label, new Error(`${t.kind} track was ended`));
+            });
+        });
+
+        for (const pc of this.connections) {
+            pc.addStream(this.stream);
+        }
+
+        return this.stream;
+    }
+
+    broadcast(sender: string, text: string) {
+        this.connections.forEach(c => c.send(JSON.stringify({sender, text})));
+    }
+
+    close() {
+        this.connections.forEach(c => c.close());
+        this.connections = [];
+        this.signaling.close();
+    }
+
+    private onNewPeer(id: string, peerConnection: PeerConnection) {
+        peerConnection.onRTCPeerConnectionCreated = () => {
+            if (this.stream) {
+                peerConnection.addStream(this.stream);
+            }
+        }
+
+        peerConnection.onDataChannelMessage = (sender, text) => {
+            this.broadcast(sender, text);
+            this.onMessage?.(sender, text);
+        };
+
+        peerConnection.onConnectionState = state => {
+            this.connectionStates.set(id, state);
+            const converted = Array.from(this.connectionStates, ([key, value]) => ({
+                name: key,
+                state: value
+            }));
+            this.onPeerConnectionStates?.(converted);
+        }
+
+        this.connections.push(peerConnection);
+    }
+}
+
+export async function createDevice(settings: DeviceSettings): Promise<Device> {
+    return new DeviceImpl(settings);
+}

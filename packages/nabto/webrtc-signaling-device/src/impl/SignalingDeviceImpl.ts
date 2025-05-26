@@ -1,0 +1,234 @@
+import { SignalingChannel, SignalingErrorCodes, SignalingError, SignalingChannelState, JSONValue, TypedEventEmitter } from "@nabto/webrtc-signaling-common";
+import { SignalingDevice, SignalingDeviceOptions } from "../SignalingDevice";
+import { Configuration, DevicesApi, ResponseError } from '../impl/backend'
+import { WebSocketConnectionImpl, SignalingChannelImpl, SignalingServiceImpl, SignalingConnectionState } from '@nabto/webrtc-signaling-common'
+import { IceServersImpl } from "./IceServersImpl";
+
+const CHECK_ALIVE_TIMEOUT = 1000
+
+type EventMap = {
+  connectionstatechange: () => void; // No payload
+  connectionreconnect: () => void; // No payload
+};
+
+export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements SignalingDevice, SignalingServiceImpl {
+  iceApi: IceServersImpl
+  devicesApi: DevicesApi
+  signalingChannels: Map<string, SignalingChannelImpl> = new Map()
+  ws: WebSocketConnectionImpl
+  reconnectCounter: number = 0
+  openedWebSockets: number = 0;
+
+  onNewSignalingChannel?: (connection: SignalingChannel, authorized: boolean) => Promise<void>
+
+  constructor(private options: SignalingDeviceOptions) {
+    super();
+    let endpointUrl = options.endpointUrl;
+    if (!endpointUrl) {
+      endpointUrl = `https://${options.productId}.webrtc.nabto.net`;
+    }
+    this.iceApi = new IceServersImpl(endpointUrl, options.productId, options.deviceId)
+    this.devicesApi = new DevicesApi(new Configuration({ basePath: endpointUrl }))
+
+    this.on("connectionstatechange", () => {
+      if (this.connectionState === SignalingConnectionState.CONNECTED) {
+        this.reconnectCounter = 0;
+      }
+    })
+    this.ws = new WebSocketConnectionImpl("device");
+    this.initWebSocket();
+    this.doConnect();
+  }
+  connectionState_: SignalingConnectionState = SignalingConnectionState.NEW;
+
+  get connectionState() {
+    return this.connectionState_;
+  }
+
+  set connectionState(state: SignalingConnectionState) {
+    if (this.connectionState_ === state) {
+      // skip duplicate events.
+      return;
+    }
+    this.connectionState_ = state;
+    this.emitSync("connectionstatechange");
+  }
+
+  async close(): Promise<void> {
+    if (this.connectionState === SignalingConnectionState.CLOSED) {
+      return;
+    }
+    this.connectionState = SignalingConnectionState.CLOSED
+    this.onNewSignalingChannel = undefined
+    this.ws.close();
+    this.signalingChannels.forEach((conn, _id) => conn.close());
+    this.signalingChannels = new Map()
+    this.removeAllListeners();
+  }
+
+
+  closeSignalingChannel(channelId: string) {
+    this.signalingChannels.delete(channelId);
+  }
+
+  sendRoutingMessage(channelId: string, message: string) {
+    this.ws.sendMessage(channelId, message);
+  }
+
+  async serviceSendError(channelId: string, errorCode: string, errorMessage?: string) : Promise<void> {
+    this.ws.sendError(channelId, errorCode, errorMessage);
+  }
+
+  checkAlive() {
+    if (this.connectionState === SignalingConnectionState.CLOSED || this.connectionState === SignalingConnectionState.FAILED) {
+      return;
+    }
+    this.ws.checkAlive(CHECK_ALIVE_TIMEOUT);
+  }
+
+  async getIceServers(): Promise<Array<RTCIceServer>> {
+    const token = await this.options.tokenGenerator();
+    return this.iceApi.getIceServers(token);
+  }
+
+  async doHttpRequest(): Promise<string> {
+    const token = await this.options.tokenGenerator()
+    const response = await this.devicesApi.postV1DeviceConnect({
+      authorization: `Bearer ${token}`,
+      postV1IceServersRequest: {
+        productId: this.options.productId,
+        deviceId: this.options.deviceId
+      }
+    })
+    return response.signalingUrl;
+  }
+
+  async handleTooManyRequests(retryAfter: string | null) {
+    let seconds = 300;
+    if (retryAfter) {
+      const n = Number(retryAfter);
+      if (!Number.isNaN(n)) {
+        seconds = n;
+      } else {
+        try {
+          const d = new Date(retryAfter);
+          const now = new Date()
+          const diff = d.getTime() - now.getTime()
+          seconds = diff/1000;
+        } catch {
+          // ignore that it could not be parsed and fallback to the default delay
+        }
+      }
+    }
+    console.debug(`Too many requests. Waiting ${seconds}s before making next request`);
+    if (seconds < 0) {
+      seconds = 300;
+    }
+    this.waitReconnect(seconds);
+  }
+
+  async doConnect() {
+    if (this.connectionState === SignalingConnectionState.CLOSED || this.connectionState === SignalingConnectionState.FAILED) {
+      return;
+    }
+    try {
+      this.connectionState = SignalingConnectionState.CONNECTING
+      const signalingUrl = await this.doHttpRequest();
+      this.ws.connect(signalingUrl);
+    } catch (e) {
+      if (e instanceof ResponseError) {
+        if (e.response.status === 429) {
+          const retryAfter = e.response.headers.get("Retry-After");
+          this.handleTooManyRequests(retryAfter);
+          return;
+        } else {
+          console.debug(`Connect failed, retries in a moment. Status code ${e.response.status}. Status text ${e.response.statusText} `)
+        }
+      } else {
+        console.debug(`Connect failed, retries in a moment ${e}`)
+      }
+      this.waitReconnect();
+    }
+  }
+
+  initWebSocket() {
+    this.ws.on("close", () => {
+      this.waitReconnect();
+    })
+    this.ws.on("error", () => {
+      this.waitReconnect();
+    })
+    this.ws.on("connectionerror", (channelId: string, errorCode: string, errorMessage?: string) => {
+      const c = this.signalingChannels.get(channelId);
+      const e = new SignalingError(errorCode, errorMessage);
+      e.isRemote = true;
+      c?.handleError(e)
+    })
+    this.ws.on("message", (channelId: string, message: JSONValue, authorized: boolean) => {
+      {
+        const connection = this.signalingChannels.get(channelId)
+        if (connection) {
+          connection.handleRoutingMessage(message);
+        } else {
+          const c = new SignalingChannelImpl(this, channelId, true /*isDevice*/);
+          c.channelState = SignalingChannelState.ONLINE;
+          if (!c.isInitialMessage(message)) {
+            this.serviceSendError(channelId, SignalingErrorCodes.CHANNEL_NOT_FOUND, `The message with the channelId: ${channelId} is not found in the device.`);
+          } else {
+            this.signalingChannels.set(channelId, c);
+            c.handleRoutingMessage(message)
+            const createChannel = async () => {
+              await this.onNewSignalingChannel?.(c, authorized);
+              c.startRecv();
+            }
+            createChannel();
+          }
+        }
+      }
+    })
+    this.ws.on("open", () => {
+      this.openedWebSockets++;
+      const reconnected = this.openedWebSockets > 1
+      if (reconnected) {
+        this.emit("connectionreconnect");
+      }
+      this.signalingChannels.forEach((c) => {
+        c.handleWebSocketConnect();
+      })
+      this.connectionState = SignalingConnectionState.CONNECTED;
+    })
+    this.ws.on("peerconnected", (channelId: string) => {
+      const c = this.signalingChannels.get(channelId);
+      c?.handlePeerConnected();
+    })
+    this.ws.on("peeroffline", (channelId: string) => {
+      const c = this.signalingChannels.get(channelId)
+      c?.handlePeerOffline();
+    })
+  }
+
+  waitReconnect(waitSeconds?: number) {
+    if (this.connectionState === SignalingConnectionState.CLOSED || this.connectionState === SignalingConnectionState.FAILED) {
+      return;
+    }
+    if (this.connectionState === SignalingConnectionState.WAIT_RETRY) {
+      return;
+    }
+    this.connectionState = SignalingConnectionState.WAIT_RETRY
+
+    let reconnectWaitSeconds = 60
+    if (waitSeconds) {
+      reconnectWaitSeconds = waitSeconds;
+    } else {
+      if (this.reconnectCounter < 6) {
+        reconnectWaitSeconds = (2 ** this.reconnectCounter)
+      }
+    }
+    this.reconnectCounter++;
+
+    console.debug(`Waiting ${reconnectWaitSeconds}s before reconnecting`)
+    setTimeout(() => {
+      this.doConnect()
+    }, reconnectWaitSeconds * 1000)
+  }
+}

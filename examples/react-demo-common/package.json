@@ -1,0 +1,20 @@
+{
+    "name": "@nabto/react-demo-common",
+    "version": "1.0.0",
+    "exports": {
+        "./webrtc": "./webrtc/index.ts",
+        "./state": "./react/index.ts"
+    },
+    "peerDependencies": {
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "@nabto/webrtc-signaling-client": "workspace:*",
+        "@nabto/webrtc-signaling-device": "workspace:*",
+        "@nabto/webrtc-signaling-common": "workspace:*",
+        "@nabto/webrtc-signaling-util": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/react": "^18.3.12",
+        "@types/react-dom": "^18.3.1"
+    }
+}
