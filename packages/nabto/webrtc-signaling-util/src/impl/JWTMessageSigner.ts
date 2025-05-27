@@ -34,6 +34,13 @@ export class JWTMessageSigner implements MessageSigner {
 
   };
 
+  /**
+   * Get a key id from a Signing message. This is used to retrieve the keyId
+   * before the message is verified such that the correct shared secret can be
+   * used.
+   * @param message  The Signing message.
+   * @returns the keyId from the JWT header.
+   */
   static async getKeyId(message: JSONValue): Promise<string> {
     const signingMessage = ProtocolSigningMessageSchema.parse(message);
     if (signingMessage.type !== ProtocolSigningMessageTypes.JWT) {
