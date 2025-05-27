@@ -33,10 +33,7 @@ export class ClientMessageTransportImpl extends TypedEventEmitter<ClientMessageT
   static create(client: SignalingClient, options: ClientMessageTransportOptions): MessageTransport {
     let messageSigner: MessageSigner;
     if (options.securityMode === ClientMessageTransportSecurityMode.SHARED_SECRET) {
-      if (options.sharedSecret === undefined) {
-        throw new Error("Missing a required shared secret")
-      }
-      messageSigner = new JWTMessageSigner(options.sharedSecret, options.keyId ? options.keyId : "default");
+      messageSigner = new JWTMessageSigner(options.sharedSecret, options.keyId);
     } else {
       messageSigner = new NoneMessageSigner();
     }

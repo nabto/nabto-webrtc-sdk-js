@@ -32,11 +32,6 @@ export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageT
   }
 
   static create(device: SignalingDevice, channel: SignalingChannel, options: DeviceMessageTransportOptions) {
-    if (options.securityMode === DeviceMessageTransportSecurityMode.SHARED_SECRET) {
-      if (options.sharedSecretCallback === undefined) {
-        throw new Error("Missing a required shared secret")
-      }
-    }
     const instance = new DeviceMessageTransportImpl(device, channel, options);
     return instance;
   }
@@ -78,9 +73,6 @@ export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageT
     if (this.options.securityMode === DeviceMessageTransportSecurityMode.NONE) {
       this.messageSigner = new NoneMessageSigner();
     } else if (this.options.securityMode === DeviceMessageTransportSecurityMode.SHARED_SECRET) {
-      if (!this.options.sharedSecretCallback) {
-        throw new Error("Configuration error, missing shared secret callback");
-      }
       const keyId = await JWTMessageSigner.getKeyId(message);
       const sharedSecret = await this.options.sharedSecretCallback(keyId);
       this.messageSigner = new JWTMessageSigner(sharedSecret, keyId);

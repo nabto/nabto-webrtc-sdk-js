@@ -15,11 +15,11 @@ export enum DeviceMessageTransportSecurityMode {
   NONE
 }
 
-export interface DeviceMessageTransportOptions {
+export interface DeviceMessageTransportSharedSecretOptions {
   /**
    * The security mode the use for the device
    */
-  securityMode: DeviceMessageTransportSecurityMode;
+  securityMode: DeviceMessageTransportSecurityMode.SHARED_SECRET;
 
   /**
    * If the security mode is set to shared secret, a shared secret callback must
@@ -29,8 +29,17 @@ export interface DeviceMessageTransportOptions {
    * @returns  A shared secret which is used to sign and verify messages on the
    * channel.
    */
-  sharedSecretCallback?: (keyId: string) => Promise<string>;
+  sharedSecretCallback: (keyId: string) => Promise<string>;
 }
+
+export interface DeviceMessageTransportNoneOptions {
+  /**
+   * The security mode the use for the device
+   */
+  securityMode: DeviceMessageTransportSecurityMode.NONE;
+}
+
+export type DeviceMessageTransportOptions = DeviceMessageTransportSharedSecretOptions | DeviceMessageTransportNoneOptions
 
 /**
  * Create a message transport for a device application.

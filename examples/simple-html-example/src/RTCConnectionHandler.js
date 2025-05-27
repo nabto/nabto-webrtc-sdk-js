@@ -19,7 +19,8 @@ class RTCConnectionHandler {
     this.onerror = onerror;
     this.messageTransport = SDK.createClientMessageTransport(this.signalingClient, {
       securityMode: SDK.ClientMessageTransportSecurityMode.SHARED_SECRET,
-      sharedSecret: sharedSecret
+      sharedSecret: sharedSecret,
+      keyId: "default"
     })
     this.messageTransport.on("setupdone", async (iceServers) => {
       this.createPeerConnection(iceServers);

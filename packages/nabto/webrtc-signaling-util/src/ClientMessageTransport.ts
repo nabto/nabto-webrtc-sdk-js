@@ -14,25 +14,31 @@ export enum ClientMessageTransportSecurityMode {
   NONE
 }
 
-/**
- * Options needed to construct the client transport
- */
-export interface ClientMessageTransportOptions {
+export interface ClientMessageTransportSharedSecretOptions {
   /**
    * The security mode the MessageTransport should use
    */
-  securityMode: ClientMessageTransportSecurityMode;
-
+  securityMode: ClientMessageTransportSecurityMode.SHARED_SECRET,
   /**
-   * The shared secret to use if the security mode is SHARED_SECRET.
-   */
-  sharedSecret?: string;
+ * The shared secret to use if the security mode is SHARED_SECRET.
+ */
+  sharedSecret: string;
 
   /**
    * The Key ID of the shared secret if the security mode is SHARED_SECRET.
    */
-  keyId?: string;
+  keyId: string;
 }
+
+
+export interface ClientMessageTransportNoneOptions {
+  /**
+   * The security mode the MessageTransport should use
+   */
+  securityMode: ClientMessageTransportSecurityMode.NONE,
+}
+
+export type ClientMessageTransportOptions = ClientMessageTransportSharedSecretOptions | ClientMessageTransportNoneOptions;
 
 /**
  * Create a message transport for a client application.
