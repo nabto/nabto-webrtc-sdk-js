@@ -124,16 +124,16 @@ export class DefaultMessageTransportDeviceImpl extends TypedEventEmitter<Default
     }
   }
 
-  async sendWebRTCSignalingMessage(message: WebrtcSignalingMessage): Promise < void> {
+  async sendWebRTCSignalingMessage(message: WebrtcSignalingMessage): Promise<void> {
+    if (this.state !== State.SIGNALING) {
+      throw new Error("Trying to send a signaling message before setup has completed.");
+    }
     return this.sendSignalingMessage(message);
   }
 
   private async sendSignalingMessage(message: SignalingMessage): Promise<void> {
-    if (this.state !== State.SIGNALING) {
-      throw new Error("Trying to send a signaling message before setup has completed.");
-    }
     if (!this.messageSigner) {
-      throw new Error("Never here, the message signer is setup when the state switches away from FIRST_PACKET.");
+      throw new Error("Never here, the message signer is configured when we are sending messages.");
     }
     const encoded = this.messageEncoder.encodeMessage(message);
     const signed = await this.messageSigner.signMessage(encoded);

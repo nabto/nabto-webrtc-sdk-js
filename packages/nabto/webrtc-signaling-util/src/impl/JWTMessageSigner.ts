@@ -34,7 +34,7 @@ export class JWTMessageSigner implements MessageSigner {
 
   };
 
-  static async getKeyId(message: JSONValue) : Promise<string> {
+  static async getKeyId(message: JSONValue): Promise<string> {
     const signingMessage = ProtocolSigningMessageSchema.parse(message);
     if (signingMessage.type !== ProtocolSigningMessageTypes.JWT) {
       throw new SignalingError(SignalingErrorCodes.VERIFICATION_ERROR, `Expected a JWT signed message but got a signing message of type ${signingMessage.type}.`);
@@ -43,7 +43,10 @@ export class JWTMessageSigner implements MessageSigner {
     if (parts.length < 3) {
       throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, "The provided JWT token does not contain two dots.");
     }
-    const jwtHeader = JWTHeaderSchema.parse(parts[0]);
+
+    const headerClaims = rs.KJUR.jws.JWS.readSafeJSONString(rs.b64utoutf8(parts[0]))
+
+    const jwtHeader = JWTHeaderSchema.parse(headerClaims);
     if (jwtHeader.kid === undefined) {
       throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, "The provided JWT token does not contain a key id (kid).");
     }
