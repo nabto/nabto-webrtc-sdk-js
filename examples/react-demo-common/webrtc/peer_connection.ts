@@ -1,10 +1,11 @@
 import { SignalingChannel, SignalingError, SignalingErrorCodes } from '@nabto/webrtc-signaling-common';
-import { createDefaultMessageTransportClient, DefaultMessageTransportDeviceOptions, DefaultMessageTransportSecurityModes, PerfectNegotiation, SignalingEventHandler } from "@nabto/webrtc-signaling-util";
+import { createDeviceMessageTransport, DeviceMessageTransportOptions, DeviceMessageTransportSecurityMode, PerfectNegotiation, SignalingEventHandler } from "@nabto/webrtc-signaling-util";
 import { createLogger, Logger } from "../log";
-import { createDefaultMessageTransportDevice, MessageTransport, DefaultMessageTransportOptions } from '@nabto/webrtc-signaling-util';
+import { MessageTransport } from '@nabto/webrtc-signaling-util';
 import { SignalingClient } from '@nabto/webrtc-signaling-client';
 import { SignalingEventHandlerConnection } from '@nabto/webrtc-signaling-util';
 import { SignalingDevice } from '@nabto/webrtc-signaling-device';
+import { ClientMessageTransportSecurityMode, createClientMessageTransport } from '@nabto/webrtc-signaling-util/src/ClientMessageTransport';
 
 export enum PeerConnectionLogLevel {
     NONE = 0,
@@ -224,39 +225,35 @@ export async function createPeerConnection(options: PeerConnectionOptions): Prom
     let signalingConn: SignalingEventHandlerConnection;
     let defaultMessageTransport : MessageTransport
     if (isDevice) {
-        let defaultMessageTransportDeviceOptions : DefaultMessageTransportDeviceOptions
+        let deviceMessageTransportOptions : DeviceMessageTransportOptions
         if (options.sharedSecret) {
             const sharedSecret = options.sharedSecret;
-            defaultMessageTransportDeviceOptions = {
-                securityMode: DefaultMessageTransportSecurityModes.SHARED_SECRET,
+            deviceMessageTransportOptions = {
+                securityMode: DeviceMessageTransportSecurityMode.SHARED_SECRET,
                 sharedSecretCallback: async (keyId) => {
-                    if (keyId !== "default") {
-                        console.error("The client provided the key id: ${keyId} but the device only supports the keyId 'default'")
-                        throw new SignalingError(SignalingErrorCodes.ACCESS_DENIED, "The only supported key id is 'default'")
-                    }
                     return sharedSecret;
                 },
             }
         } else {
-            defaultMessageTransportDeviceOptions = {
-                securityMode: DefaultMessageTransportSecurityModes.NONE,
+            deviceMessageTransportOptions = {
+                securityMode: DeviceMessageTransportSecurityMode.NONE,
             }
         }
         if (!options.signalingDevice) {
             throw new Error("createPeerConnection called with isDevice but signaling device not provided");
         }
         signalingConn = options.signalingDevice;
-        defaultMessageTransport = createDefaultMessageTransportDevice(options.signalingDevice, options.signalingChannel, defaultMessageTransportDeviceOptions);
+        defaultMessageTransport = createDeviceMessageTransport(options.signalingDevice, options.signalingChannel, deviceMessageTransportOptions);
     } else {
-        const defaultMessageTransportOptions: DefaultMessageTransportOptions = {
-            securityMode: options.sharedSecret ? DefaultMessageTransportSecurityModes.SHARED_SECRET : DefaultMessageTransportSecurityModes.NONE,
-            sharedSecret: options.sharedSecret
-        }
         if (!options.signalingClient) {
             throw new Error("createPeerConnection called with !isDevice but signaling client not provided");
         }
+        if (options.sharedSecret) {
+            defaultMessageTransport = createClientMessageTransport(options.signalingClient, {securityMode: ClientMessageTransportSecurityMode.SHARED_SECRET, keyId: "default", sharedSecret: options.sharedSecret})
+        } else {
+            defaultMessageTransport = createClientMessageTransport(options.signalingClient, {securityMode: ClientMessageTransportSecurityMode.NONE});
+        }
         signalingConn = options.signalingClient;
-        defaultMessageTransport = createDefaultMessageTransportClient(options.signalingClient, defaultMessageTransportOptions);
     }
 
     const pc = new PeerConnectionImpl(name, signalingConn, channel, defaultMessageTransport, isDevice);

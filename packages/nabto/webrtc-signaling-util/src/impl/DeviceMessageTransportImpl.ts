@@ -1,12 +1,12 @@
 import { JSONValue, SignalingChannel, TypedEventEmitter } from "@nabto/webrtc-signaling-common";
 import { SignalingDevice } from "@nabto/webrtc-signaling-device";
 import { DefaultMessageEncoder, SignalingMessage } from "./DefaultMessageEncoder";
-import { DefaultMessageTransportDeviceOptions, DefaultMessageTransportSecurityModes } from "../DefaultMessageTransport";
 import { MessageSigner } from "./MessageSigner";
 import { NoneMessageSigner } from "./NoneMessageSigner";
 import { JWTMessageSigner } from "./JWTMessageSigner";
 import { MessageTransport, MessageTransportMode, WebrtcSignalingMessageType, WebrtcSignalingMessage } from "../MessageTransport";
 import { SignalingMessageType } from "./DefaultMessageEncoder";
+import { DeviceMessageTransportOptions, DeviceMessageTransportSecurityMode } from "../DeviceMessageTransport";
 
 enum State {
   WAIT_FIRST_MESSAGE, // The implementation is waiting on receiving the first message.
@@ -26,13 +26,13 @@ export class DefaultMessageTransportDeviceImpl extends TypedEventEmitter<Default
   state: State = State.WAIT_FIRST_MESSAGE;
   messageSigner?: MessageSigner;
 
-  constructor(private device: SignalingDevice, private channel: SignalingChannel, private options: DefaultMessageTransportDeviceOptions) {
+  constructor(private device: SignalingDevice, private channel: SignalingChannel, private options: DeviceMessageTransportOptions) {
     super();
     this.channel.on("message", async (message: JSONValue) => { this.signalingChannelMessageHandler(message) });
   }
 
-  static create(device: SignalingDevice, channel: SignalingChannel, options: DefaultMessageTransportDeviceOptions) {
-    if (options.securityMode === DefaultMessageTransportSecurityModes.SHARED_SECRET) {
+  static create(device: SignalingDevice, channel: SignalingChannel, options: DeviceMessageTransportOptions) {
+    if (options.securityMode === DeviceMessageTransportSecurityMode.SHARED_SECRET) {
       if (options.sharedSecretCallback === undefined) {
         throw new Error("Missing a required shared secret")
       }
@@ -75,9 +75,9 @@ export class DefaultMessageTransportDeviceImpl extends TypedEventEmitter<Default
   }
 
   async setupMessageSigner(message: JSONValue): Promise<void> {
-    if (this.options.securityMode === DefaultMessageTransportSecurityModes.NONE) {
+    if (this.options.securityMode === DeviceMessageTransportSecurityMode.NONE) {
       this.messageSigner = new NoneMessageSigner();
-    } else if (this.options.securityMode === DefaultMessageTransportSecurityModes.SHARED_SECRET) {
+    } else if (this.options.securityMode === DeviceMessageTransportSecurityMode.SHARED_SECRET) {
       if (!this.options.sharedSecretCallback) {
         throw new Error("Configuration error, missing shared secret callback");
       }
