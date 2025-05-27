@@ -13,7 +13,6 @@ export interface SignalingServiceImpl {
   serviceSendError(channelId: string, errorCode: string, errorMessage?: string): Promise<void>
   sendRoutingMessage(channelId: string, message: JSONValue): void
   closeSignalingChannel(channelId: string): void
-  checkAlive(): void
 }
 
 export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEventHandlers> implements SignalingChannel {
@@ -63,12 +62,6 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     this.signalingService.serviceSendError(this.getChannelIdInternal(), errorCode, errorMessage);
   }
 
-  checkAlive(): void {
-    if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
-      return;
-    }
-    this.signalingService.checkAlive();
-  }
   close(): void {
     if (this.channelState === SignalingChannelState.CLOSED) {
       return;
