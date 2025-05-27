@@ -223,39 +223,37 @@ export async function createPeerConnection(options: PeerConnectionOptions): Prom
     const name = options.name ?? (isDevice ? "device" : "client");
 
     let signalingConn: SignalingEventHandlerConnection;
-    let defaultMessageTransport : MessageTransport
+    let messageTransport : MessageTransport
     if (isDevice) {
-        let deviceMessageTransportOptions : DeviceMessageTransportOptions
+        if (!options.signalingDevice) {
+            throw new Error("createPeerConnection called with isDevice but signaling device not provided");
+        }
         if (options.sharedSecret) {
             const sharedSecret = options.sharedSecret;
-            deviceMessageTransportOptions = {
+            messageTransport = createDeviceMessageTransport(options.signalingDevice, options.signalingChannel, {
                 securityMode: DeviceMessageTransportSecurityMode.SHARED_SECRET,
                 sharedSecretCallback: async (keyId) => {
                     return sharedSecret;
                 },
-            }
+            })
         } else {
-            deviceMessageTransportOptions = {
-                securityMode: DeviceMessageTransportSecurityMode.NONE,
-            }
-        }
-        if (!options.signalingDevice) {
-            throw new Error("createPeerConnection called with isDevice but signaling device not provided");
+            messageTransport = createDeviceMessageTransport(options.signalingDevice, options.signalingChannel, {
+                securityMode: DeviceMessageTransportSecurityMode.NONE
+            })
         }
         signalingConn = options.signalingDevice;
-        defaultMessageTransport = createDeviceMessageTransport(options.signalingDevice, options.signalingChannel, deviceMessageTransportOptions);
     } else {
         if (!options.signalingClient) {
             throw new Error("createPeerConnection called with !isDevice but signaling client not provided");
         }
         if (options.sharedSecret) {
-            defaultMessageTransport = createClientMessageTransport(options.signalingClient, {securityMode: ClientMessageTransportSecurityMode.SHARED_SECRET, keyId: "default", sharedSecret: options.sharedSecret})
+            messageTransport = createClientMessageTransport(options.signalingClient, {securityMode: ClientMessageTransportSecurityMode.SHARED_SECRET, keyId: "default", sharedSecret: options.sharedSecret})
         } else {
-            defaultMessageTransport = createClientMessageTransport(options.signalingClient, {securityMode: ClientMessageTransportSecurityMode.NONE});
+            messageTransport = createClientMessageTransport(options.signalingClient, {securityMode: ClientMessageTransportSecurityMode.NONE});
         }
         signalingConn = options.signalingClient;
     }
 
-    const pc = new PeerConnectionImpl(name, signalingConn, channel, defaultMessageTransport, isDevice);
+    const pc = new PeerConnectionImpl(name, signalingConn, channel, messageTransport, isDevice);
     return pc;
 }
