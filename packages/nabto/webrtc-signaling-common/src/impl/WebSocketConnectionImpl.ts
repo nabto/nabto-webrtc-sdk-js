@@ -173,8 +173,8 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
     }
   }
 
-  async emitMessage(channelId: string, message: JSONValue, authorized: boolean) {
-    const consumers = await this.emit("message", channelId, message, authorized);
+  emitMessage(channelId: string, message: JSONValue, authorized: boolean) {
+    const consumers = this.emitSync("message", channelId, message, authorized);
     if (consumers === 0) {
       console.error(`"The message: ${message}, on the channel: ${channelId}, got dropped as there are no receivers registerd for the message event.`);
     }
