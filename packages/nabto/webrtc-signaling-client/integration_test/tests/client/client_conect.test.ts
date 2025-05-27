@@ -122,12 +122,6 @@ describe("Test connection to a device through the signaling service", async () =
     expect(client.channelState).toBe(SignalingChannelState.OFFLINE);
   })
 
-  test('Device is online', async () => {
-    await testInstance.connectDevice();
-    await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
-    expect(client.channelState).toBe(SignalingChannelState.ONLINE);
-  })
-
   test('Device becomes online', async () => {
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
     expect(client.channelState).toBe(SignalingChannelState.OFFLINE);
@@ -141,12 +135,30 @@ describe("Test connection to a device through the signaling service", async () =
     expect(status).toBe(true);
     expect(client.channelState).toBe(SignalingChannelState.ONLINE);
   })
-  test('Device is online', async () => {
+})
+
+
+describe("Test connection to a device through the signaling service, the device is online before the client connects", async () => {
+  let testInstance: ClientTestInstance;
+  let client: SignalingClient;
+  beforeEach(async () => {
+    testInstance = await ClientTestInstance.create({});
     await testInstance.connectDevice();
-    await testInstance.waitForSignalingChannelState(client, SignalingChannelState.ONLINE);
+    client = testInstance.createSignalingClient();
+  })
+
+  afterEach(async () => {
+    await testInstance.destroyTest();
+  })
+
+  test('Device is online', async () => {
+    await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
     expect(client.channelState).toBe(SignalingChannelState.ONLINE);
   })
 })
+
+
+
 
 describe("Test connection to a device which is offline but is required to be online", async () => {
   let testInstance: ClientTestInstance;

@@ -60,8 +60,11 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
 
     this.ws = new WebSocketConnectionImpl("client");
     this.setupWs(this.ws);
-    this.firstConnect()
-    this.signalingChannel.startRecv();
+    console.log("calling first connect")
+    queueMicrotask(() => {
+      this.firstConnect();
+      this.signalingChannel.startRecv();
+    })
   }
   sendRoutingMessage(channelId: string, message: string): void {
     this.ws.sendMessage(channelId, message);
