@@ -4,7 +4,7 @@ import { MessageTransport } from "./MessageTransport";
 
 
 /**
- * Security modes the default transport can use
+ * Security modes the client message transport can use
  *
  *  - SHARED_SECRET: Use a shared secret to sign messages as JWT
  *  - NONE: Do not sign messages at all.
@@ -15,7 +15,7 @@ export enum ClientMessageTransportSecurityMode {
 }
 
 /**
- * Options needed to construct the default transport
+ * Options needed to construct the client transport
  */
 export interface ClientMessageTransportOptions {
   /**
@@ -35,7 +35,7 @@ export interface ClientMessageTransportOptions {
 }
 
 /**
- * Create a default message transport for a client application.
+ * Create a message transport for a client application.
  *
  * @param client The SignalingClient to use
  * @param options The options to use

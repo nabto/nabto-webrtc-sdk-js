@@ -14,13 +14,13 @@ enum State {
   SIGNALING
 }
 
-interface DefaultMessageTransportImplEventHandlers {
+interface DeviceMessageTransportImplEventHandlers {
   webrtcsignalingmessage: (message: WebrtcSignalingMessage) => Promise<void>;
   error: (error: Error) => void;
   setupdone: (iceServers?: RTCIceServer[]) => Promise<void>;
 }
 
-export class DefaultMessageTransportDeviceImpl extends TypedEventEmitter<DefaultMessageTransportImplEventHandlers> implements MessageTransport {
+export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageTransportImplEventHandlers> implements MessageTransport {
 
   messageEncoder: DefaultMessageEncoder = new DefaultMessageEncoder();
   state: State = State.WAIT_FIRST_MESSAGE;
@@ -37,7 +37,7 @@ export class DefaultMessageTransportDeviceImpl extends TypedEventEmitter<Default
         throw new Error("Missing a required shared secret")
       }
     }
-    const instance = new DefaultMessageTransportDeviceImpl(device, channel, options);
+    const instance = new DeviceMessageTransportImpl(device, channel, options);
     return instance;
   }
 

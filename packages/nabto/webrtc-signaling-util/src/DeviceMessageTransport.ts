@@ -1,6 +1,6 @@
 import { SignalingChannel } from "@nabto/webrtc-signaling-common";
 import { SignalingDevice } from "@nabto/webrtc-signaling-device";
-import { DefaultMessageTransportDeviceImpl } from './impl/DeviceMessageTransportImpl'
+import { DeviceMessageTransportImpl } from './impl/DeviceMessageTransportImpl'
 import { MessageTransport } from "./MessageTransport";
 
 
@@ -33,7 +33,7 @@ export interface DeviceMessageTransportOptions {
 }
 
 /**
- * Create a default message transport for a device application.
+ * Create a message transport for a device application.
  *
  * @param device The SignalingDevice to use
  * @param channel The SignalingChannel to send/receive on.
@@ -41,5 +41,5 @@ export interface DeviceMessageTransportOptions {
  * @returns The created MessageTransport object
  */
 export function createDeviceMessageTransport(device: SignalingDevice, channel: SignalingChannel, options: DeviceMessageTransportOptions): MessageTransport {
-  return DefaultMessageTransportDeviceImpl.create(device, channel, options);
+  return DeviceMessageTransportImpl.create(device, channel, options);
 }
