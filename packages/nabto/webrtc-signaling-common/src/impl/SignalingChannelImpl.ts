@@ -10,7 +10,6 @@ import { Reliability, ReliabilityMessageSchema, ReliabilityUnion } from './Relia
  * communicates with the signaling service.
  */
 export interface SignalingServiceImpl {
-  getIceServers(): Promise<Array<RTCIceServer>>
   serviceSendError(channelId: string, errorCode: string, errorMessage?: string): Promise<void>
   sendRoutingMessage(channelId: string, message: JSONValue): void
   closeSignalingChannel(channelId: string): void
@@ -57,9 +56,6 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     this.emit("channelstatechange");
   }
 
-  async getIceServers(): Promise<Array<RTCIceServer>> {
-    return this.signalingService.getIceServers();
-  }
   async sendMessage(message: JSONValue): Promise<void> {
     await this.reliability.sendReliableMessage(message);
   }
