@@ -19,7 +19,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
   reconnectCounter: number = 0
   openedWebSockets: number = 0;
 
-  onNewSignalingChannel?: (connection: SignalingChannel, authorized: boolean) => Promise<void>
+  onNewSignalingChannel: (device: SignalingDevice, connection: SignalingChannel, authorized: boolean) => Promise<void>
 
   constructor(private options: SignalingDeviceOptions) {
     super();
@@ -29,6 +29,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     }
     this.iceApi = new IceServersImpl(endpointUrl, options.productId, options.deviceId)
     this.devicesApi = new DevicesApi(new Configuration({ basePath: endpointUrl }))
+    this.onNewSignalingChannel = options.onNewSignalingChannel;
 
     this.on("connectionstatechange", () => {
       if (this.connectionState === SignalingConnectionState.CONNECTED) {
@@ -59,7 +60,6 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
       return;
     }
     this.connectionState = SignalingConnectionState.CLOSED
-    this.onNewSignalingChannel = undefined
     this.ws.close();
     this.signalingChannels.forEach((conn, _id) => conn.close());
     this.signalingChannels = new Map()
@@ -158,7 +158,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     this.ws.on("error", () => {
       this.waitReconnect();
     })
-    this.ws.on("connectionerror", (channelId: string, errorCode: string, errorMessage?: string) => {
+    this.ws.on("channelerror", (channelId: string, errorCode: string, errorMessage?: string) => {
       const c = this.signalingChannels.get(channelId);
       const e = new SignalingError(errorCode, errorMessage);
       e.isRemote = true;
@@ -170,18 +170,13 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
         if (connection) {
           connection.handleRoutingMessage(message);
         } else {
-          const c = new SignalingChannelImpl(this, channelId, true /*isDevice*/);
-          c.channelState = SignalingChannelState.ONLINE;
-          if (!c.isInitialMessage(message)) {
+          if (!SignalingChannelImpl.isInitialMessage(message)) {
             this.serviceSendError(channelId, SignalingErrorCodes.CHANNEL_NOT_FOUND, `The message with the channelId: ${channelId} is not found in the device.`);
           } else {
+            const c = new SignalingChannelImpl(this, channelId, async () => { await this.onNewSignalingChannel(this, c, authorized) });
+            c.channelState = SignalingChannelState.ONLINE;
             this.signalingChannels.set(channelId, c);
             c.handleRoutingMessage(message)
-            const createChannel = async () => {
-              await this.onNewSignalingChannel?.(c, authorized);
-              c.startRecv();
-            }
-            createChannel();
           }
         }
       }

@@ -186,7 +186,7 @@ export class Reliability {
    * for older device instances. Eg. to detect packets from old connections
    * after a device restart.
    */
-  isInitialMessage(message: ReliabilityUnion): boolean {
+  static isInitialMessage(message: ReliabilityUnion): boolean {
     return message.type === ReliabilityMessageTypes.DATA && message.seq === 0;
   }
 }

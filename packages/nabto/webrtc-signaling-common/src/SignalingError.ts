@@ -25,7 +25,11 @@ export enum SignalingErrorCodes {
   /**
    * This error code is sent if a channel is rejected based on authentication and/or authorization data.
    */
-  ACCESS_DENIED = "ACCESS_DENIED"
+  ACCESS_DENIED = "ACCESS_DENIED",
+  /**
+   * This error is sent if the device or the client encounters an internal error.
+   */
+  INTERNAL_ERROR = "INTERNAL_ERROR"
 }
 
 

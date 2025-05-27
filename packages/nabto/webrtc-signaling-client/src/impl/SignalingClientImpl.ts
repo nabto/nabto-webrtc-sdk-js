@@ -38,7 +38,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.iceApi = new IceServersImpl(endpointUrl, options.productId, options.deviceId)
     this.clientsApi = new ClientsApi(new Configuration({ basePath: endpointUrl }))
 
-    this.signalingChannel = new SignalingChannelImpl(this, "not_connected", false /*isDevice*/)
+    this.signalingChannel = new SignalingChannelImpl(this, "not_connected")
 
     this.on("connectionstatechange", () => {
       if (this.connectionState === SignalingConnectionState.CONNECTED) {
@@ -84,7 +84,6 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       throw new Error("Connect can only be called once.")
     }
     this.firstConnect()
-    this.signalingChannel.startRecv();
   }
 
   async getIceServers(): Promise<Array<RTCIceServer>> {
@@ -191,7 +190,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     })
     ws.on("open", () => this.handleWsOpened());
 
-    ws.on("connectionerror", (_channelId, errorCode, errorMessage) => {
+    ws.on("channelerror", (_channelId, errorCode, errorMessage) => {
       const e = new SignalingError(errorCode, errorMessage);
       e.isRemote = true;
       this.signalingChannel.handleError(e)

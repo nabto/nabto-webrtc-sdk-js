@@ -1,9 +1,9 @@
 import { DeviceTokenGenerator } from "@nabto/webrtc-signaling-util";
-import { SignalingDevice, createSignalingDevice,  SignalingConnectionState } from "@nabto/webrtc-signaling-device";
+import { SignalingDevice, createSignalingDevice, SignalingConnectionState, SignalingChannel } from "@nabto/webrtc-signaling-device";
 import { PeerConnection, createPeerConnection } from "./peer_connection";
 
 type MessageCallback = (sender: string, text: string) => void
-type PeerConnectionStatesCallback = (states: {name: string, state: RTCPeerConnectionState}[]) => void
+type PeerConnectionStatesCallback = (states: { name: string, state: RTCPeerConnectionState }[]) => void
 type OnConnectionStateChangeCallback = (state: SignalingConnectionState) => void
 type onErrorCallback = (origin: string, error: Error) => void
 
@@ -39,11 +39,12 @@ class DeviceImpl implements Device {
     private connectionStates = new Map<string, RTCPeerConnectionState>();
     private stream?: MediaStream;
 
-    constructor(settings: DeviceSettings) {
+    constructor(private settings: DeviceSettings) {
         this.tokenGen = new DeviceTokenGenerator(settings.productId, settings.deviceId, settings.privateKey)
         this.signaling = createSignalingDevice({
             ...settings,
-            tokenGenerator: async () => { return this.tokenGen.generateToken() }
+            tokenGenerator: async () => { return this.tokenGen.generateToken() },
+            onNewSignalingChannel: this.onNewSignalingChannel
         });
 
         this.signaling.on("connectionstatechange", () => {
@@ -53,35 +54,35 @@ class DeviceImpl implements Device {
         if (settings.sharedSecret === "" && !settings.requireCentralAuth) {
             throw new Error("Bad configuration, either a shared secret must be set or central authorization should be set to required.")
         }
+    }
 
-        this.signaling.onNewSignalingChannel = async (channel, authorized) => {
-            // Fail if central auth is required and the channel isnt authorized.
-            if (settings.requireCentralAuth) {
-                if (!authorized) {
-                    channel.sendError("UNAUTHORIZED", "The device requires central authorization, but the client is not centrally authorized to access the device.");
-                    channel.close();
-                    return;
-                }
+    async onNewSignalingChannel(device: SignalingDevice, channel: SignalingChannel, authorized: boolean) {
+        // Fail if central auth is required and the channel isnt authorized.
+        if (this.settings.requireCentralAuth) {
+            if (!authorized) {
+                channel.sendError("UNAUTHORIZED", "The device requires central authorization, but the client is not centrally authorized to access the device.");
+                channel.close();
+                return;
             }
+        }
 
-            channel.on("channelstatechange", () => {
-                console.log(`${id} channel state change to ${channel.channelState}`)
-            });
+        channel.on("channelstatechange", () => {
+            console.log(`${id} channel state change to ${channel.channelState}`)
+        });
 
-            const index = this.connections.length;
-            const id = `connection-${index}`;
-            const peerConnection = await createPeerConnection({
-                name: id,
-                signalingDevice: this.signaling,
-                signalingChannel: channel,
-                centralAuth: settings.requireCentralAuth,
-                sharedSecret: settings.sharedSecret,
-                accessToken: await this.tokenGen.generateToken(),
-                isDevice: true
-            });
+        const index = this.connections.length;
+        const id = `connection-${index}`;
+        const peerConnection = await createPeerConnection({
+            name: id,
+            signalingDevice: this.signaling,
+            signalingChannel: channel,
+            centralAuth: this.settings.requireCentralAuth,
+            sharedSecret: this.settings.sharedSecret,
+            accessToken: await this.tokenGen.generateToken(),
+            isDevice: true
+        });
 
-            this.onNewPeer(id, peerConnection);
-        };
+        this.onNewPeer(id, peerConnection);
     }
 
     async updateUserMedia(constraints?: MediaStreamConstraints): Promise<MediaStream> {
@@ -100,7 +101,7 @@ class DeviceImpl implements Device {
     }
 
     broadcast(sender: string, text: string) {
-        this.connections.forEach(c => c.send(JSON.stringify({sender, text})));
+        this.connections.forEach(c => c.send(JSON.stringify({ sender, text })));
     }
 
     close() {

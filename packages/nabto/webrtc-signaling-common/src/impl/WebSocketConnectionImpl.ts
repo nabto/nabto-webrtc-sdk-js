@@ -167,7 +167,7 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
       this.emitMessage(msg.channelId, msg.message, authorized);
 
     } else if (msg.type === RoutingMessageType.ERROR) {
-      this.emit("connectionerror", msg.channelId,msg.error.code, msg.error.message)
+      this.emit("channelerror", msg.channelId,msg.error.code, msg.error.message)
     } else {
       console.debug(`Not handling unknown message ${msg}`)
     }
