@@ -1,8 +1,5 @@
-import { SignalingChannel } from "@nabto/webrtc-signaling-common";
 import { SignalingClient } from "@nabto/webrtc-signaling-client";
-import { SignalingDevice } from "@nabto/webrtc-signaling-device";
 import { ClientMessageTransportImpl } from './impl/ClientMessageTransportImpl'
-import { DefaultMessageTransportDeviceImpl } from './impl/DeviceMessageTransportImpl'
 import { MessageTransport } from "./MessageTransport";
 
 
