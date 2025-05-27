@@ -1,66 +1,45 @@
 import { JSONValue, SignalingChannel, TypedEventEmitter } from "@nabto/webrtc-signaling-common";
 import { SignalingDevice } from "@nabto/webrtc-signaling-device";
 import { DefaultMessageEncoder, SignalingMessage } from "./DefaultMessageEncoder";
-import { DefaultMessageTransportOptions, DefaultMessageTransportSecurityModes } from "../DefaultMessageTransport";
 import { MessageSigner } from "./MessageSigner";
 import { NoneMessageSigner } from "./NoneMessageSigner";
 import { JWTMessageSigner } from "./JWTMessageSigner";
 import { MessageTransport, MessageTransportMode, WebrtcSignalingMessageType, WebrtcSignalingMessage } from "../MessageTransport";
 import { SignalingMessageType } from "./DefaultMessageEncoder";
+import { DeviceMessageTransportOptions, DeviceMessageTransportSecurityMode } from "../DeviceMessageTransport";
 
 enum State {
+  WAIT_FIRST_MESSAGE, // The implementation is waiting on receiving the first message.
   SETUP, // if we are exchanging SETUP_REQUEST/RESPONSE and aquiring ice servers.
   SIGNALING
 }
 
-interface DefaultMessageTransportImplEventHandlers {
+interface DeviceMessageTransportImplEventHandlers {
   webrtcsignalingmessage: (message: WebrtcSignalingMessage) => Promise<void>;
   error: (error: Error) => void;
   setupdone: (iceServers?: RTCIceServer[]) => Promise<void>;
 }
 
-export class DefaultMessageTransportDeviceImpl extends TypedEventEmitter<DefaultMessageTransportImplEventHandlers> implements MessageTransport {
+export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageTransportImplEventHandlers> implements MessageTransport {
 
   messageEncoder: DefaultMessageEncoder = new DefaultMessageEncoder();
-  state: State = State.SETUP;
-  iceServersPromise?: Promise<Array<RTCIceServer>>
+  state: State = State.WAIT_FIRST_MESSAGE;
+  messageSigner?: MessageSigner;
 
-  constructor(private device: SignalingDevice, private channel: SignalingChannel, private messageSigner: MessageSigner) {
+  constructor(private device: SignalingDevice, private channel: SignalingChannel, private options: DeviceMessageTransportOptions) {
     super();
     this.channel.on("message", async (message: JSONValue) => { this.signalingChannelMessageHandler(message) });
   }
 
-  static create(device: SignalingDevice, channel: SignalingChannel, options: DefaultMessageTransportOptions) {
-    let messageSigner: MessageSigner;
-    if (options.securityMode === DefaultMessageTransportSecurityModes.SHARED_SECRET) {
-      if (options.sharedSecret === undefined) {
-        throw new Error("Missing a required shared secret")
-      }
-      messageSigner = new JWTMessageSigner(options.sharedSecret, options.keyId ? options.keyId : "default");
-    } else {
-      messageSigner = new NoneMessageSigner();
-    }
-    const instance = new DefaultMessageTransportDeviceImpl(device, channel, messageSigner);
-    instance.start();
-
+  static create(device: SignalingDevice, channel: SignalingChannel, options: DeviceMessageTransportOptions) {
+    const instance = new DeviceMessageTransportImpl(device, channel, options);
     return instance;
   }
 
-  /**
-   * Wait for a create request, once received, send a create response back to
-   * the client.
-   */
-  start(): void {
-    this.iceServersPromise = this.channel.getIceServers();
-
-  }
 
   async handleDeviceSetupRequest() {
     try {
-      if (!this.iceServersPromise) {
-        throw new Error("Invalid state missing iceServersPromise.")
-      }
-      const iceServers = await this.iceServersPromise;
+      const iceServers = await this.channel.getIceServers();
       await this.sendSignalingMessage({ type: SignalingMessageType.SETUP_RESPONSE, iceServers: iceServers });
       await this.emitSetupDone(iceServers);
     } catch (e) {
@@ -90,9 +69,28 @@ export class DefaultMessageTransportDeviceImpl extends TypedEventEmitter<Default
     }
   }
 
+  async setupMessageSigner(message: JSONValue): Promise<void> {
+    if (this.options.securityMode === DeviceMessageTransportSecurityMode.NONE) {
+      this.messageSigner = new NoneMessageSigner();
+    } else if (this.options.securityMode === DeviceMessageTransportSecurityMode.SHARED_SECRET) {
+      const keyId = await JWTMessageSigner.getKeyId(message);
+      const sharedSecret = await this.options.sharedSecretCallback(keyId);
+      this.messageSigner = new JWTMessageSigner(sharedSecret, keyId);
+    } else {
+      throw new Error("Unknown security mode.")
+    }
+  }
+
   signalingChannelMessageHandler = async (message: JSONValue) => {
     try {
+      if (this.state === State.WAIT_FIRST_MESSAGE) {
+        await this.setupMessageSigner(message);
+        this.state = State.SETUP;
+      }
       console.log("signalingChannelMessageHandler", message)
+      if (!this.messageSigner) {
+        throw new Error("This should never happen. As the message signer is setup in the FIRST_MESSAGE state.")
+      }
       const verified = await this.messageSigner.verifyMessage(message);
       const decoded = this.messageEncoder.decodeMessage(verified);
 
@@ -118,11 +116,17 @@ export class DefaultMessageTransportDeviceImpl extends TypedEventEmitter<Default
     }
   }
 
-  async sendWebRTCSignalingMessage(message: WebrtcSignalingMessage): Promise < void> {
+  async sendWebRTCSignalingMessage(message: WebrtcSignalingMessage): Promise<void> {
+    if (this.state !== State.SIGNALING) {
+      throw new Error("Trying to send a signaling message before setup has completed.");
+    }
     return this.sendSignalingMessage(message);
   }
 
   private async sendSignalingMessage(message: SignalingMessage): Promise<void> {
+    if (!this.messageSigner) {
+      throw new Error("Never here, the message signer is configured when we are sending messages.");
+    }
     const encoded = this.messageEncoder.encodeMessage(message);
     const signed = await this.messageSigner.signMessage(encoded);
     console.log(`sending signaling message ${JSON.stringify(message)}, encoded: ${JSON.stringify(encoded)}, signed: ${JSON.stringify(signed)}`)

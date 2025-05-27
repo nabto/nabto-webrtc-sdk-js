@@ -17,14 +17,15 @@ class RTCConnectionHandler {
     this.ontrack = ontrack;
     this.logger = logger;
     this.onerror = onerror;
-    this.defaultMessageTransport = SDK.createDefaultMessageTransportClient(this.signalingClient, {
-      securityMode: SDK.DefaultMessageTransportSecurityModes.SHARED_SECRET,
-      sharedSecret: sharedSecret
+    this.messageTransport = SDK.createClientMessageTransport(this.signalingClient, {
+      securityMode: SDK.ClientMessageTransportSecurityMode.SHARED_SECRET,
+      sharedSecret: sharedSecret,
+      keyId: "default"
     })
-    this.defaultMessageTransport.on("setupdone", async (iceServers) => {
+    this.messageTransport.on("setupdone", async (iceServers) => {
       this.createPeerConnection(iceServers);
     })
-    this.defaultMessageTransport.on("error", (error) => {
+    this.messageTransport.on("error", (error) => {
       this.onerror(error)
     })
     this.signalingClient.on("error", (error) => {
@@ -51,7 +52,7 @@ class RTCConnectionHandler {
    */
   async createPeerConnection(iceServers) {
     this.pc = new RTCPeerConnection({ iceServers: iceServers });
-    this.perfectNegotiation = new SDK.PerfectNegotiation(this.pc, this.defaultMessageTransport);
+    this.perfectNegotiation = new SDK.PerfectNegotiation(this.pc, this.messageTransport);
     this.signalingEventHandler = new SDK.SignalingEventHandler(this.pc, this.signalingClient);
     this.pc.ontrack = (event) => {
       this.ontrack(event)

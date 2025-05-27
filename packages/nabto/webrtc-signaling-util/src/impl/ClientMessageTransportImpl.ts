@@ -1,7 +1,7 @@
 import { JSONValue, SignalingChannel, TypedEventEmitter } from "@nabto/webrtc-signaling-common";
 import { SignalingClient } from "@nabto/webrtc-signaling-client";
 import { DefaultMessageEncoder, SignalingMessage } from "./DefaultMessageEncoder";
-import { DefaultMessageTransportOptions, DefaultMessageTransportSecurityModes } from "../DefaultMessageTransport";
+import { ClientMessageTransportOptions, ClientMessageTransportSecurityMode } from "../ClientMessageTransport";
 import { MessageSigner } from "./MessageSigner";
 import { NoneMessageSigner } from "./NoneMessageSigner";
 import { JWTMessageSigner } from "./JWTMessageSigner";
@@ -13,13 +13,13 @@ enum State {
   SIGNALING
 }
 
-interface DefaultMessageTransportImplEventHandlers {
+interface ClientMessageTransportImplEventHandlers {
   webrtcsignalingmessage: (message: WebrtcSignalingMessage) => Promise<void>;
   error: (error: Error) => void;
   setupdone: (iceServers?: RTCIceServer[]) => Promise<void>;
 }
 
-export class DefaultMessageTransportClientImpl extends TypedEventEmitter<DefaultMessageTransportImplEventHandlers> implements MessageTransport {
+export class ClientMessageTransportImpl extends TypedEventEmitter<ClientMessageTransportImplEventHandlers> implements MessageTransport {
 
   messageEncoder: DefaultMessageEncoder = new DefaultMessageEncoder();
   state: State = State.SETUP;
@@ -30,17 +30,14 @@ export class DefaultMessageTransportClientImpl extends TypedEventEmitter<Default
     this.signalingChannel.on("message", async (message: JSONValue) => { this.signalingChannelMessageHandler(message) });
   }
 
-  static create(client: SignalingClient, options: DefaultMessageTransportOptions): MessageTransport {
+  static create(client: SignalingClient, options: ClientMessageTransportOptions): MessageTransport {
     let messageSigner: MessageSigner;
-    if (options.securityMode === DefaultMessageTransportSecurityModes.SHARED_SECRET) {
-      if (options.sharedSecret === undefined) {
-        throw new Error("Missing a required shared secret")
-      }
-      messageSigner = new JWTMessageSigner(options.sharedSecret, options.keyId ? options.keyId : "default");
+    if (options.securityMode === ClientMessageTransportSecurityMode.SHARED_SECRET) {
+      messageSigner = new JWTMessageSigner(options.sharedSecret, options.keyId);
     } else {
       messageSigner = new NoneMessageSigner();
     }
-    const instance = new DefaultMessageTransportClientImpl(client, messageSigner);
+    const instance = new ClientMessageTransportImpl(client, messageSigner);
     instance.start();
 
     return instance;

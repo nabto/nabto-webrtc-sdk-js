@@ -1,10 +1,11 @@
-import { SignalingChannel, SignalingError } from '@nabto/webrtc-signaling-common';
-import { createDefaultMessageTransportClient, DefaultMessageTransportSecurityModes, PerfectNegotiation, SignalingEventHandler } from "@nabto/webrtc-signaling-util";
+import { SignalingChannel, SignalingError, SignalingErrorCodes } from '@nabto/webrtc-signaling-common';
+import { createDeviceMessageTransport, DeviceMessageTransportOptions, DeviceMessageTransportSecurityMode, PerfectNegotiation, SignalingEventHandler } from "@nabto/webrtc-signaling-util";
 import { createLogger, Logger } from "../log";
-import { createDefaultMessageTransportDevice, MessageTransport, DefaultMessageTransportOptions } from '@nabto/webrtc-signaling-util';
+import { MessageTransport } from '@nabto/webrtc-signaling-util';
 import { SignalingClient } from '@nabto/webrtc-signaling-client';
 import { SignalingEventHandlerConnection } from '@nabto/webrtc-signaling-util';
 import { SignalingDevice } from '@nabto/webrtc-signaling-device';
+import { ClientMessageTransportSecurityMode, createClientMessageTransport } from '@nabto/webrtc-signaling-util/src/ClientMessageTransport';
 
 export enum PeerConnectionLogLevel {
     NONE = 0,
@@ -221,27 +222,38 @@ export async function createPeerConnection(options: PeerConnectionOptions): Prom
     const isDevice = options.isDevice;
     const name = options.name ?? (isDevice ? "device" : "client");
 
-    const defaultMessageTransportOptions: DefaultMessageTransportOptions = {
-        securityMode: options.sharedSecret ? DefaultMessageTransportSecurityModes.SHARED_SECRET : DefaultMessageTransportSecurityModes.NONE,
-        sharedSecret: options.sharedSecret
-    }
-
     let signalingConn: SignalingEventHandlerConnection;
-    let defaultMessageTransport : MessageTransport
+    let messageTransport : MessageTransport
     if (isDevice) {
         if (!options.signalingDevice) {
             throw new Error("createPeerConnection called with isDevice but signaling device not provided");
         }
+        if (options.sharedSecret) {
+            const sharedSecret = options.sharedSecret;
+            messageTransport = createDeviceMessageTransport(options.signalingDevice, options.signalingChannel, {
+                securityMode: DeviceMessageTransportSecurityMode.SHARED_SECRET,
+                sharedSecretCallback: async (keyId) => {
+                    return sharedSecret;
+                },
+            })
+        } else {
+            messageTransport = createDeviceMessageTransport(options.signalingDevice, options.signalingChannel, {
+                securityMode: DeviceMessageTransportSecurityMode.NONE
+            })
+        }
         signalingConn = options.signalingDevice;
-        defaultMessageTransport = createDefaultMessageTransportDevice(options.signalingDevice, options.signalingChannel, defaultMessageTransportOptions);
     } else {
         if (!options.signalingClient) {
             throw new Error("createPeerConnection called with !isDevice but signaling client not provided");
         }
+        if (options.sharedSecret) {
+            messageTransport = createClientMessageTransport(options.signalingClient, {securityMode: ClientMessageTransportSecurityMode.SHARED_SECRET, keyId: "default", sharedSecret: options.sharedSecret})
+        } else {
+            messageTransport = createClientMessageTransport(options.signalingClient, {securityMode: ClientMessageTransportSecurityMode.NONE});
+        }
         signalingConn = options.signalingClient;
-        defaultMessageTransport = createDefaultMessageTransportClient(options.signalingClient, defaultMessageTransportOptions);
     }
 
-    const pc = new PeerConnectionImpl(name, signalingConn, channel, defaultMessageTransport, isDevice);
+    const pc = new PeerConnectionImpl(name, signalingConn, channel, messageTransport, isDevice);
     return pc;
 }

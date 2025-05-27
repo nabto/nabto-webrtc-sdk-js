@@ -1,5 +1,5 @@
 import * as rs from "jsrsasign";
-import { JWTHeader, JWTClaims, MessageSigner, JWTClaimsSchema, ProtocolSigningMessageTypes, ProtocolSigningMessage, ProtocolSigningMessageSchema } from './MessageSigner';
+import { JWTHeader, JWTClaims, MessageSigner, JWTClaimsSchema, ProtocolSigningMessageTypes, ProtocolSigningMessage, ProtocolSigningMessageSchema, JWTHeaderSchema } from './MessageSigner';
 import { JSONValue, SignalingError, SignalingErrorCodes } from "@nabto/webrtc-signaling-common";
 
 /**
@@ -33,6 +33,32 @@ export class JWTMessageSigner implements MessageSigner {
   constructor(private sharedSecret: string, private keyId: string) {
 
   };
+
+  /**
+   * Get a key id from a Signing message. This is used to retrieve the keyId
+   * before the message is verified such that the correct shared secret can be
+   * used.
+   * @param message  The Signing message.
+   * @returns the keyId from the JWT header.
+   */
+  static async getKeyId(message: JSONValue): Promise<string> {
+    const signingMessage = ProtocolSigningMessageSchema.parse(message);
+    if (signingMessage.type !== ProtocolSigningMessageTypes.JWT) {
+      throw new SignalingError(SignalingErrorCodes.VERIFICATION_ERROR, `Expected a JWT signed message but got a signing message of type ${signingMessage.type}.`);
+    }
+    const parts = signingMessage.jwt.split(".");
+    if (parts.length < 3) {
+      throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, "The provided JWT token does not contain two dots.");
+    }
+
+    const headerClaims = rs.KJUR.jws.JWS.readSafeJSONString(rs.b64utoutf8(parts[0]))
+
+    const jwtHeader = JWTHeaderSchema.parse(headerClaims);
+    if (jwtHeader.kid === undefined) {
+      throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, "The provided JWT token does not contain a key id (kid).");
+    }
+    return jwtHeader.kid;
+  }
 
   async signMessage(msg: JSONValue): Promise<ProtocolSigningMessage> {
     if (this.nextMessageSignSeq !== 0 && this.remoteNonce === undefined) {

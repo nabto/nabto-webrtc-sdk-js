@@ -21,7 +21,11 @@ export enum SignalingErrorCodes {
   /**
    * This can be sent by the device if a client attempts to create a new channel but the device has reached its limit.
    */
-  NO_MORE_CHANNELS = "NO_MORE_CHANNELS"
+  NO_MORE_CHANNELS = "NO_MORE_CHANNELS",
+  /**
+   * This error code is sent if a channel is rejected based on authentication and/or authorization data.
+   */
+  ACCESS_DENIED = "ACCESS_DENIED"
 }
 
 
@@ -52,5 +56,3 @@ export class SignalingError extends Error {
    */
   isRemote: boolean = false;
 }
-
-
