@@ -37,7 +37,6 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     })
     this.ws = new WebSocketConnectionImpl("device");
     this.initWebSocket();
-    this.doConnect();
   }
   connectionState_: SignalingConnectionState = SignalingConnectionState.NEW;
 
@@ -54,14 +53,22 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     this.emitSync("connectionstatechange");
   }
 
-  async close(): Promise<void> {
+  start(): void
+  {
+    if (this.connectionState !== SignalingConnectionState.NEW) {
+      throw new Error("Start can only be called once");
+    }
+    this.doConnect();
+  }
+
+  stop(): void {
     if (this.connectionState === SignalingConnectionState.CLOSED) {
       return;
     }
     this.onNewSignalingChannel = undefined;
     this.connectionState = SignalingConnectionState.CLOSED
-    this.ws.close();
-    this.signalingChannels.forEach((conn, _id) => conn.close());
+    this.ws.stop();
+    this.signalingChannels.forEach((conn, _id) => conn.stop());
     this.signalingChannels = new Map()
     this.removeAllListeners();
   }

@@ -55,6 +55,7 @@ class DeviceImpl implements Device {
         if (settings.sharedSecret === "" && !settings.requireCentralAuth) {
             throw new Error("Bad configuration, either a shared secret must be set or central authorization should be set to required.")
         }
+        this.signaling.start();
     }
 
     async onNewSignalingChannel(channel: SignalingChannel, authorized: boolean) {
@@ -62,7 +63,7 @@ class DeviceImpl implements Device {
         if (this.settings.requireCentralAuth) {
             if (!authorized) {
                 channel.sendError("UNAUTHORIZED", "The device requires central authorization, but the client is not centrally authorized to access the device.");
-                channel.close();
+                channel.stop();
                 return;
             }
         }
@@ -108,7 +109,7 @@ class DeviceImpl implements Device {
     close() {
         this.connections.forEach(c => c.close());
         this.connections = [];
-        this.signaling.close();
+        this.signaling.stop();
     }
 
     private onNewPeer(id: string, peerConnection: PeerConnection) {

@@ -105,7 +105,7 @@ class PeerConnectionImpl implements PeerConnection {
 
     close() {
         this.log.d(`Closing peer connection ${this.name}`);
-        this.signalingChannel.close();
+        this.signalingChannel.stop();
         this.dc = undefined;
         this.pc.close();
         this.onConnectionStateChange();

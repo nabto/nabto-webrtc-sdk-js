@@ -50,7 +50,7 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
         }
 
         if (client) {
-            client.close();
+            client.stop();
         }
 
         if (pc || client)
@@ -105,7 +105,7 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
             }
         });
 
-        client.connect();
+        client.start();
         // TODO  setProgressState("connected");
         createPeerConnection({
             signalingClient: client,

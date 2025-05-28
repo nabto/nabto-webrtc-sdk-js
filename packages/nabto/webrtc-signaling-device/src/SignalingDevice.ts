@@ -52,9 +52,14 @@ export interface SignalingDevice extends SignalingConnectionStateChanges {
   getIceServers(): Promise<Array<RTCIceServer>>;
 
   /**
+   * Start the Signaling device.
+   */
+  start(): void;
+
+  /**
    * Close the signaling connection and related resources.
    */
-  close(): void;
+  stop(): void;
 
   /**
    * If we detect that the WebRTC connection state goes to conncetionState.disconnected, instruct the

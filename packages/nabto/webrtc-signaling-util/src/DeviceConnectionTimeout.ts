@@ -56,7 +56,7 @@ export class DeviceConnectionTimeout {
       }, this.timeoutMilliseconds)
     }
   }
-  close() {
+  stop() {
     this.clearTimeout();
   }
 }

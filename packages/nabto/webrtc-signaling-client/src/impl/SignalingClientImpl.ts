@@ -66,7 +66,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.ws.sendMessage(channelId, message);
   }
   closeSignalingChannel(_channelId: string) {
-    this.close();
+    this.stop();
   }
 
   connectionState_: SignalingConnectionState = SignalingConnectionState.NEW
@@ -80,7 +80,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.emitSync("connectionstatechange");
   }
 
-  connect(): void {
+  start(): void {
     if (this.connectionState !== SignalingConnectionState.NEW) {
       throw new Error("Connect can only be called once.")
     }
@@ -98,13 +98,13 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.ws.checkAlive(CHECK_ALIVE_TIMEOUT)
   }
 
-  close(): void {
+  stop(): void {
     if (this.connectionState === SignalingConnectionState.CLOSED) {
       return;
     }
     this.connectionState = SignalingConnectionState.CLOSED;
-    this.signalingChannel.close();
-    this.ws.close();
+    this.signalingChannel.stop();
+    this.ws.stop();
 
     this.removeAllListeners();
   }

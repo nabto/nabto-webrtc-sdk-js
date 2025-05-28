@@ -87,7 +87,7 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     this.signalingService.serviceSendError(this.getChannelIdInternal(), errorCode, errorMessage);
   }
 
-  close(): void {
+  stop(): void {
     if (this.channelState === SignalingChannelState.CLOSED) {
       return;
     }
