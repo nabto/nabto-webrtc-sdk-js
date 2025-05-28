@@ -163,7 +163,11 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
           const op = this.operations.shift();
           if (op) {
             if (op.type === OperationType.NEW_CHANNEL) {
-              await op.operation();
+              try {
+                await op.operation();
+              } catch (e) {
+                console.error("Exception thrown in onNewSignalingChannel, this is not supported.");
+              }
             } else if (op.type === OperationType.MESSAGE) {
               const consumers = await this.emit("message", op.message);
               if (consumers === 0) {
