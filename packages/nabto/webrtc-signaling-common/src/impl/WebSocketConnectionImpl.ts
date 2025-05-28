@@ -83,15 +83,15 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
   commonConnect(ws: WebSocket) {
     ws.addEventListener("open", (_event: WebSocket.Event) => {
       this.isConnected = true;
-      this.emit("open");
+      this.emitSync("open");
     });
     ws.addEventListener("close", (ev: WebSocket.CloseEvent) => {
-      console.log(`Websocket close code: ${ev.code} reason: ${ev.reason}`)
-      this.emit("close", {code: ev.code, reason: ev.reason});
+      console.log(`Websocket close code: ${ev.code} reason: ${ev.reason}`);
+      this.emitSync("close", {code: ev.code, reason: ev.reason});
     });
     ws.addEventListener("error", (ev: WebSocket.Event) => {
-      console.log(`Websocket error: ${ev.type}`)
-      this.emit("error", new Error(ev.type));
+      console.log(`Websocket error: ${ev.type}`);
+      this.emitSync("error", new Error(ev.type));
     })
     ws.addEventListener("message", (ev: WebSocket.MessageEvent) => {
       this.handleMessage(ev);
@@ -104,22 +104,22 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
   }
 
   public sendMessage(channelId: string, message: JSONValue) {
-    const msg: RoutingMessage = {type: RoutingMessageType.MESSAGE, channelId: channelId, message: message}
-    this.send(msg)
+    const msg: RoutingMessage = { type: RoutingMessageType.MESSAGE, channelId: channelId, message: message }
+    this.send(msg);
   }
 
   public sendError(channelId: string, errorCode: string, errorMessage?: string) {
     const error: RoutingError = { type: RoutingMessageType.ERROR, channelId: channelId, error: { code: errorCode, message: errorMessage } }
-    this.send(error)
+    this.send(error);
   }
 
   private sendPing() {
-    const ping: RoutingPing = {type: RoutingMessageType.PING}
-    this.send(ping)
+    const ping: RoutingPing = { type: RoutingMessageType.PING }
+    this.send(ping);
   }
   private sendPong() {
-    const pong: RoutingPong = {type: RoutingMessageType.PONG}
-    this.send(pong)
+    const pong: RoutingPong = { type: RoutingMessageType.PONG }
+    this.send(pong);
   }
 
 
@@ -145,16 +145,16 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
     setTimeout(() => {
 
       if (currentPongCounter == this.pongCounter) {
-        this.emit("error", new Error("Ping timeout"));
+        this.emitSync("error", new Error("Ping timeout"));
       }
-    }, timeout)
+    }, timeout);
   }
 
   handleParsedMessage(msg: RoutingUnion) {
     if (msg.type === RoutingMessageType.PEER_CONNECTED) {
-      this.emit("peerconnected", msg.channelId)
+      this.emitSync("peerconnected", msg.channelId)
     } else if (msg.type === RoutingMessageType.PEER_OFFLINE) {
-      this.emit("peeroffline", msg.channelId)
+      this.emitSync("peeroffline", msg.channelId)
     } else if (msg.type === RoutingMessageType.PING) {
       this.handlePing();
     } else if (msg.type === RoutingMessageType.PONG) {
@@ -167,7 +167,7 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
       this.emitMessage(msg.channelId, msg.message, authorized);
 
     } else if (msg.type === RoutingMessageType.ERROR) {
-      this.emit("channelerror", msg.channelId,msg.error.code, msg.error.message)
+      this.emitSync("channelerror", msg.channelId,msg.error.code, msg.error.message)
     } else {
       console.debug(`Not handling unknown message ${msg}`)
     }
