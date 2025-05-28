@@ -245,9 +245,11 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     const reconnectWait = 1000 * (2 ** this.reconnectCounter)
 
     this.reconnectCounter++;
+
+    const jitterWaitMilliseconds = Math.random() * reconnectWait;
     setTimeout(() => {
       this.reconnect();
-    }, reconnectWait)
+    }, jitterWaitMilliseconds)
   }
 
   private emitError(e: unknown) {
