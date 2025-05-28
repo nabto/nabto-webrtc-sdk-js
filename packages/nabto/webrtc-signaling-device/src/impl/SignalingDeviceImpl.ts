@@ -61,14 +61,14 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     this.doConnect();
   }
 
-  stop(): void {
+  close(): void {
     if (this.connectionState === SignalingConnectionState.CLOSED) {
       return;
     }
     this.onNewSignalingChannel = undefined;
     this.connectionState = SignalingConnectionState.CLOSED
-    this.ws.stop();
-    this.signalingChannels.forEach((conn, _id) => conn.stop());
+    this.ws.close();
+    this.signalingChannels.forEach((conn, _id) => conn.close());
     this.signalingChannels = new Map()
     this.removeAllListeners();
   }

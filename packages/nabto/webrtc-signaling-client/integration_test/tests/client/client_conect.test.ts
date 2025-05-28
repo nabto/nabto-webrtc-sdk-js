@@ -21,7 +21,7 @@ describe("Test of connection to the signaling service", async () => {
     const client = testInstance.createSignalingClient();
     client.start();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
-    await client.stop();
+    await client.close();
     const expectedStates: Array<SignalingConnectionState> = [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED, SignalingConnectionState.CLOSED]
     await testInstance.waitForObservedStates(client, expectedStates);
   })
@@ -29,7 +29,7 @@ describe("Test of connection to the signaling service", async () => {
     const client = testInstance.createSignalingClient();
     client.start();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
-    await client.stop();
+    await client.close();
     const expectedStates: Array<SignalingConnectionState> = [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED, SignalingConnectionState.CLOSED]
     await testInstance.waitForObservedStates(client, expectedStates);
   })
@@ -52,7 +52,7 @@ describe("Test of failing http connection to the signaling service", async () =>
     await expect(testInstance.waitForError(client)).rejects.toThrowError('Bad')
     await observedStates;
     expect(client.connectionState).to.be.equal(SignalingConnectionState.FAILED);
-    client.stop();
+    client.close();
     expect(client.connectionState).to.be.equal(SignalingConnectionState.CLOSED);
   })
 })
@@ -198,7 +198,7 @@ describe("Signaling channel states", async () => {
     await testInstance.deviceSendError(SignalingErrorCodes.CHANNEL_NOT_FOUND, "Channel is not found");
     expect(client.channelState).to.be.equal(SignalingChannelState.FAILED);
     console.log(client.channelState)
-    client.stop();
+    client.close();
     expect(client.channelState).to.be.equal(SignalingChannelState.CLOSED);
 
   })
@@ -206,7 +206,7 @@ describe("Signaling channel states", async () => {
     client.start();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
     expect(client.channelState).to.be.equal(SignalingChannelState.OFFLINE);
-    client.stop();
+    client.close();
     expect(client.channelState).to.be.equal(SignalingChannelState.CLOSED);
   })
 })

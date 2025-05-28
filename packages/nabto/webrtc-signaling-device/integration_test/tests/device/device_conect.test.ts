@@ -23,7 +23,7 @@ describe("Test device connection to the signaling service", async () => {
     const device = testInstance.createSignalingDevice();
     device.start();
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
-    await device.stop()
+    await device.close()
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED, SignalingConnectionState.CLOSED])
   })
 })

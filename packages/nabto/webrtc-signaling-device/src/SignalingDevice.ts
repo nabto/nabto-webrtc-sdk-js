@@ -59,7 +59,7 @@ export interface SignalingDevice extends SignalingConnectionStateChanges {
   /**
    * Close the signaling connection and related resources.
    */
-  stop(): void;
+  close(): void;
 
   /**
    * If we detect that the WebRTC connection state goes to conncetionState.disconnected, instruct the

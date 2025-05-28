@@ -98,7 +98,7 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
     })
   }
 
-  stop() {
+  close() {
     this.ws?.close();
     this.removeAllListeners();
   }

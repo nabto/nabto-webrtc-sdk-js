@@ -27,9 +27,9 @@ export interface SignalingChannel {
   sendError(errorCode: string, errorMessage?: string): Promise<void>;
 
   /**
-   * Stop/close the signaling channel
+   * Close the signaling channel
    */
-  stop(): void;
+  close(): void;
 
   /**
   * The signaling peer state is the state of the other peer of the signaling

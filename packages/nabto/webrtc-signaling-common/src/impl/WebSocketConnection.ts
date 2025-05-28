@@ -47,7 +47,7 @@ export interface WebSocketConnection {
   /**
    * Call this to close the websocket connection
    */
-  stop(): void;
+  close(): void;
 
   /**
    * Send a message, the message will be sent to the other peer for the signaling connection

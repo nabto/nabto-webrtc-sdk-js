@@ -46,10 +46,10 @@ export interface SignalingClient {
   start(): void;
 
   /**
-   * Close the signaling client, this deregisters callbacks and closes
-   * underlying resources.
+   * Close the signaling client, this deregisters callbacks and closes underlying
+   * resources.
    */
-  stop(): void;
+  close(): void;
 
   /**
    * Check if the connection to the Signaling service is alive. If the

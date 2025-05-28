@@ -66,7 +66,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.ws.sendMessage(channelId, message);
   }
   closeSignalingChannel(_channelId: string) {
-    this.stop();
+    this.close();
   }
 
   connectionState_: SignalingConnectionState = SignalingConnectionState.NEW
@@ -98,13 +98,13 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.ws.checkAlive(CHECK_ALIVE_TIMEOUT)
   }
 
-  stop(): void {
+  close(): void {
     if (this.connectionState === SignalingConnectionState.CLOSED) {
       return;
     }
     this.connectionState = SignalingConnectionState.CLOSED;
-    this.signalingChannel.stop();
-    this.ws.stop();
+    this.signalingChannel.close();
+    this.ws.close();
 
     this.removeAllListeners();
   }
