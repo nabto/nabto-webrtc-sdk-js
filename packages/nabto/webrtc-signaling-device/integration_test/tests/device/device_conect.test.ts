@@ -16,10 +16,12 @@ describe("Test device connection to the signaling service", async () => {
 
   test('ok', async () => {
     const device = testInstance.createSignalingDevice();
+    device.start();
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
   })
   test('close changes state to closed', async () => {
     const device = testInstance.createSignalingDevice();
+    device.start();
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
     await device.close()
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED, SignalingConnectionState.CLOSED])
@@ -36,6 +38,7 @@ describe("Test device connection to the signaling service which returns an http 
   })
   test('http fail', async () => {
     const device = testInstance.createSignalingDevice();
+    device.start();
     // The connect does not fail but keeps retrying in the background.
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.WAIT_RETRY])
   })
@@ -52,6 +55,7 @@ describe("Test device connection to the signaling service which returns an ws er
 
   test('ws fail', async () => {
     const device = testInstance.createSignalingDevice();
+    device.start();
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.WAIT_RETRY])
   })
 })
@@ -67,6 +71,7 @@ describe("Test device connection to the signaling", async () => {
   })
   test('The device reconnects if the connection is terminated by the server', async () => {
     const device = testInstance.createSignalingDevice();
+    device.start();
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
     await testInstance.disconnectDevice();
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED, SignalingConnectionState.WAIT_RETRY, SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
@@ -79,6 +84,7 @@ describe("Test clients connect through the signaling service", async () => {
   beforeEach(async () => {
     testInstance = await DeviceTestInstance.create({});
     device = testInstance.createSignalingDevice();
+    device.start();
   })
 
   afterEach(async () => {

@@ -55,6 +55,7 @@ class DeviceImpl implements Device {
         if (settings.sharedSecret === "" && !settings.requireCentralAuth) {
             throw new Error("Bad configuration, either a shared secret must be set or central authorization should be set to required.")
         }
+        this.signaling.start();
     }
 
     async onNewSignalingChannel(channel: SignalingChannel, authorized: boolean) {

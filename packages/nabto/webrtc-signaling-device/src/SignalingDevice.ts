@@ -52,6 +52,11 @@ export interface SignalingDevice extends SignalingConnectionStateChanges {
   requestIceServers(): Promise<Array<RTCIceServer>>;
 
   /**
+   * Start the Signaling device.
+   */
+  start(): void;
+
+  /**
    * Close the signaling connection and related resources.
    */
   close(): void;

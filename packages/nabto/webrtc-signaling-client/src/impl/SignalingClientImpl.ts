@@ -80,7 +80,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.emitSync("connectionstatechange");
   }
 
-  connect(): void {
+  start(): void {
     if (this.connectionState !== SignalingConnectionState.NEW) {
       throw new Error("Connect can only be called once.")
     }
