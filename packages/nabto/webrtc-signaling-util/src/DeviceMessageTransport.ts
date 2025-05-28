@@ -25,11 +25,12 @@ export interface DeviceMessageTransportSharedSecretOptions {
    * If the security mode is set to shared secret, a shared secret callback must
    * be provided. The shared secret callback is invoked once for each channel
    * when the channel needs to find a shared secret to use for the session.
-   * @param keyId  The keyId from the signed message.
+   * @param keyId  The keyId from the signed message. This can be undefined if
+   *               no keyId was in the Token.
    * @returns  A shared secret which is used to sign and verify messages on the
-   * channel.
+   *           channel.
    */
-  sharedSecretCallback: (keyId: string) => Promise<string>;
+  sharedSecretCallback: (keyId?: string) => Promise<string>;
 }
 
 export interface DeviceMessageTransportNoneOptions {
