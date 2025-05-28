@@ -238,9 +238,11 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     }
     this.reconnectCounter++;
 
+    const jitterWaitMilliseconds = Math.random() * reconnectWaitSeconds * 1000;
+
     console.debug(`Waiting ${reconnectWaitSeconds}s before reconnecting`)
     setTimeout(() => {
       this.doConnect()
-    }, reconnectWaitSeconds * 1000)
+    }, jitterWaitMilliseconds)
   }
 }
