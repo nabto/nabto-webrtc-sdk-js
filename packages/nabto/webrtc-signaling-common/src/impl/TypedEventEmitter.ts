@@ -29,7 +29,7 @@ export class TypedEventEmitter<
         try {
           await (handler as TEventMap[K])(...args);
         } catch (e) {
-          console.error("Exception thrown in event handler, this is not supported.")
+          console.error("Exception thrown in event handler, this is not supported.", e)
         }
         invokedHandlersCount++;
       }
@@ -48,7 +48,7 @@ export class TypedEventEmitter<
         try {
           (handler as TEventMap[K])(...args);
         } catch (e) {
-          console.error("Exception thrown in event handler, this is not supported.")
+          console.error("Exception thrown in event handler, this is not supported.", e)
         }
         invokedHandlersCount++;
       }
