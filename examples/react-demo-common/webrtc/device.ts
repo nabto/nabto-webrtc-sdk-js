@@ -43,9 +43,10 @@ class DeviceImpl implements Device {
         this.tokenGen = new DeviceTokenGenerator(settings.productId, settings.deviceId, settings.privateKey)
         this.signaling = createSignalingDevice({
             ...settings,
-            tokenGenerator: async () => { return this.tokenGen.generateToken() },
-            onNewSignalingChannel: this.onNewSignalingChannel
+            tokenGenerator: async () => { return this.tokenGen.generateToken() }
         });
+
+        this.signaling.onNewSignalingChannel = async (channel, authorized) => { return this.onNewSignalingChannel(channel, authorized) };
 
         this.signaling.on("connectionstatechange", () => {
             this.onSignalingServiceConnectionState?.(this.signaling.connectionState)
@@ -56,7 +57,7 @@ class DeviceImpl implements Device {
         }
     }
 
-    async onNewSignalingChannel(device: SignalingDevice, channel: SignalingChannel, authorized: boolean) {
+    async onNewSignalingChannel(channel: SignalingChannel, authorized: boolean) {
         // Fail if central auth is required and the channel isnt authorized.
         if (this.settings.requireCentralAuth) {
             if (!authorized) {

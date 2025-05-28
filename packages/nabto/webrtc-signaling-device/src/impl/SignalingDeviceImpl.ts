@@ -19,7 +19,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
   reconnectCounter: number = 0
   openedWebSockets: number = 0;
 
-  onNewSignalingChannel: (device: SignalingDevice, connection: SignalingChannel, authorized: boolean) => Promise<void>
+  onNewSignalingChannel?: (connection: SignalingChannel, authorized: boolean) => Promise<void>
 
   constructor(private options: SignalingDeviceOptions) {
     super();
@@ -29,7 +29,6 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     }
     this.iceApi = new IceServersImpl(endpointUrl, options.productId, options.deviceId)
     this.devicesApi = new DevicesApi(new Configuration({ basePath: endpointUrl }))
-    this.onNewSignalingChannel = options.onNewSignalingChannel;
 
     this.on("connectionstatechange", () => {
       if (this.connectionState === SignalingConnectionState.CONNECTED) {
@@ -59,6 +58,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     if (this.connectionState === SignalingConnectionState.CLOSED) {
       return;
     }
+    this.onNewSignalingChannel = undefined;
     this.connectionState = SignalingConnectionState.CLOSED
     this.ws.close();
     this.signalingChannels.forEach((conn, _id) => conn.close());
@@ -165,19 +165,29 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
       c?.handleError(e)
     })
     this.ws.on("message", (channelId: string, message: JSONValue, authorized: boolean) => {
-      {
+      try {
         const connection = this.signalingChannels.get(channelId)
         if (connection) {
           connection.handleRoutingMessage(message);
         } else {
           if (!SignalingChannelImpl.isInitialMessage(message)) {
-            this.serviceSendError(channelId, SignalingErrorCodes.CHANNEL_NOT_FOUND, `The message with the channelId: ${channelId} is not found in the device.`);
+            throw new SignalingError(SignalingErrorCodes.CHANNEL_NOT_FOUND, `The message with the channelId: ${channelId} is not found in the device.`);
           } else {
-            const c = new SignalingChannelImpl(this, channelId, async () => { await this.onNewSignalingChannel(this, c, authorized) });
+            if (!this.onNewSignalingChannel) {
+              throw new SignalingError(SignalingErrorCodes.INTERNAL_ERROR, "onNewSignalingChannel should be defined, dropping the channel");
+            }
+            const onNewSignalingChannel = this.onNewSignalingChannel;
+            const c = new SignalingChannelImpl(this, channelId, async () => { await onNewSignalingChannel(c, authorized) });
             c.channelState = SignalingChannelState.ONLINE;
             this.signalingChannels.set(channelId, c);
             c.handleRoutingMessage(message)
           }
+        }
+      } catch (e) {
+        if (e instanceof SignalingError) {
+          this.serviceSendError(channelId, e.errorCode, e.errorMessage);
+        } else {
+          console.log("onMessage encountered an unhandled error", e);
         }
       }
     })

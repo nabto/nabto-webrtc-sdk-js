@@ -25,24 +25,24 @@ export interface SignalingDeviceOptions {
    * either connections to the signaling service or retrieval of iceServers.
    */
   tokenGenerator: () => Promise<string>
-
-  /**
-   * Called when a new signaling channel is made. This happens when the device
-   * receives an initial message from a new channelId.
-   *
-   * @param device  The signaling device the channel originates from.
-   * @param channel  The created signaling channel.
-   * @param authorized  True if the client has been authorized to connect to the
-   * device with centralized access control.
-   * @returns
-   */
-  onNewSignalingChannel: (device: SignalingDevice, channel: SignalingChannel, authorized: boolean) => Promise<void>;
 }
 
 /**
  * Interface representing the WebSocket connection to the backend clients can use to create a signaling channel to the device
  */
 export interface SignalingDevice extends SignalingConnectionStateChanges {
+
+  /**
+   * Called when a new signaling channel is made. This happens when the device
+   * receives an initial message from a new channelId.
+   *
+   * @param channel  The created signaling channel.
+   * @param authorized  True if the client has been authorized to connect to the
+   * device with centralized access control.
+   * @returns
+   */
+  onNewSignalingChannel?: (channel: SignalingChannel, authorized: boolean) => Promise<void>;
+
   /**
     * Return a list of IceServers, the token for the request is created by the
     * tokenGenerator which is provided in the options.
