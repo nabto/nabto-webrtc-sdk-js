@@ -1,7 +1,7 @@
 import { JSONValue } from '../JSONValue'
 import { SignalingChannel, SignalingChannelEventHandlers } from '../SignalingChannel'
 import { SignalingChannelState } from '../SignalingChannelState'
-import { SignalingErrorCodes } from '../SignalingError'
+import { SignalingError, SignalingErrorCodes } from '../SignalingError'
 import { TypedEventEmitter } from './TypedEventEmitter'
 import { Reliability, ReliabilityMessageSchema, ReliabilityUnion } from './Reliability'
 
@@ -77,7 +77,7 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
       return;
     }
     this.channelState_ = state;
-    this.emit("channelstatechange");
+    this.emitSync("channelstatechange");
   }
 
   async sendMessage(message: JSONValue): Promise<void> {
@@ -98,17 +98,13 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
 
   }
 
-  static parseReliabilityMessage(message: JSONValue): ReliabilityUnion | undefined {
-    try {
-      const parsed = message;
-      const result = ReliabilityMessageSchema.safeParse(parsed)
-      if (!result.success) {
-        console.debug(`The message is not understood ${message} discarding the message. Error: ${result.error}`)
-      } else {
-        return result.data;
-      }
-    } catch {
-      console.error(`Cannot parse ${message} as json`)
+  static parseReliabilityMessage(message: JSONValue): ReliabilityUnion {
+    const parsed = message;
+    const result = ReliabilityMessageSchema.safeParse(parsed)
+    if (!result.success) {
+      throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, `The message is not understood ${message} discarding the message. Error: ${result.error}`)
+    } else {
+      return result.data;
     }
   }
 
@@ -118,12 +114,10 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     }
 
     const parsed = SignalingChannelImpl.parseReliabilityMessage(message);
-    if (parsed) {
-      const reliableMessage = this.reliability.handleRoutingMessage(parsed);
-      if (reliableMessage) {
-        this.operations.push({ type: OperationType.MESSAGE, message: reliableMessage })
-        this.handleOperations()
-      }
+    const reliableMessage = this.reliability.handleRoutingMessage(parsed);
+    if (reliableMessage) {
+      this.operations.push({ type: OperationType.MESSAGE, message: reliableMessage })
+      this.handleOperations()
     }
   }
 
@@ -138,7 +132,7 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
       return;
     }
-    this.emit("error", e)
+    this.emitSync("error", e)
   }
 
   handlePeerConnected() {
@@ -158,10 +152,7 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
 
   static isInitialMessage(message: JSONValue): boolean {
     const parsed = SignalingChannelImpl.parseReliabilityMessage(message);
-    if (parsed) {
-      return Reliability.isInitialMessage(parsed)
-    }
-    return false;
+    return Reliability.isInitialMessage(parsed)
   }
 
   async handleOperations() {

@@ -75,7 +75,7 @@ export class Reliability {
    * @return if the received message is an expected ReliabilityMessage the
    * function returns the payload from that packet.
    */
-  handleRoutingMessage(message: ReliabilityUnion) : JSONValue | undefined {
+  handleRoutingMessage(message: ReliabilityUnion): JSONValue | undefined {
     if (message.type === ReliabilityMessageTypes.ACK) {
       this.handleAck(message)
       return undefined;
