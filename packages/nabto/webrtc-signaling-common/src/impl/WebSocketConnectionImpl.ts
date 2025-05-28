@@ -138,8 +138,8 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
 
   checkAlive(timeout: number) {
     /**
-         * Send a ping, wait for a pong
-         */
+     * Send a ping, wait for a pong
+     */
     const currentPongCounter = this.pongCounter;
     this.sendPing();
     setTimeout(() => {
