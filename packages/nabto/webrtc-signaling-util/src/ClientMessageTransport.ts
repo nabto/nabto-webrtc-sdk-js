@@ -26,8 +26,13 @@ export interface ClientMessageTransportSharedSecretOptions {
 
   /**
    * The Key ID of the shared secret if the security mode is SHARED_SECRET.
+   *
+   * The KeyId is used to distinguish multiple keys on the device side. If the
+   * system only ever has a single shared_secret it is possible to omit the
+   * keyId, on all systems with multiple shared_secrets, it is recommended to
+   * assing a keyId to each shared secret in use.
    */
-  keyId: string;
+  keyId?: string;
 }
 
 
