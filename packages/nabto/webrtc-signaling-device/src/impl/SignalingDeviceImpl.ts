@@ -5,6 +5,9 @@ import { WebSocketConnectionImpl, SignalingChannelImpl, SignalingServiceImpl, Si
 import { IceServersImpl } from "./IceServersImpl";
 
 const CHECK_ALIVE_TIMEOUT = 1000
+// minimum time betwenn a open and close event on a websocket such that the
+// websocket connection counts as have been connected.
+const RECONNECT_COUNTER_RESET_TIMEOUT = 10000;
 
 type EventMap = {
   connectionstatechange: () => void; // No payload
@@ -224,7 +227,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
 
   private setReconnectCounterTimeout() {
     this.clearReconnectCounterTimeout();
-    this.reconnectCounterTimeoutId = setTimeout(() => { this.reconnectCounter = 0; }, RECONNECT_COUNTER_TIMEOUT);
+    this.reconnectCounterTimeoutId = setTimeout(() => { this.reconnectCounter = 0; }, RECONNECT_COUNTER_RESET_TIMEOUT);
   }
 
   private clearReconnectCounterTimeout() {

@@ -10,7 +10,7 @@ import { TypedEventEmitter } from '@nabto/webrtc-signaling-common'
 const CHECK_ALIVE_TIMEOUT = 1000;
 // minimum time betwenn a open and close event on a websocket such that the
 // websocket connection counts as have been connected.
-const RECONNECT_COUNTER_TIMEOUT = 10000;
+const RECONNECT_COUNTER_RESET_TIMEOUT = 10000;
 
 export interface SignalingClientEventHandlers extends SignalingChannelEventHandlers, SignalingConnectionStateChangesEventHandlers  {
   connectionreconnect: () => void
@@ -232,7 +232,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
 
   private setReconnectCounterTimeout() {
     this.clearReconnectCounterTimeout();
-    this.reconnectCounterTimeoutId = setTimeout(() => { this.reconnectCounter = 0; }, RECONNECT_COUNTER_TIMEOUT);
+    this.reconnectCounterTimeoutId = setTimeout(() => { this.reconnectCounter = 0; }, RECONNECT_COUNTER_RESET_TIMEOUT);
   }
 
   private clearReconnectCounterTimeout() {
