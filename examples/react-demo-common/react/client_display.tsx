@@ -50,7 +50,7 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
         }
 
         if (client) {
-            client.stop();
+            client.close();
         }
 
         if (pc || client)

@@ -63,7 +63,7 @@ class DeviceImpl implements Device {
         if (this.settings.requireCentralAuth) {
             if (!authorized) {
                 channel.sendError("UNAUTHORIZED", "The device requires central authorization, but the client is not centrally authorized to access the device.");
-                channel.stop();
+                channel.close();
                 return;
             }
         }
@@ -109,7 +109,7 @@ class DeviceImpl implements Device {
     close() {
         this.connections.forEach(c => c.close());
         this.connections = [];
-        this.signaling.stop();
+        this.signaling.close();
     }
 
     private onNewPeer(id: string, peerConnection: PeerConnection) {
