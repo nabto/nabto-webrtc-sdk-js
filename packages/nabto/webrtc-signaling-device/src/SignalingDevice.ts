@@ -44,12 +44,12 @@ export interface SignalingDevice extends SignalingConnectionStateChanges {
   onNewSignalingChannel?: (channel: SignalingChannel, authorized: boolean) => Promise<void>;
 
   /**
-    * Return a list of IceServers, the token for the request is created by the
-    * tokenGenerator which is provided in the options.
+    * Request a list of iceServers from the signaling service. The token for the
+    * request is created by the tokenGenerator which is provided in the options.
     *
     * @returns Promise resolving to a list of ICE servers
     */
-  getIceServers(): Promise<Array<RTCIceServer>>;
+  requestIceServers(): Promise<Array<RTCIceServer>>;
 
   /**
    * Close the signaling connection and related resources.

@@ -86,9 +86,9 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     this.ws.checkAlive(CHECK_ALIVE_TIMEOUT);
   }
 
-  async getIceServers(): Promise<Array<RTCIceServer>> {
+  async requestIceServers(): Promise<Array<RTCIceServer>> {
     const token = await this.options.tokenGenerator();
-    return this.iceApi.getIceServers(token);
+    return this.iceApi.requestIceServers(token);
   }
 
   async doHttpRequest(): Promise<string> {

@@ -87,8 +87,8 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.firstConnect()
   }
 
-  async getIceServers(): Promise<Array<RTCIceServer>> {
-    return this.iceApi.getIceServers(this.options.accessToken);
+  async requestIceServers(): Promise<Array<RTCIceServer>> {
+    return this.iceApi.requestIceServers(this.options.accessToken);
   }
 
   async serviceSendError(channelId: string, errorCode: string, errorMessage?: string): Promise<void> {

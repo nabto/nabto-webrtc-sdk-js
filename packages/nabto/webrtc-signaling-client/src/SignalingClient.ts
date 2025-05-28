@@ -90,7 +90,7 @@ export interface SignalingClient {
   *
   * @returns Promise resolving to a list of ICE servers
   */
-  getIceServers(): Promise<Array<RTCIceServer>>;
+  requestIceServers(): Promise<Array<RTCIceServer>>;
 
   /**
    * Signaling Service Connection State.
