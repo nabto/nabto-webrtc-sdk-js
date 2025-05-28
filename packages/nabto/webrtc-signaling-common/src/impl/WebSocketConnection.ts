@@ -27,7 +27,7 @@ export interface WebSocketConnectionEventHandlers {
    * If the other end has sent an error on the signaling connection, we invoke
    * this function.
    */
-  connectionerror: (channelId: string, errorCode: string, errorMessage?: string) => void
+  channelerror: (channelId: string, errorCode: string, errorMessage?: string) => void
   /**
    * Called when the websocket has been opened.
    */

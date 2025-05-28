@@ -1,7 +1,7 @@
 import { JSONValue } from '../JSONValue'
 import { SignalingChannel, SignalingChannelEventHandlers } from '../SignalingChannel'
 import { SignalingChannelState } from '../SignalingChannelState'
-import { SignalingErrorCodes } from '../SignalingError'
+import { SignalingError, SignalingErrorCodes } from '../SignalingError'
 import { TypedEventEmitter } from './TypedEventEmitter'
 import { Reliability, ReliabilityMessageSchema, ReliabilityUnion } from './Reliability'
 
@@ -10,28 +10,51 @@ import { Reliability, ReliabilityMessageSchema, ReliabilityUnion } from './Relia
  * communicates with the signaling service.
  */
 export interface SignalingServiceImpl {
-  getIceServers(): Promise<Array<RTCIceServer>>
   serviceSendError(channelId: string, errorCode: string, errorMessage?: string): Promise<void>
   sendRoutingMessage(channelId: string, message: JSONValue): void
   closeSignalingChannel(channelId: string): void
-  checkAlive(): void
 }
+
+enum OperationType {
+  NEW_CHANNEL,
+  MESSAGE
+}
+
+interface NewChannelOperation {
+  type: OperationType.NEW_CHANNEL
+  operation: () => Promise<void>
+}
+
+interface MessageOperation {
+  type: OperationType.MESSAGE
+  message: JSONValue
+}
+
+type Operation = NewChannelOperation | MessageOperation
 
 export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEventHandlers> implements SignalingChannel {
 
   reliability: Reliability;
 
-  // array of received signaling messages which is handled serially in the webrtc connection
-  receivedMessages: Array<JSONValue> = new Array<JSONValue>()
+  // Array of operations which needs to be handled synchronous by the receiving
+  // application. Since they are async operations we need a queue to ensure the
+  // correct delivery order.
+  operations: Array<Operation> = new Array<Operation>();
+
   // set to true while handling received messages, such that we can let the
   // queue handle one message at a time.
-  handlingReceivedMessages: boolean = false;
+  handlingOperations: boolean = false;
 
-  readyToEmitMessages: boolean = false;
+  ready: boolean = true;
 
-  constructor(private signalingService: SignalingServiceImpl, public channelId: string | undefined, public isDevice: boolean) {
+  // the initial operation is used to synchronize onNewSingnalingChannel such that the async operation finished before messages are dispatched on the channel.
+  constructor(private signalingService: SignalingServiceImpl, public channelId: string | undefined, initialOperation?: () => Promise<void>) {
     super()
     this.reliability = new Reliability((message: ReliabilityUnion) => { signalingService.sendRoutingMessage(this.getChannelIdInternal(), message); });
+
+    if (initialOperation) {
+      this.operations.push({ type: OperationType.NEW_CHANNEL, operation: initialOperation })
+    }
 
     this.on("error", (_err: Error) => {
       this.channelState = SignalingChannelState.FAILED
@@ -54,12 +77,9 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
       return;
     }
     this.channelState_ = state;
-    this.emit("channelstatechange");
+    this.emitSync("channelstatechange");
   }
 
-  async getIceServers(): Promise<Array<RTCIceServer>> {
-    return this.signalingService.getIceServers();
-  }
   async sendMessage(message: JSONValue): Promise<void> {
     await this.reliability.sendReliableMessage(message);
   }
@@ -67,12 +87,6 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     this.signalingService.serviceSendError(this.getChannelIdInternal(), errorCode, errorMessage);
   }
 
-  checkAlive(): void {
-    if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
-      return;
-    }
-    this.signalingService.checkAlive();
-  }
   close(): void {
     if (this.channelState === SignalingChannelState.CLOSED) {
       return;
@@ -84,17 +98,13 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
 
   }
 
-  parseReliabilityMessage(message: JSONValue): ReliabilityUnion | undefined {
-    try {
-      const parsed = message;
-      const result = ReliabilityMessageSchema.safeParse(parsed)
-      if (!result.success) {
-        console.debug(`The message is not understood ${message} discarding the message. Error: ${result.error}`)
-      } else {
-        return result.data;
-      }
-    } catch {
-      console.error(`Cannot parse ${message} as json`)
+  static parseReliabilityMessage(message: JSONValue): ReliabilityUnion {
+    const parsed = message;
+    const result = ReliabilityMessageSchema.safeParse(parsed)
+    if (!result.success) {
+      throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, `The message is not understood ${message} discarding the message. Error: ${result.error}`)
+    } else {
+      return result.data;
     }
   }
 
@@ -102,13 +112,12 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
       return;
     }
-    const parsed = this.parseReliabilityMessage(message);
-    if (parsed) {
-      const reliableMessage = this.reliability.handleRoutingMessage(parsed);
-      if (reliableMessage) {
-        this.receivedMessages.push(reliableMessage)
-        this.handleReceivedMessages()
-      }
+
+    const parsed = SignalingChannelImpl.parseReliabilityMessage(message);
+    const reliableMessage = this.reliability.handleRoutingMessage(parsed);
+    if (reliableMessage) {
+      this.operations.push({ type: OperationType.MESSAGE, message: reliableMessage })
+      this.handleOperations()
     }
   }
 
@@ -123,7 +132,7 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
       return;
     }
-    this.emit("error", e)
+    this.emitSync("error", e)
   }
 
   handlePeerConnected() {
@@ -141,35 +150,35 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     this.channelState = SignalingChannelState.OFFLINE;
   }
 
-  isInitialMessage(message: JSONValue): boolean {
-    const parsed = this.parseReliabilityMessage(message);
-    if (parsed) {
-      return this.reliability.isInitialMessage(parsed)
-    }
-    return false;
+  static isInitialMessage(message: JSONValue): boolean {
+    const parsed = SignalingChannelImpl.parseReliabilityMessage(message);
+    return Reliability.isInitialMessage(parsed)
   }
 
-  async handleReceivedMessages() {
-    if (this.readyToEmitMessages) {
-      if (this.handlingReceivedMessages === false) {
-        if (this.receivedMessages.length > 0) {
-          this.handlingReceivedMessages = true;
-          const msg = this.receivedMessages.shift();
-          if (msg) {
-            const consumers = await this.emit("message", msg);
-            if (consumers === 0) {
-              console.error(`No message receivers is registered for the message: ${JSON.stringify(msg)}. The message will be discarded.`);
+  async handleOperations() {
+    if (this.ready) {
+      if (this.handlingOperations === false) {
+        if (this.operations.length > 0) {
+          this.handlingOperations = true;
+          const op = this.operations.shift();
+          if (op) {
+            if (op.type === OperationType.NEW_CHANNEL) {
+              try {
+                await op.operation();
+              } catch (e) {
+                console.error("Exception thrown in onNewSignalingChannel, this is not supported.", e);
+              }
+            } else if (op.type === OperationType.MESSAGE) {
+              const consumers = await this.emit("message", op.message);
+              if (consumers === 0) {
+                console.error(`No message receivers is registered for the message: ${JSON.stringify(op.message)}. The message will be discarded.`);
+              }
             }
           }
-          this.handlingReceivedMessages = false;
-          this.handleReceivedMessages();
+          this.handlingOperations = false;
+          this.handleOperations();
         }
       }
     }
-  }
-
-  startRecv() {
-    this.readyToEmitMessages = true;
-    this.handleReceivedMessages();
   }
 }

@@ -12,17 +12,10 @@ export interface SignalingChannelEventHandlers {
  */
 export interface SignalingChannel {
   /**
-  * Return a list of IceServers
-  *
-  * @returns Promise resolving to a list of ICE servers
-  */
-  getIceServers(): Promise<Array<RTCIceServer>>;
-
-  /**
-  * Send a message to the other peer
-  *
-  * @param message The message to send
-  */
+   * Send a message to the other peer
+   *
+   * @param message The message to send
+   */
   sendMessage(message: JSONValue): Promise<void>;
 
 

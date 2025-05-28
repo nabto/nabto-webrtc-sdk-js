@@ -31,6 +31,7 @@ export interface SignalingDeviceOptions {
  * Interface representing the WebSocket connection to the backend clients can use to create a signaling channel to the device
  */
 export interface SignalingDevice extends SignalingConnectionStateChanges {
+
   /**
    * Called when a new signaling channel is made. This happens when the device
    * receives an initial message from a new channelId.
@@ -41,6 +42,14 @@ export interface SignalingDevice extends SignalingConnectionStateChanges {
    * @returns
    */
   onNewSignalingChannel?: (channel: SignalingChannel, authorized: boolean) => Promise<void>;
+
+  /**
+    * Return a list of IceServers, the token for the request is created by the
+    * tokenGenerator which is provided in the options.
+    *
+    * @returns Promise resolving to a list of ICE servers
+    */
+  getIceServers(): Promise<Array<RTCIceServer>>;
 
   /**
    * Close the signaling connection and related resources.

@@ -26,7 +26,11 @@ export class TypedEventEmitter<
     let invokedHandlersCount = 0;
     if (events) {
       for (const handler of events) {
-        await (handler as TEventMap[K])(...args);
+        try {
+          await (handler as TEventMap[K])(...args);
+        } catch (e) {
+          console.error("Exception thrown in event handler, this is not supported.", e)
+        }
         invokedHandlersCount++;
       }
     }
@@ -41,7 +45,11 @@ export class TypedEventEmitter<
     let invokedHandlersCount = 0;
     if (events) {
       for (const handler of events) {
-        (handler as TEventMap[K])(...args);
+        try {
+          (handler as TEventMap[K])(...args);
+        } catch (e) {
+          console.error("Exception thrown in event handler, this is not supported.", e)
+        }
         invokedHandlersCount++;
       }
     }

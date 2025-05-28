@@ -26,8 +26,9 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
 
   openedWebSockets: number = 0
 
-  accessToken?: string
   signalingUrl: string = ""
+
+  signalingChannel: SignalingChannelImpl;
 
   constructor(private options: SignalingClientOptions) {
     super();
@@ -38,7 +39,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.iceApi = new IceServersImpl(endpointUrl, options.productId, options.deviceId)
     this.clientsApi = new ClientsApi(new Configuration({ basePath: endpointUrl }))
 
-    this.signalingChannel = new SignalingChannelImpl(this, "not_connected", false /*isDevice*/)
+    this.signalingChannel = new SignalingChannelImpl(this, "not_connected")
 
     this.on("connectionstatechange", () => {
       if (this.connectionState === SignalingConnectionState.CONNECTED) {
@@ -46,10 +47,10 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       }
     })
     this.signalingChannel.on("channelstatechange", () => {
-      this.emit("channelstatechange");
+      this.emitSync("channelstatechange");
     })
     this.signalingChannel.on("error", (error: Error) => {
-      this.emit("error", error);
+      this.emitError(error);
     })
     this.signalingChannel.on("message", async (message: JSONValue) => {
       const consumers = await this.emit("message", message);
@@ -67,7 +68,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
   closeSignalingChannel(_channelId: string) {
     this.close();
   }
-  signalingChannel: SignalingChannelImpl;
+
   connectionState_: SignalingConnectionState = SignalingConnectionState.NEW
 
   get connectionState(): SignalingConnectionState {
@@ -84,7 +85,6 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       throw new Error("Connect can only be called once.")
     }
     this.firstConnect()
-    this.signalingChannel.startRecv();
   }
 
   async getIceServers(): Promise<Array<RTCIceServer>> {
@@ -113,7 +113,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
    * WebSocket connection management
    */
   async httpConnectRequest(): Promise<string> {
-    const authorization: string | undefined = this.accessToken ? `Bearer ${this.accessToken}` : undefined
+    const authorization: string | undefined = this.options.accessToken ? `Bearer ${this.options.accessToken}` : undefined
     try {
       const response = await this.clientsApi.postV1ClientConnect({
         authorization: authorization,
@@ -158,11 +158,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       this.ws.connect(this.signalingUrl)
     } catch (e) {
       this.connectionState = SignalingConnectionState.FAILED;
-      if (e instanceof Error) {
-        this.emit("error", e);
-      } else {
-        this.emit("error", new Error(JSON.stringify(e)));
-      }
+      this.emitError(e);
     }
   }
 
@@ -191,7 +187,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     })
     ws.on("open", () => this.handleWsOpened());
 
-    ws.on("connectionerror", (_channelId, errorCode, errorMessage) => {
+    ws.on("channelerror", (_channelId, errorCode, errorMessage) => {
       const e = new SignalingError(errorCode, errorMessage);
       e.isRemote = true;
       this.signalingChannel.handleError(e)
@@ -205,7 +201,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.openedWebSockets++;
     const reconnected = this.openedWebSockets > 1;
     if (reconnected) {
-      this.emit("connectionreconnect");
+      this.emitSync("connectionreconnect");
     }
     this.signalingChannel.handleWebSocketConnect();
     this.connectionState = SignalingConnectionState.CONNECTED;
@@ -220,9 +216,9 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       // The websocket was closed in the initial attempt to connect to the
       // service, this is always a fatal error.
       if (error instanceof Error) {
-        this.emit("error", error)
+        this.emitError(error);
       } else {
-        this.emit("error", new Error(`The websocket was closed before it got opened, code: ${error.code}, reason: ${error.reason}`))
+        this.emitError(new Error(`The websocket was closed before it got opened, code: ${error.code}, reason: ${error.reason}`));
       }
     } else {
       this.waitReconnect();
@@ -250,8 +246,16 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
 
     this.reconnectCounter++;
     setTimeout(() => {
-      this.reconnect()
+      this.reconnect();
     }, reconnectWait)
+  }
+
+  private emitError(e: unknown) {
+    if (e instanceof Error) {
+      this.emitSync("error", e);
+    } else {
+      this.emitSync("error", new Error(JSON.stringify(e)));
+    }
   }
 
   // Signaling channel impl:
@@ -263,11 +267,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     return this.signalingChannel.sendError(errorCode, errorMessage);
   }
 
-  get isDevice() {
-    return false;
-  }
-
   get channelState() {
-    return this.signalingChannel.channelState
+    return this.signalingChannel.channelState;
   }
 }

@@ -58,8 +58,8 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     if (this.connectionState === SignalingConnectionState.CLOSED) {
       return;
     }
+    this.onNewSignalingChannel = undefined;
     this.connectionState = SignalingConnectionState.CLOSED
-    this.onNewSignalingChannel = undefined
     this.ws.close();
     this.signalingChannels.forEach((conn, _id) => conn.close());
     this.signalingChannels = new Map()
@@ -158,31 +158,36 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     this.ws.on("error", () => {
       this.waitReconnect();
     })
-    this.ws.on("connectionerror", (channelId: string, errorCode: string, errorMessage?: string) => {
+    this.ws.on("channelerror", (channelId: string, errorCode: string, errorMessage?: string) => {
       const c = this.signalingChannels.get(channelId);
       const e = new SignalingError(errorCode, errorMessage);
       e.isRemote = true;
       c?.handleError(e)
     })
     this.ws.on("message", (channelId: string, message: JSONValue, authorized: boolean) => {
-      {
+      try {
         const connection = this.signalingChannels.get(channelId)
         if (connection) {
           connection.handleRoutingMessage(message);
         } else {
-          const c = new SignalingChannelImpl(this, channelId, true /*isDevice*/);
-          c.channelState = SignalingChannelState.ONLINE;
-          if (!c.isInitialMessage(message)) {
-            this.serviceSendError(channelId, SignalingErrorCodes.CHANNEL_NOT_FOUND, `The message with the channelId: ${channelId} is not found in the device.`);
+          if (!SignalingChannelImpl.isInitialMessage(message)) {
+            throw new SignalingError(SignalingErrorCodes.CHANNEL_NOT_FOUND, `The message with the channelId: ${channelId} is not found in the device.`);
           } else {
+            if (!this.onNewSignalingChannel) {
+              throw new SignalingError(SignalingErrorCodes.INTERNAL_ERROR, "onNewSignalingChannel should be defined, dropping the channel");
+            }
+            const onNewSignalingChannel = this.onNewSignalingChannel;
+            const c = new SignalingChannelImpl(this, channelId, async () => { await onNewSignalingChannel(c, authorized) });
+            c.channelState = SignalingChannelState.ONLINE;
             this.signalingChannels.set(channelId, c);
             c.handleRoutingMessage(message)
-            const createChannel = async () => {
-              await this.onNewSignalingChannel?.(c, authorized);
-              c.startRecv();
-            }
-            createChannel();
           }
+        }
+      } catch (e) {
+        if (e instanceof SignalingError) {
+          this.serviceSendError(channelId, e.errorCode, e.errorMessage);
+        } else {
+          console.log("onMessage encountered an unhandled error", e);
         }
       }
     })
