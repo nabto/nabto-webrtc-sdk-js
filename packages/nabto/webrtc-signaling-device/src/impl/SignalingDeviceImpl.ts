@@ -5,6 +5,9 @@ import { WebSocketConnectionImpl, SignalingChannelImpl, SignalingServiceImpl, Si
 import { IceServersImpl } from "./IceServersImpl";
 
 const CHECK_ALIVE_TIMEOUT = 1000
+// minimum time betwenn a open and close event on a websocket such that the
+// websocket connection counts as have been connected.
+const RECONNECT_COUNTER_RESET_TIMEOUT = 10000;
 
 type EventMap = {
   connectionstatechange: () => void; // No payload
@@ -16,6 +19,10 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
   devicesApi: DevicesApi
   signalingChannels: Map<string, SignalingChannelImpl> = new Map()
   ws: WebSocketConnectionImpl
+
+  // number of times we have reconnected without obtaining a valid connection to
+  // the signaling service.
+  reconnectCounterTimeoutId?: ReturnType<typeof setTimeout>;
   reconnectCounter: number = 0
   openedWebSockets: number = 0;
 
@@ -30,11 +37,6 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     this.iceApi = new IceServersImpl(endpointUrl, options.productId, options.deviceId)
     this.devicesApi = new DevicesApi(new Configuration({ basePath: endpointUrl }))
 
-    this.on("connectionstatechange", () => {
-      if (this.connectionState === SignalingConnectionState.CONNECTED) {
-        this.reconnectCounter = 0;
-      }
-    })
     this.ws = new WebSocketConnectionImpl("device");
     this.initWebSocket();
   }
@@ -160,9 +162,11 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
 
   initWebSocket() {
     this.ws.on("close", () => {
+      this.clearReconnectCounterTimeout();
       this.waitReconnect();
     })
     this.ws.on("error", () => {
+      this.clearReconnectCounterTimeout();
       this.waitReconnect();
     })
     this.ws.on("channelerror", (channelId: string, errorCode: string, errorMessage?: string) => {
@@ -199,6 +203,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
       }
     })
     this.ws.on("open", () => {
+      this.setReconnectCounterTimeout();
       this.openedWebSockets++;
       const reconnected = this.openedWebSockets > 1
       if (reconnected) {
@@ -217,6 +222,19 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
       const c = this.signalingChannels.get(channelId)
       c?.handlePeerOffline();
     })
+  }
+
+
+  private setReconnectCounterTimeout() {
+    this.clearReconnectCounterTimeout();
+    this.reconnectCounterTimeoutId = setTimeout(() => { this.reconnectCounter = 0; }, RECONNECT_COUNTER_RESET_TIMEOUT);
+  }
+
+  private clearReconnectCounterTimeout() {
+    if (this.reconnectCounterTimeoutId) {
+      clearTimeout(this.reconnectCounterTimeoutId);
+      this.reconnectCounterTimeoutId = undefined;
+    }
   }
 
   waitReconnect(waitSeconds?: number) {
