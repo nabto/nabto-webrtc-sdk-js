@@ -38,7 +38,7 @@ class RTCConnectionHandler {
   }
 
   close() {
-    this.signalingClient.stop();
+    this.signalingClient.close();
     if (this.pc) {
       this.pc.close()
     }
