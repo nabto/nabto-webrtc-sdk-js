@@ -29,7 +29,6 @@ export class DeviceTestInstance {
 
   createSignalingDevice(): SignalingDevice {
     const signalingDevice = createSignalingDevice({ productId: this.productId, deviceId: this.deviceId, endpointUrl: this.endpointUrl, tokenGenerator: async () => { return this.accessToken } })
-    this.observedConnectionStates.push(signalingDevice.connectionState)
     signalingDevice.on("connectionstatechange", () => {
       this.observedConnectionStates.push(signalingDevice.connectionState);
     })
