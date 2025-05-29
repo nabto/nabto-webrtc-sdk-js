@@ -27,10 +27,7 @@ export type ConnectionDisplayProps = {
     onProgress: (progress: ProgressState) => void,
 };
 
-export type DeviceConnectionDisplayProps = ConnectionDisplayProps & {
-    useVideo: boolean,
-    useAudio: boolean
-};
+export type DeviceConnectionDisplayProps = ConnectionDisplayProps
 
 export function IsError(err: unknown): err is Error {
     return err instanceof Error || ((err as Error)?.message !== undefined && typeof (err as Error)?.message === "string");

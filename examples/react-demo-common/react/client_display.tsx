@@ -83,9 +83,30 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
         const channel = client;
         const token = settings.requireCentralAuth ? settings.clientAccessToken : undefined;
 
-        client.on("connectionstatechange", () => setSignalingConnectionState(client.connectionState));
+        client.on("connectionstatechange", () => {
+            switch (client.connectionState) {
+                case SignalingConnectionState.CONNECTED: {
+                    setProgressState("connected");
+                    break;
+                }
+
+                case SignalingConnectionState.CONNECTING: {
+                    setProgressState("connecting");
+                    break;
+                }
+
+                case SignalingConnectionState.FAILED:
+                case SignalingConnectionState.CLOSED: {
+                    setProgressState("disconnected");
+                    break;
+                }
+            }
+            setSignalingConnectionState(client.connectionState)
+        });
+
         channel.on("channelstatechange", () => setSignalingPeerState(channel.channelState));
         channel.on("error", (err) => {
+            console.error(err);
             if (err instanceof SignalingError) {
                 switch (err.errorCode) {
                     case SignalingErrorCodes.CHANNEL_CLOSED: {

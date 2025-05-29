@@ -122,9 +122,13 @@ class PeerConnectionImpl implements PeerConnection {
         this.pc.ondatachannel = event => this.onDataChannel(event);
 
         this.pc.onicecandidateerror = event => {
+            if (event.errorCode == 701) {
+                return;
+            }
             this.handleError("RTCPeerConnection", new Error(`ICE candidate error code ${event.errorCode}, reason: ${event.errorText}`));
             this.log.e(event);
         }
+
         if (this.isDevice) {
             this.createDefaultDataChannel();
         }

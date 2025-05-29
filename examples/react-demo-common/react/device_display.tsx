@@ -3,7 +3,7 @@ import { Device, createDevice } from "../webrtc";
 import { ProgressState, IsError, SettingsValues, DeviceConnectionDisplayProps } from "./shared";
 
 export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
-    const { onProgress, pushNotification, useVideo, useAudio } = props;
+    const { onProgress, pushNotification } = props;
 
     const [signalingServiceState, setSignalingServiceState] = useState<string>();
     const [peerConnectionStates, setPeerConnectionStates] = useState<{ name: string, state: RTCPeerConnectionState }[]>([])
@@ -27,7 +27,7 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
     const [progressState, setProgressState] = useState<ProgressState>("disconnected");
     useEffect(() => onProgress(progressState));
 
-    const updateUserMedia = useCallback((userMedia: MediaDeviceInfo[]) => {
+    const updateUserMedia = useCallback((userMedia: MediaDeviceInfo[], useVideo: boolean, useAudio: boolean) => {
         if (device.current && userMedia.length > 0) {
             const cams = userMedia.filter(d => d.kind == "videoinput");
             const mics = userMedia.filter(d => d.kind == "audioinput");
@@ -45,11 +45,7 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
                 }
             });
         }
-    }, [pushNotification, useAudio, useVideo]);
-
-    navigator.mediaDevices.ondevicechange = () => {
-        navigator.mediaDevices.enumerateDevices().then(updateUserMedia);
-    }
+    }, [pushNotification]);
 
     const stop = useCallback(() => {
         const dev = device.current;
@@ -98,7 +94,16 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
                 });
             }
             setProgressState("connected");
-            navigator.mediaDevices.enumerateDevices().then(updateUserMedia).catch(handleError);
+
+            navigator.mediaDevices.enumerateDevices().then(userMedia => {
+                updateUserMedia(userMedia, settings.openVideoStream, settings.openAudioStream);
+            }).catch(handleError);
+            
+            navigator.mediaDevices.ondevicechange = () => {
+                navigator.mediaDevices.enumerateDevices().then(userMedia => {
+                    updateUserMedia(userMedia, settings.openVideoStream, settings.openAudioStream);
+                }).catch(handleError);
+            }
         }).catch(handleError);
     }, [pushNotification, progressState, stop, updateUserMedia]);
 
