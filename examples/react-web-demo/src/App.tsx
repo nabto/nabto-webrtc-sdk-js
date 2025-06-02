@@ -67,8 +67,8 @@ function App() {
       progressState,
       signalingConnectionState,
       signalingPeerState,
-      connectionState,
-      signalingState,
+      rtcConnectionState: rtConnectionState,
+      rtcSignalingState: rtcSignalingState,
     } = clientState;
     display = (
       <Stack direction="column" gap={3}>
@@ -80,8 +80,8 @@ function App() {
         <ClientInfoTable
           signalingServiceState={signalingConnectionState}
           signalingPeerState={signalingPeerState}
-          connectionState={connectionState}
-          signalingState={signalingState} />
+          rtcConnectionState={rtConnectionState}
+          rtcSignalingState={rtcSignalingState} />
       </Stack>
     );
   } else {

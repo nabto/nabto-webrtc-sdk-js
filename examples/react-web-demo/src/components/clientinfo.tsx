@@ -2,8 +2,8 @@ import { Paper, Table, TableBody, TableCell, TableContainer, TableRow } from "@m
 import { Help, StylizedHelp } from "./help";
 
 type ClientInfoTableProps = {
-    connectionState?: string,
-    signalingState?: string,
+    rtcConnectionState?: string,
+    rtcSignalingState?: string,
     signalingServiceState?: string,
     signalingPeerState?: string
 };
@@ -34,7 +34,7 @@ const helpSignalingServicePeerState =(
     </StylizedHelp>
 );
 
-export function ClientInfoTable({ connectionState, signalingState, signalingServiceState, signalingPeerState }: ClientInfoTableProps) {
+export function ClientInfoTable({ rtcConnectionState: connectionState, rtcSignalingState: signalingState, signalingServiceState, signalingPeerState }: ClientInfoTableProps) {
     return (
         <TableContainer component={Paper}>
             <Table size="small">
