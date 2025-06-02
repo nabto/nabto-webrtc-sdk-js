@@ -11,6 +11,7 @@ describe("Test that messages are sent reliably.", async () => {
   beforeEach(async () => {
     testInstance = await DeviceTestInstance.create({});
     device = testInstance.createSignalingDevice();
+    device.start();
     await testInstance.waitForState(device, SignalingConnectionState.CONNECTED);
     clientId = await testInstance.createClient()
     const channelPromise = new Promise<SignalingChannel>((resolve, _reject) => {

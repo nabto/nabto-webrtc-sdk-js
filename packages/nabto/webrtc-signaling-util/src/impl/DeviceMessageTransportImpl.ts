@@ -39,7 +39,7 @@ export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageT
 
   async handleDeviceSetupRequest() {
     try {
-      const iceServers = await this.device.getIceServers();
+      const iceServers = await this.device.requestIceServers();
       await this.sendSignalingMessage({ type: SignalingMessageType.SETUP_RESPONSE, iceServers: iceServers });
       await this.emitSetupDone(iceServers);
     } catch (e) {

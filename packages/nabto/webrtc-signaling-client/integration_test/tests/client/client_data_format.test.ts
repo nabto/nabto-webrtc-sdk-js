@@ -12,7 +12,7 @@ describe("test that the http protocol is allowed to return extra data", async ()
   })
   test("test that the client accepts more data in the json response than defined", async () => {
     const client = testInstance.createSignalingClient();
-    await client.connect();
+    await client.start();
   })
 })
 
@@ -27,7 +27,7 @@ describe("test that the ws protocol accepts new message types", async () => {
   })
   test("test that a client can accept websocket messages with a new type, without breaking", async () => {
     const client = testInstance.createSignalingClient();
-    await client.connect();
+    await client.start();
     await testInstance.connectDevice()
     await testInstance.sendNewMessageType()
   })

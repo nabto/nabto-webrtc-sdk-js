@@ -10,7 +10,7 @@ export class IceServersImpl {
     this.iceApi = new ICEApi(new Configuration({ basePath: basePath }))
   }
 
-  async getIceServers(accessToken?: string): Promise<Array<RTCIceServer>> {
+  async requestIceServers(accessToken?: string): Promise<Array<RTCIceServer>> {
     const authorization = accessToken?`Bearer ${accessToken}`:undefined
     try {
       const response = await this.iceApi.postV1IceServers({

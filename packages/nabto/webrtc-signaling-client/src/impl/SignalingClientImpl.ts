@@ -8,6 +8,9 @@ import { TypedEventEmitter } from '@nabto/webrtc-signaling-common'
 
 
 const CHECK_ALIVE_TIMEOUT = 1000;
+// minimum time betwenn a open and close event on a websocket such that the
+// websocket connection counts as have been connected.
+const RECONNECT_COUNTER_RESET_TIMEOUT = 10000;
 
 export interface SignalingClientEventHandlers extends SignalingChannelEventHandlers, SignalingConnectionStateChangesEventHandlers  {
   connectionreconnect: () => void
@@ -22,6 +25,9 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
   channelId: string | undefined = undefined
   ws: WebSocketConnectionImpl
 
+  // number of times we have reconnected without obtaining a valid connection to
+  // the signaling service.
+  reconnectCounterTimeoutId?: ReturnType<typeof setTimeout>;
   reconnectCounter: number = 0
 
   openedWebSockets: number = 0
@@ -41,11 +47,6 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
 
     this.signalingChannel = new SignalingChannelImpl(this, "not_connected")
 
-    this.on("connectionstatechange", () => {
-      if (this.connectionState === SignalingConnectionState.CONNECTED) {
-        this.reconnectCounter = 0;
-      }
-    })
     this.signalingChannel.on("channelstatechange", () => {
       this.emitSync("channelstatechange");
     })
@@ -80,15 +81,15 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.emitSync("connectionstatechange");
   }
 
-  connect(): void {
+  start(): void {
     if (this.connectionState !== SignalingConnectionState.NEW) {
       throw new Error("Connect can only be called once.")
     }
     this.firstConnect()
   }
 
-  async getIceServers(): Promise<Array<RTCIceServer>> {
-    return this.iceApi.getIceServers(this.options.accessToken);
+  async requestIceServers(): Promise<Array<RTCIceServer>> {
+    return this.iceApi.requestIceServers(this.options.accessToken);
   }
 
   async serviceSendError(channelId: string, errorCode: string, errorMessage?: string): Promise<void> {
@@ -198,6 +199,9 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     if (this.connectionState === SignalingConnectionState.FAILED || this.connectionState === SignalingConnectionState.CLOSED) {
       return;
     }
+
+    this.setReconnectCounterTimeout();
+
     this.openedWebSockets++;
     const reconnected = this.openedWebSockets > 1;
     if (reconnected) {
@@ -211,6 +215,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     if (this.connectionState === SignalingConnectionState.FAILED || this.connectionState === SignalingConnectionState.CLOSED) {
       return;
     }
+    this.clearReconnectCounterTimeout();
     if (this.openedWebSockets === 0) {
       this.connectionState = SignalingConnectionState.FAILED;
       // The websocket was closed in the initial attempt to connect to the
@@ -222,6 +227,18 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       }
     } else {
       this.waitReconnect();
+    }
+  }
+
+  private setReconnectCounterTimeout() {
+    this.clearReconnectCounterTimeout();
+    this.reconnectCounterTimeoutId = setTimeout(() => { this.reconnectCounter = 0; }, RECONNECT_COUNTER_RESET_TIMEOUT);
+  }
+
+  private clearReconnectCounterTimeout() {
+    if (this.reconnectCounterTimeoutId) {
+      clearTimeout(this.reconnectCounterTimeoutId);
+      this.reconnectCounterTimeoutId = undefined;
     }
   }
 
@@ -245,9 +262,11 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     const reconnectWait = 1000 * (2 ** this.reconnectCounter)
 
     this.reconnectCounter++;
+
+    const jitterWaitMilliseconds = Math.random() * reconnectWait;
     setTimeout(() => {
       this.reconnect();
-    }, reconnectWait)
+    }, jitterWaitMilliseconds)
   }
 
   private emitError(e: unknown) {

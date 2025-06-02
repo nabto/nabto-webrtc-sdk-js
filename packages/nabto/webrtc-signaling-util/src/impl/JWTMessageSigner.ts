@@ -28,9 +28,9 @@ export class JWTMessageSigner implements MessageSigner {
    * Construct a MessageSigner for shared secrets. This uses a shared secret to sign messages so the other peer can authorize the connection. The keyId can be used by the other peer to identify which secret was used in case multiple secrets exist.
    *
    * @param sharedSecret The shared secret to use.
-   * @param keyId The key ID to use.
+   * @param keyId The key ID to use. Optional, if not set the JWT header will omit the key id.
    */
-  constructor(private sharedSecret: string, private keyId: string) {
+  constructor(private sharedSecret: string, private keyId?: string) {
 
   };
 
@@ -39,10 +39,11 @@ export class JWTMessageSigner implements MessageSigner {
    * before the message is verified such that the correct shared secret can be
    * used.
    * @param message  The Signing message.
-   * @returns the keyId from the JWT header.
+   * @returns the keyId from the JWT header or undefined if no key id is in the header.
    */
-  static async getKeyId(message: JSONValue): Promise<string> {
+  static async getKeyId(message: JSONValue): Promise<string | undefined> {
     const signingMessage = ProtocolSigningMessageSchema.parse(message);
+
     if (signingMessage.type !== ProtocolSigningMessageTypes.JWT) {
       throw new SignalingError(SignalingErrorCodes.VERIFICATION_ERROR, `Expected a JWT signed message but got a signing message of type ${signingMessage.type}.`);
     }
@@ -53,11 +54,11 @@ export class JWTMessageSigner implements MessageSigner {
 
     const headerClaims = rs.KJUR.jws.JWS.readSafeJSONString(rs.b64utoutf8(parts[0]))
 
-    const jwtHeader = JWTHeaderSchema.parse(headerClaims);
-    if (jwtHeader.kid === undefined) {
-      throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, "The provided JWT token does not contain a key id (kid).");
+    const parsedJwtHeader = JWTHeaderSchema.safeParse(headerClaims);
+    if (!parsedJwtHeader.success) {
+      throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, `Cannot decode the JWT Header ${JSON.stringify(headerClaims)}`);
     }
-    return jwtHeader.kid;
+    return parsedJwtHeader.data.kid;
   }
 
   async signMessage(msg: JSONValue): Promise<ProtocolSigningMessage> {
