@@ -138,10 +138,10 @@ describe("Test clients connect through the signaling service", async () => {
     await testInstance.clientSendMessages(clientId, ["test_message"])
     await clientConnectedPromise
     expect(createdChannel).not.toBeNull()
-    expect(createdChannel?.channelState).toBe(SignalingChannelState.ONLINE);
+    expect(createdChannel?.channelState).toBe(SignalingChannelState.CONNECTED);
     const offlinePromise = new Promise<boolean>((resolve, _reject) => {
       createdChannel?.on("channelstatechange", () => {
-        if (createdChannel?.channelState === SignalingChannelState.OFFLINE) {
+        if (createdChannel?.channelState === SignalingChannelState.DISCONNECTED) {
           resolve(true)
         }
       })
@@ -149,6 +149,6 @@ describe("Test clients connect through the signaling service", async () => {
     await testInstance.disconnectClient(clientId);
     await createdChannel?.sendMessage("message")
     await offlinePromise
-    expect(createdChannel?.channelState).toBe(SignalingChannelState.OFFLINE);
+    expect(createdChannel?.channelState).toBe(SignalingChannelState.DISCONNECTED);
   })
 })

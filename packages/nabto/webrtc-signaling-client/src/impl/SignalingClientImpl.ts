@@ -127,10 +127,10 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
 
       this.signalingChannel.channelId = this.channelId;
       if (response.deviceOnline !== undefined) {
-        this.signalingChannel.channelState = response.deviceOnline ? SignalingChannelState.ONLINE : SignalingChannelState.OFFLINE;
+        this.signalingChannel.channelState = response.deviceOnline ? SignalingChannelState.CONNECTED : SignalingChannelState.DISCONNECTED;
       }
       if (this.options.requireOnline === true) {
-        if (this.signalingChannel.channelState !== SignalingChannelState.ONLINE) {
+        if (this.signalingChannel.channelState !== SignalingChannelState.CONNECTED) {
           throw new Error("The requested device is not online, try again later.");
         }
       }

@@ -54,7 +54,7 @@ describe("Test that messages are sent reliably.", async () => {
     for (const msg of messages) {
       await signalingChannel.sendMessage(msg);
     }
-    expect(signalingChannel.channelState).toBe(SignalingChannelState.OFFLINE);
+    expect(signalingChannel.channelState).toBe(SignalingChannelState.DISCONNECTED);
     await testInstance.connectDevice();
     const receivedMessages = await testInstance.deviceWaitForMessagesIsReceived(messages, 200);
     expect(receivedMessages).toStrictEqual(messages)

@@ -139,7 +139,7 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
       return;
     }
-    this.channelState = SignalingChannelState.ONLINE;
+    this.channelState = SignalingChannelState.CONNECTED;
     this.reliability.handlePeerConnected();
   }
 
@@ -147,7 +147,7 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
       return;
     }
-    this.channelState = SignalingChannelState.OFFLINE;
+    this.channelState = SignalingChannelState.DISCONNECTED;
   }
 
   static isInitialMessage(message: JSONValue): boolean {
