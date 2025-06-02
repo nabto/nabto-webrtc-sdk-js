@@ -125,20 +125,20 @@ describe("Test connection to a device through the signaling service", async () =
   test('Device is offline', async () => {
     client.start();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
-    expect(client.channelState).toBe(SignalingChannelState.OFFLINE);
+    expect(client.channelState).toBe(SignalingChannelState.DISCONNECTED);
   })
 
   test('Device is online', async () => {
     await testInstance.connectDevice();
     client.start();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
-    expect(client.channelState).toBe(SignalingChannelState.ONLINE);
+    expect(client.channelState).toBe(SignalingChannelState.CONNECTED);
   })
 
   test('Device becomes online', async () => {
     client.start();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
-    expect(client.channelState).toBe(SignalingChannelState.OFFLINE);
+    expect(client.channelState).toBe(SignalingChannelState.DISCONNECTED);
 
     const stateChangePromise = new Promise<boolean>(resolve => {
       client.on("channelstatechange", () => resolve(true));
@@ -147,13 +147,13 @@ describe("Test connection to a device through the signaling service", async () =
     await testInstance.connectDevice();
     const status = await stateChangePromise;
     expect(status).toBe(true);
-    expect(client.channelState).toBe(SignalingChannelState.ONLINE);
+    expect(client.channelState).toBe(SignalingChannelState.CONNECTED);
   })
   test('Device is online', async () => {
     await testInstance.connectDevice();
     client.start();
-    await testInstance.waitForSignalingChannelState(client, SignalingChannelState.ONLINE);
-    expect(client.channelState).toBe(SignalingChannelState.ONLINE);
+    await testInstance.waitForSignalingChannelState(client, SignalingChannelState.CONNECTED);
+    expect(client.channelState).toBe(SignalingChannelState.CONNECTED);
   })
 })
 
@@ -192,9 +192,9 @@ describe("Signaling channel states", async () => {
     expect(client.channelState).to.be.equal(SignalingChannelState.NEW)
     client.start();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
-    expect(client.channelState).to.be.equal(SignalingChannelState.OFFLINE);
+    expect(client.channelState).to.be.equal(SignalingChannelState.DISCONNECTED);
     await testInstance.connectDevice();
-    expect(client.channelState).to.be.equal(SignalingChannelState.ONLINE);
+    expect(client.channelState).to.be.equal(SignalingChannelState.CONNECTED);
     await testInstance.deviceSendError(SignalingErrorCodes.CHANNEL_NOT_FOUND, "Channel is not found");
     expect(client.channelState).to.be.equal(SignalingChannelState.FAILED);
     console.log(client.channelState)
@@ -205,7 +205,7 @@ describe("Signaling channel states", async () => {
   test("After closed has been called the state is closed", async () => {
     client.start();
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
-    expect(client.channelState).to.be.equal(SignalingChannelState.OFFLINE);
+    expect(client.channelState).to.be.equal(SignalingChannelState.DISCONNECTED);
     client.close();
     expect(client.channelState).to.be.equal(SignalingChannelState.CLOSED);
   })

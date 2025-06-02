@@ -189,7 +189,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
             }
             const onNewSignalingChannel = this.onNewSignalingChannel;
             const c = new SignalingChannelImpl(this, channelId, async () => { await onNewSignalingChannel(c, authorized) });
-            c.channelState = SignalingChannelState.ONLINE;
+            c.channelState = SignalingChannelState.CONNECTED;
             this.signalingChannels.set(channelId, c);
             c.handleRoutingMessage(message)
           }

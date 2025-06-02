@@ -33,14 +33,15 @@ export interface SignalingChannel {
 
   /**
   * The signaling peer state is the state of the other peer of the signaling
-  * channel. If it says online the device seemed to be online when the
-  * signaling channel was made or when the last message transferred on the
-  * signaling channel happened. If it is OFFLINE the other peer was either
-  * Offline when the connection was made or a message could not be delivered to
-  * the other peer as it has gone offline.
+  * channel. If it is `CONNECTED` the other peer seemed to be connected to the
+  * Nabto WebRTC Signaling Service when the signaling channel was made or when
+  * the last message transferred on the signaling channel happened. If it is
+  * `DISCONNECTED` the other peer was either disconnected when the connection
+  * was made or a message could not be delivered to the other peer because it is
+  * not connected to the Nabto WebRTC Signaling Service.
   *
-  * If the other peer goes offline and no message is transmitted towards it
-  * after it goes offline, the state is not updated to reflect this.
+  * If the other peer disconnects and no message is transmitted towards it after
+  * it disconnects, the state is not updated to reflect this.
   */
   channelState: SignalingChannelState;
 
