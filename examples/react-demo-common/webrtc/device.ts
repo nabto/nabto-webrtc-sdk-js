@@ -110,6 +110,12 @@ class DeviceImpl implements Device {
         this.connections.forEach(c => c.close());
         this.connections = [];
         this.signaling.close();
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => {
+                track.stop();
+            });
+            this.stream = undefined;
+        }
     }
 
     private onNewPeer(id: string, peerConnection: PeerConnection) {
