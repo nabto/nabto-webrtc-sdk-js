@@ -1,6 +1,6 @@
 import { ExpandMore } from '@mui/icons-material';
 import { Button, FormControl, Stack, Typography, Box, FormLabel, TextField, FormControlLabel, Checkbox, FormGroup, Accordion, AccordionSummary, AccordionDetails, ToggleButtonGroup, ToggleButton, Modal } from '@mui/material';
-import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, MouseEvent, useEffect, useState } from 'react';
 import { Help, StylizedHelp } from './help';
 import { SettingsValues } from '@nabto/react-demo-common/state';
 import QRCode from 'react-qr-code';
