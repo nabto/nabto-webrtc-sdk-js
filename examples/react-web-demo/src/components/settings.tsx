@@ -70,34 +70,32 @@ type SettingsErrorStates = {
     privateKey: SettingsErrorState;
 }
 
-function useSettings(storageKey: string) {
-    const defaultSettings: SettingsValues = {
-        endpointUrl: "https://eu.webrtc.dev.nabto.net",
-        productId: "",
-        deviceId: "",
-        sharedSecret: "",
-        privateKey: "",
-        openAudioStream: false,
-        openVideoStream: true,
-        clientAccessToken: "",
-        requireCentralAuth: false
-    };
+enum ConnectionMode {
+    CLIENT = "client",
+    DEVICE = "device"
+}
 
-    const [settings, setSettings] = useState<SettingsValues>(() => {
-        const item = localStorage.getItem(storageKey);
-        return item !== null ? { ...defaultSettings, ...JSON.parse(item) } : defaultSettings;
+function useSingleSetting<T>(key: string, fallback: T) {
+    const [setting, setSetting] = useState(() => {
+        const item = localStorage.getItem(key);
+        return (item !== null ? JSON.parse(item) : fallback) as T;
     });
 
     useEffect(() => {
-        localStorage.setItem(storageKey, JSON.stringify(settings));
-    }, [settings, storageKey]);
+        localStorage.setItem(key, JSON.stringify(setting));
+    }, [setting, key]);
 
-    return [settings, setSettings] as const;
+    return [setting, setSetting] as const;
 }
 
-function setInputValue(input: HTMLInputElement | null, value: string) {
-    if (input != null) {
-        input.value = value;
+function useSetting<T>(mode: ConnectionMode, key: string, fallback: T) {
+    const [clientSetting, setClientSetting] = useSingleSetting(`${ConnectionMode.CLIENT}-${key}`, fallback);
+    const [deviceSetting, setDeviceSetting] = useSingleSetting(`${ConnectionMode.DEVICE}-${key}`, fallback);
+
+    if (mode == ConnectionMode.CLIENT) {
+        return [clientSetting, setClientSetting] as const;
+    } else {
+        return [deviceSetting, setDeviceSetting] as const;
     }
 }
 
@@ -147,22 +145,20 @@ function GenerateCodeModal({show, onClose, productId, deviceId, sharedSecret}: G
 export default function Settings(props: SettingsProperties) {
     const disabled = props.disabled;
 
-    const productIdRef = useRef<HTMLInputElement>(null);
-    const deviceIdRef = useRef<HTMLInputElement>(null);
-    const sharedSecretRef = useRef<HTMLInputElement>(null);
-    const privateKeyRef = useRef<HTMLInputElement>(null);
-    const endpointRef = useRef<HTMLInputElement>(null);
-    const clientAccessTokenRef = useRef<HTMLInputElement>(null);
-
-    const [clientSettings, setClientSettings] = useSettings("client-settings");
-    const [deviceSettings, setDeviceSettings] = useSettings("device-settings");
-
+    const [connectionMode, setConnectionMode] = useState<ConnectionMode>(ConnectionMode.CLIENT);
     const [showQrCode, setShowQrCode] = useState(false);
-    const [productId, setProductId] = useState<string>();
-    const [deviceId, setDeviceId] = useState<string>();
-    const [sharedSecret, setSharedSecret] = useState<string>();
 
-    const [connectionMode, setConnectionMode] = useState<"client" | "device">("client");
+    const [productId, setProductId] = useSetting(connectionMode, "product-id", "");
+    const [deviceId, setDeviceId] = useSetting(connectionMode, "device-id", "");
+    const [sharedSecret, setSharedSecret] = useSetting(connectionMode, "shared-secret", "");
+    const [clientAccessToken, setClientAccessToken] = useSetting(connectionMode, "access-token", "");
+    const [privateKey, setPrivateKey] = useSetting(connectionMode, "private-key", "");
+    const [openVideoStream, setOpenVideoStream] = useSetting(connectionMode, "open-video-stream", true);
+    const [openAudioStream, setOpenAudioStream] = useSetting(connectionMode, "open-audio-stream", false);
+    const [requireCentralAuth, setRequireCentralAuth] = useSetting(connectionMode, "require-central-auth", false);
+
+    const [endpoint, setEndpoint] = useSingleSetting("endpoint-url", "");
+
     const [errs] = useState<SettingsErrorStates>({
         endpoint: { error: false, errorMessage: "" },
         productId: { error: false, errorMessage: "" },
@@ -172,55 +168,25 @@ export default function Settings(props: SettingsProperties) {
         privateKey: { error: false, errorMessage: "" }
     });
 
-    useEffect(() => {
-        props.onModeChanged?.(connectionMode);
-
-        if (connectionMode == "client") {
-            setInputValue(productIdRef.current, clientSettings.productId);
-            setInputValue(deviceIdRef.current, clientSettings.deviceId);
-            setInputValue(sharedSecretRef.current, clientSettings.sharedSecret);
-            setInputValue(endpointRef.current, clientSettings.endpointUrl);
-            setInputValue(clientAccessTokenRef.current, clientSettings.clientAccessToken);
-        } else {
-            setInputValue(productIdRef.current, deviceSettings.productId);
-            setInputValue(deviceIdRef.current, deviceSettings.deviceId);
-            setInputValue(sharedSecretRef.current, deviceSettings.sharedSecret);
-            setInputValue(endpointRef.current, deviceSettings.endpointUrl);
-            setInputValue(privateKeyRef.current, deviceSettings.privateKey);
-        }
-
-        setProductId(productIdRef.current?.value);
-        setDeviceId(deviceIdRef.current?.value);
-        setSharedSecret(sharedSecretRef.current?.value);
-    }, [connectionMode, clientSettings, deviceSettings, props]);
-
     const handleChangeConnectionMode = (_: MouseEvent, newMode: string) => {
         if (newMode == "client" || newMode == "device") {
-            setConnectionMode(newMode);
+            setConnectionMode(newMode as ConnectionMode);
         }
     };
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        const result: SettingsValues = {
-            endpointUrl: data.get("serviceEndpoint")?.toString() ?? "",
-            productId: data.get("productId")?.toString() ?? "",
-            deviceId: data.get("deviceId")?.toString() ?? "",
-            sharedSecret: data.get("sharedSecret")?.toString() ?? "",
-            privateKey: data.get("privateKey")?.toString() ?? "",
-            clientAccessToken: data.get("clientAccessToken")?.toString() ?? "",
-            openVideoStream: data.get("openVideoStream") != undefined,
-            openAudioStream: data.get("openAudioStream") != undefined,
-            requireCentralAuth: data.get("requireCentralAuth") != undefined
-        };
-
-        if (connectionMode == "client") {
-            setClientSettings(result);
-        } else {
-            setDeviceSettings(result);
-        }
-        props.onConnectPressed?.(result);
+        props.onConnectPressed?.({
+            productId,
+            deviceId,
+            sharedSecret,
+            privateKey,
+            clientAccessToken,
+            endpointUrl: endpoint ? endpoint : `https://${productId}.webrtc.nabto.net`,
+            openVideoStream,
+            openAudioStream,
+            requireCentralAuth
+        });
     };
 
     const handleDisconnect = () => {
@@ -292,9 +258,8 @@ export default function Settings(props: SettingsProperties) {
                                 name="productId"
                                 id="productId"
                                 disabled={disabled}
-                                inputRef={productIdRef}
                                 onChange={(e) => setProductId(e.target.value)}
-                                defaultValue={clientSettings.productId}
+                                value={productId}
                                 error={errs.productId.error}
                                 helperText={errs.productId.errorMessage}
                                 color={errs.productId.error ? "error" : "primary"} />
@@ -310,8 +275,8 @@ export default function Settings(props: SettingsProperties) {
                                 name="deviceId"
                                 id="deviceId"
                                 disabled={disabled}
-                                inputRef={deviceIdRef}
-                                defaultValue={clientSettings.deviceId}
+                                onChange={(e) => setDeviceId(e.target.value)}
+                                value={deviceId}
                                 error={errs.deviceId.error}
                                 helperText={errs.deviceId.errorMessage}
                                 color={errs.deviceId.error ? "error" : "primary"} />
@@ -327,8 +292,8 @@ export default function Settings(props: SettingsProperties) {
                                 name="sharedSecret"
                                 id="sharedSecret"
                                 disabled={disabled}
-                                inputRef={sharedSecretRef}
-                                defaultValue={clientSettings.sharedSecret}
+                                onChange={(e) => setSharedSecret(e.target.value)}
+                                value={sharedSecret}
                                 error={errs.sharedSecret.error}
                                 helperText={errs.sharedSecret.errorMessage}
                                 color={errs.sharedSecret.error ? "error" : "primary"} />
@@ -344,7 +309,8 @@ export default function Settings(props: SettingsProperties) {
                                         name="privateKey"
                                         id="privateKey"
                                         disabled={disabled}
-                                        inputRef={privateKeyRef}
+                                        onChange={(e) => setPrivateKey(e.target.value)}
+                                        value={privateKey}
                                         error={errs.privateKey.error}
                                         helperText={errs.privateKey.errorMessage}
                                         color={errs.privateKey.error ? "error" : "primary"}
@@ -359,14 +325,14 @@ export default function Settings(props: SettingsProperties) {
                                             name="openVideoStream"
                                             id="openVideoStream"
                                             defaultChecked={true}
-                                            control={<Checkbox defaultChecked={true} value="openVideoStream" color="primary" />}
+                                            control={<Checkbox checked={openVideoStream} onChange={e => setOpenVideoStream(e.target.checked)} color="primary" />}
                                             label="Open video stream" />
 
                                         <FormControlLabel
                                             disabled={disabled}
                                             name="openAudioStream"
                                             id="openAudioStream"
-                                            control={<Checkbox defaultChecked={true} value="openAudioStream" color="primary" />}
+                                            control={<Checkbox checked={openAudioStream} onChange={e => setOpenAudioStream(e.target.checked)} color="primary" />}
                                             label="Open audio stream" />
                                     </Stack>
                                 </FormGroup>
@@ -383,7 +349,8 @@ export default function Settings(props: SettingsProperties) {
                                         name="clientAccessToken"
                                         id="clientAccessToken"
                                         disabled={disabled}
-                                        inputRef={clientAccessTokenRef}
+                                        onChange={(e) => setClientAccessToken(e.target.value)}
+                                        value={clientAccessToken}
                                         error={errs.clientAccessToken.error}
                                         helperText={errs.clientAccessToken.errorMessage}
                                         color={errs.clientAccessToken.error ? "error" : "primary"} />
@@ -397,7 +364,7 @@ export default function Settings(props: SettingsProperties) {
                                 name="requireCentralAuth"
                                 id="requireCentralAuth"
                                 defaultChecked={false}
-                                control={<Checkbox defaultChecked={false} value="requireCentralAuth" color="primary" />}
+                                control={<Checkbox checked={requireCentralAuth} onChange={e => setRequireCentralAuth(e.target.checked)} color="primary" />}
                                 label="Central Authorization" />
                         </FormGroup>
                     </Box>
@@ -413,12 +380,11 @@ export default function Settings(props: SettingsProperties) {
                         <FormControl>
                             <FormLabel htmlFor="serviceEndpoint">Service Endpoint</FormLabel>
                             <TextField
-                                required
                                 name="serviceEndpoint"
                                 id="serviceEndpoint"
                                 disabled={disabled}
-                                inputRef={endpointRef}
-                                defaultValue={clientSettings.endpointUrl}
+                                onChange={(e) => setEndpoint(e.target.value)}
+                                value={endpoint}
                                 error={errs.endpoint.error}
                                 helperText={errs.endpoint.errorMessage}
                                 color={errs.endpoint.error ? "error" : "primary"} />
