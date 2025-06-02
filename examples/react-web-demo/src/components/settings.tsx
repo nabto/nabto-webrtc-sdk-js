@@ -176,7 +176,6 @@ export default function Settings(props: SettingsProperties) {
 
     useEffect(() => {
         props.onModeChanged?.(connectionMode);
-        // Reset errors when switching modes
     }, [props.onModeChanged, connectionMode]);
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
