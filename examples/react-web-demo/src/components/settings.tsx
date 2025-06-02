@@ -174,6 +174,10 @@ export default function Settings(props: SettingsProperties) {
         }
     };
 
+    useEffect(() => {
+        props.onModeChanged?.(connectionMode);
+    }, [props.onModeChanged, connectionMode]);
+
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         props.onConnectPressed?.({
