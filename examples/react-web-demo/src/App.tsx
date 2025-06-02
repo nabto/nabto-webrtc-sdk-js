@@ -54,8 +54,6 @@ function App() {
   });
 
   const deviceState = useDeviceDisplayState({
-    useAudio: true,
-    useVideo: true,
     onProgress: (progress) => setDeviceDisabled(progress != "disconnected"),
     pushNotification
   });
@@ -98,7 +96,7 @@ function App() {
     display = (
       <Stack direction="column" gap={3}>
         <NotificationStack clearNotification={clearNotification} notifications={notifications}></NotificationStack>
-        <VideoAndChat mediaStream={mediaStream} onSendChat={chatSend} chatMessages={chatMessages} />
+        <VideoAndChat mediaStream={mediaStream} muted={true} onSendChat={chatSend} chatMessages={chatMessages} />
         <Collapse unmountOnExit in={progressState == "connecting"}>
           <LinearProgress />
         </Collapse>
