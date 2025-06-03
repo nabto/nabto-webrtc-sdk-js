@@ -13,8 +13,8 @@ import { ProgressState, ConnectionDisplayProps, IsError, SettingsValues } from "
 export function useClientDisplayState(props: ConnectionDisplayProps) {
     const { onProgress, pushNotification } = props;
 
-    const [connectionState, setConnectionState] = useState<RTCPeerConnectionState>();
-    const [signalingState, setSignalingState] = useState<RTCSignalingState>();
+    const [rtcConnectionState, setRtcConnectionState] = useState<RTCPeerConnectionState>();
+    const [rtcSignalingState, setRtcSignalingState] = useState<RTCSignalingState>();
     const [signalingConnectionState, setSignalingConnectionState] = useState<SignalingConnectionState>();
     const [signalingPeerState, setSignalingPeerState] = useState<SignalingChannelState>();
 
@@ -41,12 +41,13 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
         peerConnection.current = undefined;
 
         if (pc) {
-            pc.onConnectionState = undefined;
-            pc.onSignalingState = undefined;
             pc.onMediaStream = undefined;
             pc.onDataChannelMessage = undefined;
             pc.onError = undefined;
             pc.close();
+            pc.onRtcConnectionState = undefined;
+            pc.onRtcSignalingState = undefined;
+
         }
 
         if (client) {
@@ -135,8 +136,8 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
             centralAuth: settings.requireCentralAuth,
             isDevice: false,
         }).then(pc => {
-            pc.onConnectionState = setConnectionState;
-            pc.onSignalingState = setSignalingState;
+            pc.onRtcConnectionState = setRtcConnectionState;
+            pc.onRtcSignalingState = setRtcSignalingState;
             pc.onMediaStream = setMediaStream;
             pc.onDataChannelMessage = (sender, text) => setChatMessages(s => [...s, { sender, text }]);
             pc.onError = (origin, error) => {
@@ -156,8 +157,8 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
         progressState,
         signalingConnectionState,
         signalingPeerState,
-        signalingState,
-        connectionState,
+        rtcSignalingState: rtcSignalingState,
+        rtcConnectionState: rtcConnectionState,
         startConnection,
         stopConnection
     };

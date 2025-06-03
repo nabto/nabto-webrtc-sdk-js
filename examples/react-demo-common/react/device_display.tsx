@@ -53,11 +53,11 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
         setMediaStream(undefined);
 
         if (dev) {
-            dev.onPeerConnectionStates = undefined;
-            dev.onSignalingServiceConnectionState = undefined;
             dev.onError = undefined;
             dev.onMessage = undefined;
             dev.close();
+            dev.onPeerConnectionStates = undefined;
+            dev.onSignalingServiceConnectionState = undefined;
         }
 
         setProgressState("disconnected");
@@ -98,7 +98,7 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
             navigator.mediaDevices.enumerateDevices().then(userMedia => {
                 updateUserMedia(userMedia, settings.openVideoStream, settings.openAudioStream);
             }).catch(handleError);
-            
+
             navigator.mediaDevices.ondevicechange = () => {
                 navigator.mediaDevices.enumerateDevices().then(userMedia => {
                     updateUserMedia(userMedia, settings.openVideoStream, settings.openAudioStream);

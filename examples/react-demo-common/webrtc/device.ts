@@ -130,7 +130,7 @@ class DeviceImpl implements Device {
             this.onMessage?.(sender, text);
         };
 
-        peerConnection.onConnectionState = state => {
+        peerConnection.onRtcConnectionState = state => {
             this.connectionStates.set(id, state);
             const converted = Array.from(this.connectionStates, ([key, value]) => ({
                 name: key,

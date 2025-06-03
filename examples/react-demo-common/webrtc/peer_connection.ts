@@ -14,8 +14,8 @@ export enum PeerConnectionLogLevel {
 }
 
 export interface PeerConnection {
-    onSignalingState: ((state: RTCSignalingState) => void) | undefined
-    onConnectionState: ((state: RTCPeerConnectionState) => void) | undefined
+    onRtcSignalingState: ((state: RTCSignalingState) => void) | undefined
+    onRtcConnectionState: ((state: RTCPeerConnectionState) => void) | undefined
     onMediaStream: ((state: MediaStream) => void) | undefined
     onDataChannelMessage: ((sender: string, text: string) => void) | undefined
     // Called when the rtc peer connection has been created.
@@ -45,8 +45,8 @@ function generateName(length: number): string {
 }
 
 class PeerConnectionImpl implements PeerConnection {
-    onSignalingState: ((state: RTCSignalingState) => void) | undefined;
-    onConnectionState: ((state: RTCPeerConnectionState) => void) | undefined;
+    onRtcSignalingState: ((state: RTCSignalingState) => void) | undefined;
+    onRtcConnectionState: ((state: RTCPeerConnectionState) => void) | undefined;
     onMediaStream: ((state: MediaStream) => void) | undefined;
     onDataChannelMessage: ((sender: string, text: string) => void) | undefined;
     onError: ((origin: string, err: Error) => void) | undefined;
@@ -108,8 +108,8 @@ class PeerConnectionImpl implements PeerConnection {
         this.signalingChannel.close();
         this.dc = undefined;
         this.pc.close();
-        this.onConnectionStateChange();
-        this.onSignalingStateChange();
+        this.onRtcConnectionStateChange();
+        this.onRtcSignalingStateChange();
     }
 
     private setupPeerConnection(iceServers?: RTCIceServer[]) {
@@ -117,8 +117,8 @@ class PeerConnectionImpl implements PeerConnection {
         this.pc.ontrack = event => this.onTrack(event);
         this.perfectNegotiation = new PerfectNegotiation(this.pc, this.defaultMessageTransport);
         this.signalingEventHandler = new SignalingEventHandler(this.pc, this.signaling);
-        this.pc.onsignalingstatechange = () => this.onSignalingStateChange();
-        this.pc.onconnectionstatechange = () => this.onConnectionStateChange();
+        this.pc.onsignalingstatechange = () => this.onRtcSignalingStateChange();
+        this.pc.onconnectionstatechange = () => this.onRtcConnectionStateChange();
         this.pc.ondatachannel = event => this.onDataChannel(event);
 
         this.pc.onicecandidateerror = event => {
@@ -199,14 +199,14 @@ class PeerConnectionImpl implements PeerConnection {
         }
     }
 
-    private onSignalingStateChange() {
+    private onRtcSignalingStateChange() {
         this.log.d(`Signaling state ==> ${this.pc.signalingState}`);
-        this.onSignalingState?.(this.pc.signalingState);
+        this.onRtcSignalingState?.(this.pc.signalingState);
     }
 
-    private onConnectionStateChange() {
+    private onRtcConnectionStateChange() {
         this.log.d(`Connection state ==> ${this.pc.connectionState}`);
-        this.onConnectionState?.(this.pc.connectionState);
+        this.onRtcConnectionState?.(this.pc.connectionState);
     }
 }
 
