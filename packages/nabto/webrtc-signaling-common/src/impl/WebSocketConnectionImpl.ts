@@ -84,10 +84,12 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
     });
     ws.addEventListener("close", (ev: WebSocket.CloseEvent) => {
       console.log(`Websocket close code: ${ev.code} reason: ${ev.reason}`);
+      this.closeCurrentWebSocket();
       this.emitSync("close", {code: ev.code, reason: ev.reason});
     });
     ws.addEventListener("error", (ev: WebSocket.Event) => {
       console.log(`Websocket error: ${ev.type}`);
+      this.closeCurrentWebSocket();
       this.emitSync("error", new Error(ev.type));
     })
     ws.addEventListener("message", (ev: WebSocket.MessageEvent) => {
@@ -107,7 +109,10 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
   }
 
   closeWebsocket(reason: string) {
-    this.checkAliveTimer = undefined;
+    if (this.checkAliveTimer) {
+      clearTimeout(this.checkAliveTimer);
+      this.checkAliveTimer = undefined;
+    }
     if (this.ws) {
       this.ws.close(1000, reason);
       this.ws = undefined;
