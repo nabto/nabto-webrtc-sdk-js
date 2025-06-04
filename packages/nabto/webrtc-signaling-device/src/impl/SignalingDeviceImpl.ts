@@ -39,6 +39,12 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
 
     this.ws = new WebSocketConnectionImpl("device");
     this.initWebSocket();
+
+    this.on("connectionstatechange", () => {
+      if (this.connectionState === SignalingConnectionState.DISCONNECTED) {
+        this.waitReconnect();
+      }
+    });
   }
   connectionState_: SignalingConnectionState = SignalingConnectionState.NEW;
 
@@ -89,9 +95,6 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
   }
 
   checkAlive() {
-    if (this.connectionState === SignalingConnectionState.CLOSED || this.connectionState === SignalingConnectionState.FAILED) {
-      return;
-    }
     this.ws.checkAlive(CHECK_ALIVE_TIMEOUT);
   }
 
@@ -137,7 +140,8 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
   }
 
   async doConnect() {
-    if (this.connectionState === SignalingConnectionState.CLOSED || this.connectionState === SignalingConnectionState.FAILED) {
+    if (this.connectionState !== SignalingConnectionState.NEW && this.connectionState !== SignalingConnectionState.WAIT_RETRY) {
+      console.error("doConnect called in an invalid state", this.connectionState);
       return;
     }
     try {
@@ -156,18 +160,28 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
       } else {
         console.debug(`Connect failed, retries in a moment ${e}`)
       }
-      this.waitReconnect();
+      this.connectionState = SignalingConnectionState.DISCONNECTED;
     }
   }
 
   initWebSocket() {
     this.ws.on("close", () => {
-      this.clearReconnectCounterTimeout();
-      this.waitReconnect();
+      if (this.connectionState === SignalingConnectionState.CONNECTED || this.connectionState === SignalingConnectionState.CONNECTING) {
+        this.connectionState = SignalingConnectionState.DISCONNECTED;
+        this.clearReconnectCounterTimeout();
+      }
     })
     this.ws.on("error", () => {
-      this.clearReconnectCounterTimeout();
-      this.waitReconnect();
+      if (this.connectionState === SignalingConnectionState.CONNECTED || this.connectionState === SignalingConnectionState.CONNECTING) {
+        this.connectionState = SignalingConnectionState.DISCONNECTED;
+        this.clearReconnectCounterTimeout();
+      }
+
+    })
+    this.ws.on("pingtimeout", () => {
+      if (this.connectionState === SignalingConnectionState.CONNECTED || this.connectionState === SignalingConnectionState.CONNECTING) {
+        this.ws.closeCurrentWebSocket();
+      }
     })
     this.ws.on("channelerror", (channelId: string, errorCode: string, errorMessage?: string) => {
       const c = this.signalingChannels.get(channelId);
@@ -238,10 +252,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
   }
 
   waitReconnect(waitSeconds?: number) {
-    if (this.connectionState === SignalingConnectionState.CLOSED || this.connectionState === SignalingConnectionState.FAILED) {
-      return;
-    }
-    if (this.connectionState === SignalingConnectionState.WAIT_RETRY) {
+    if (this.connectionState !== SignalingConnectionState.DISCONNECTED) {
       return;
     }
     this.connectionState = SignalingConnectionState.WAIT_RETRY
@@ -254,11 +265,12 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
         reconnectWaitSeconds = (2 ** this.reconnectCounter)
       }
     }
-    this.reconnectCounter++;
 
     const jitterWaitMilliseconds = Math.random() * reconnectWaitSeconds * 1000;
 
-    console.debug(`Waiting ${reconnectWaitSeconds}s before reconnecting`)
+    console.debug(`Waiting ${jitterWaitMilliseconds}ms before reconnecting. Reconnect counter: ${this.reconnectCounter}`);
+    this.reconnectCounter++;
+
     setTimeout(() => {
       this.doConnect()
     }, jitterWaitMilliseconds)

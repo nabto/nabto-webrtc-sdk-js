@@ -16,6 +16,10 @@ export enum SignalingConnectionState {
    */
   CONNECTED = "CONNECTED",
   /**
+   * The Signaling Connection is disconnected and will go to the WAIT_RETRY state..
+   */
+  DISCONNECTED = "DISCONNECTED",
+  /**
    * The Signaling Connection is disconnected and waiting for its backoff before reconnecting.
    */
   WAIT_RETRY = "WAIT_RETRY",
