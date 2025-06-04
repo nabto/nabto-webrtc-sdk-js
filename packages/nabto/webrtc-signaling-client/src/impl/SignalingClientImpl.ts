@@ -62,12 +62,6 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
 
     this.ws = new WebSocketConnectionImpl("client");
     this.setupWs(this.ws);
-
-    this.on("connectionstatechange", () => {
-      if (this.connectionState === SignalingConnectionState.DISCONNECTED) {
-        this.waitReconnect();
-      }
-    });
   }
   sendRoutingMessage(channelId: string, message: string): void {
     this.ws.sendMessage(channelId, message);
@@ -237,7 +231,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
         this.emitError(new Error(`The websocket was closed before it got opened, code: ${error.code}, reason: ${error.reason}`));
       }
     } else {
-      this.connectionState = SignalingConnectionState.DISCONNECTED;
+      this.waitReconnect();
     }
   }
 
@@ -254,7 +248,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
   }
 
   private waitReconnect() {
-    if (this.connectionState !== SignalingConnectionState.DISCONNECTED) {
+    if (this.connectionState !== SignalingConnectionState.CONNECTING && this.connectionState !== SignalingConnectionState.CONNECTED) {
       return;
     }
     this.connectionState = SignalingConnectionState.WAIT_RETRY;

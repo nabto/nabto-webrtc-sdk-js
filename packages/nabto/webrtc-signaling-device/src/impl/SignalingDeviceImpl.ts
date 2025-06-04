@@ -39,12 +39,6 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
 
     this.ws = new WebSocketConnectionImpl("device");
     this.initWebSocket();
-
-    this.on("connectionstatechange", () => {
-      if (this.connectionState === SignalingConnectionState.DISCONNECTED) {
-        this.waitReconnect();
-      }
-    });
   }
   connectionState_: SignalingConnectionState = SignalingConnectionState.NEW;
 
@@ -160,20 +154,19 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
       } else {
         console.debug(`Connect failed, retries in a moment ${e}`)
       }
-      this.connectionState = SignalingConnectionState.DISCONNECTED;
-    }
+      this.waitReconnect();    }
   }
 
   initWebSocket() {
     this.ws.on("close", () => {
       if (this.connectionState === SignalingConnectionState.CONNECTED || this.connectionState === SignalingConnectionState.CONNECTING) {
-        this.connectionState = SignalingConnectionState.DISCONNECTED;
+        this.waitReconnect();
         this.clearReconnectCounterTimeout();
       }
     })
     this.ws.on("error", () => {
       if (this.connectionState === SignalingConnectionState.CONNECTED || this.connectionState === SignalingConnectionState.CONNECTING) {
-        this.connectionState = SignalingConnectionState.DISCONNECTED;
+        this.waitReconnect()
         this.clearReconnectCounterTimeout();
       }
 
@@ -252,7 +245,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
   }
 
   waitReconnect(waitSeconds?: number) {
-    if (this.connectionState !== SignalingConnectionState.DISCONNECTED) {
+    if (this.connectionState !== SignalingConnectionState.CONNECTED && this.connectionState !== SignalingConnectionState.CONNECTING) {
       return;
     }
     this.connectionState = SignalingConnectionState.WAIT_RETRY
