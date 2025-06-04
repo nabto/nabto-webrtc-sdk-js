@@ -66,16 +66,13 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
   private pongCounter: number = 0;
 
   private isConnected: boolean = false;
+  checkAliveTimer: ReturnType<typeof setTimeout> | undefined = undefined;
 
   constructor(private name: string) {
     super()
   }
 
   connect(url: string) {
-    if (this.ws) {
-      this.ws.close();
-      this.ws = undefined;
-    }
     this.ws = new WebSocket(url);
     this.commonConnect(this.ws);
   }
@@ -87,10 +84,12 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
     });
     ws.addEventListener("close", (ev: WebSocket.CloseEvent) => {
       console.log(`Websocket close code: ${ev.code} reason: ${ev.reason}`);
+      this.closeCurrentWebSocket();
       this.emitSync("close", {code: ev.code, reason: ev.reason});
     });
     ws.addEventListener("error", (ev: WebSocket.Event) => {
       console.log(`Websocket error: ${ev.type}`);
+      this.closeCurrentWebSocket();
       this.emitSync("error", new Error(ev.type));
     })
     ws.addEventListener("message", (ev: WebSocket.MessageEvent) => {
@@ -98,11 +97,28 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
     })
   }
 
+  closeCurrentWebSocket() {
+    if (this.ws) {
+      this.closeWebsocket("Closing current websocket.");
+    }
+  }
+
   close() {
-    this.ws?.close();
+    this.closeWebsocket("The application is closing down.");
     this.removeAllListeners();
   }
 
+  closeWebsocket(reason: string) {
+    if (this.checkAliveTimer) {
+      clearTimeout(this.checkAliveTimer);
+      this.checkAliveTimer = undefined;
+    }
+    if (this.ws) {
+      this.ws.close(1000, reason);
+      this.ws = undefined;
+      this.isConnected = false;
+    }
+  }
   public sendMessage(channelId: string, message: JSONValue) {
     const msg: RoutingMessage = { type: RoutingMessageType.MESSAGE, channelId: channelId, message: message }
     this.send(msg);
@@ -137,15 +153,20 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
   }
 
   checkAlive(timeout: number) {
+    // We only allow a single outstanding checkAlive at a time.
+    if (this.checkAliveTimer) {
+      return;
+    }
     /**
      * Send a ping, wait for a pong
      */
     const currentPongCounter = this.pongCounter;
     this.sendPing();
-    setTimeout(() => {
-
+    this.checkAliveTimer = setTimeout(() => {
+      this.checkAliveTimer = undefined;
+      // test that the pong counter has not moved
       if (currentPongCounter == this.pongCounter) {
-        this.emitSync("error", new Error("Ping timeout"));
+        this.emitSync("pingtimeout");
       }
     }, timeout);
   }

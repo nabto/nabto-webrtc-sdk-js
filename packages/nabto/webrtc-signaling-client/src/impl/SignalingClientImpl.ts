@@ -193,6 +193,11 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       e.isRemote = true;
       this.signalingChannel.handleError(e)
     })
+    this.ws.on("pingtimeout", () => {
+      if (this.connectionState === SignalingConnectionState.CONNECTED || this.connectionState === SignalingConnectionState.CONNECTING) {
+        this.ws.closeCurrentWebSocket();
+      }
+    });
   }
 
   handleWsOpened() {
@@ -212,7 +217,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
   }
 
   handleWsClosed(error: Error | WebSocketCloseReason) {
-    if (this.connectionState === SignalingConnectionState.FAILED || this.connectionState === SignalingConnectionState.CLOSED) {
+    if (this.connectionState !== SignalingConnectionState.CONNECTED && this.connectionState !== SignalingConnectionState.CONNECTING) {
       return;
     }
     this.clearReconnectCounterTimeout();
@@ -243,10 +248,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
   }
 
   private waitReconnect() {
-    if (this.connectionState === SignalingConnectionState.FAILED || this.connectionState === SignalingConnectionState.CLOSED) {
-      return;
-    }
-    if (this.connectionState === SignalingConnectionState.WAIT_RETRY) {
+    if (this.connectionState !== SignalingConnectionState.CONNECTING && this.connectionState !== SignalingConnectionState.CONNECTED) {
       return;
     }
     this.connectionState = SignalingConnectionState.WAIT_RETRY;

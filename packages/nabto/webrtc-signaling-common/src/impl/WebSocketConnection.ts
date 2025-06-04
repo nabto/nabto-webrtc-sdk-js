@@ -28,6 +28,12 @@ export interface WebSocketConnectionEventHandlers {
    * this function.
    */
   channelerror: (channelId: string, errorCode: string, errorMessage?: string) => void
+
+  /**
+   * Invoked when we have not received a pong to a ping we have sent to the signaling service.
+   */
+  pingtimeout: () => void;
+
   /**
    * Called when the websocket has been opened.
    */
@@ -42,7 +48,17 @@ export interface WebSocketConnectionEventHandlers {
 
 export interface WebSocketConnection {
 
+  /**
+   * Connect or reconnect a websocket.
+   * @param url  The URL to connect to, this is a url we got from the signaling service.
+   */
   connect(url: string): void;
+
+  /**
+   * Close the current websocket if it exists. This prepares the websocket
+   * connection for a new call to connect.
+   */
+  closeCurrentWebSocket(): void;
 
   /**
    * Call this to close the websocket connection
