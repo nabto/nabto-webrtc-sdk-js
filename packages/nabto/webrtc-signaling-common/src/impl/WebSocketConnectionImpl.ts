@@ -4,6 +4,7 @@ import { z } from "zod";
 import WebSocket from 'isomorphic-ws';
 import { TypedEventEmitter } from "./TypedEventEmitter";
 import { JSONValue, JSONValueSchema } from '../JSONValue'
+import { WebSocketAdapter } from "./WebSocketAdapter";
 
 enum RoutingMessageType {
   MESSAGE = "MESSAGE",
@@ -59,7 +60,7 @@ type RoutingPing = z.infer<typeof RoutingPingSchema>;
 type RoutingPong = z.infer<typeof RoutingPongSchema>;
 
 export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnectionEventHandlers> implements WebSocketConnection {
-  ws?: WebSocket
+  ws?: WebSocketAdapter;
 
   // if oldCounter == currentCounter when testing for a ping timeout there has
   // been a timeout.
@@ -73,48 +74,60 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
   }
 
   connect(url: string) {
-    this.ws = new WebSocket(url);
+    this.ws = new WebSocketAdapter(url);
     this.commonConnect(this.ws);
   }
 
-  commonConnect(ws: WebSocket) {
-    ws.addEventListener("open", (_event: WebSocket.Event) => {
+  commonConnect(ws: WebSocketAdapter) {
+    ws.on("open", () => {
       this.isConnected = true;
       this.emitSync("open");
     });
-    ws.addEventListener("close", (ev: WebSocket.CloseEvent) => {
+    ws.on("close", (ev: WebSocket.CloseEvent) => {
       console.log(`Websocket close code: ${ev.code} reason: ${ev.reason}`);
-      this.closeCurrentWebSocket();
+      this.closeWebsocketInternal();
       this.emitSync("close", {code: ev.code, reason: ev.reason});
     });
-    ws.addEventListener("error", (ev: WebSocket.Event) => {
+    ws.on("error", (ev: WebSocket.Event) => {
       console.log(`Websocket error: ${ev.type}`);
-      this.closeCurrentWebSocket();
+      this.closeWebsocketInternal();
       this.emitSync("error", new Error(ev.type));
     })
-    ws.addEventListener("message", (ev: WebSocket.MessageEvent) => {
+    ws.on("message", (ev: WebSocket.MessageEvent) => {
       this.handleMessage(ev);
     })
   }
 
+  /**
+   * This is called by the application to forcefully close a websocket such that
+   * a new one can be created.
+   */
   closeCurrentWebSocket() {
     if (this.ws) {
-      this.closeWebsocket("Closing current websocket.");
+      // this triggers an on("error",...) event, which we use to create a new websocket
+      this.ws.abort();
     }
   }
 
   close() {
-    this.closeWebsocket("The application is closing down.");
+    if (this.ws) {
+      this.ws.close(1000, "The application is closing down.");
+    }
+    this.closeWebsocketInternal();
     this.removeAllListeners();
   }
 
-  closeWebsocket(reason: string) {
+  /**
+   * This is called from inside this module to cleanup after a websocket has been closed.
+   * @param reason
+   */
+  closeWebsocketInternal() {
     if (this.checkAliveTimer) {
       clearTimeout(this.checkAliveTimer);
       this.checkAliveTimer = undefined;
     }
     if (this.ws) {
-      this.ws.close(1000, reason);
+      this.ws.removeAllListeners();
       this.ws = undefined;
       this.isConnected = false;
     }
