@@ -262,10 +262,11 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     }
 
     const reconnectWait = 1000 * (2 ** this.reconnectCounter)
+    const jitterWaitMilliseconds = Math.random() * reconnectWait;
+
+    console.debug(`Switching to WAIT_RETRY state, waiting ${jitterWaitMilliseconds}ms before reconnecting. Reconnect counter: ${this.reconnectCounter}`);
 
     this.reconnectCounter++;
-
-    const jitterWaitMilliseconds = Math.random() * reconnectWait;
     setTimeout(() => {
       this.reconnect();
     }, jitterWaitMilliseconds)
