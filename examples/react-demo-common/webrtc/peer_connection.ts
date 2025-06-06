@@ -7,6 +7,16 @@ import { SignalingEventHandlerConnection } from '@nabto/webrtc-signaling-util';
 import { SignalingDevice } from '@nabto/webrtc-signaling-device';
 import { ClientMessageTransportSecurityMode, createClientMessageTransport } from '@nabto/webrtc-signaling-util/src/ClientMessageTransport';
 
+import { z } from 'zod';
+
+
+const ChatMessageSchema = z.object({
+    sender: z.string(),
+    text: z.string(),
+});
+
+type ChatMessage = z.infer<typeof ChatMessageSchema>;
+
 export enum PeerConnectionLogLevel {
     NONE = 0,
     ERROR = 1,
@@ -79,22 +89,31 @@ class PeerConnectionImpl implements PeerConnection {
 
     private createDefaultDataChannel() {
         this.dc = this.pc.createDataChannel("default");
-        this.dc.onmessage = (msg) => {
-            if (typeof msg.data === "string") {
-                const parsed = JSON.parse(msg.data);
-                if (typeof parsed.sender === "string" && typeof parsed.text === "string") {
-                    this.onDataChannelMessage?.(parsed.sender, parsed.text);
-                } else {
-                    this.log.e("DataChannel received invalid message", msg.data);
-                }
-            } else {
-                this.log.e("DataChannel received message that was not a string", msg);
+        this.dc.onmessage = (msg: MessageEvent) => {
+            if (typeof msg.data !== "string") {
+                this.handleError(`data channel ${this.dc?.id}`, new Error(`Data channel received message that was not a string`));
+                return;
+            }
+            try {
+                const json = JSON.parse(msg.data);
+                const parsed = ChatMessageSchema.parse(json);
+                this.onDataChannelMessage?.(parsed.sender, parsed.text);
+            } catch (e) {
+                this.handleError(`data channel ${this.dc?.id}`, new Error(`Data channel received message with the wrong format ${JSON.stringify(msg.data)}`));
             }
         }
     }
 
     send(text: string) {
-        this.dc?.send(text);
+        const msg = {
+            sender: this.chatName,
+            text: text,
+        }
+        this.sendChatMessage(msg);
+    }
+
+    sendChatMessage(msg: ChatMessage) {
+        this.dc?.send(JSON.stringify(msg));
     }
 
     addStream(stream: MediaStream) {
@@ -185,16 +204,17 @@ class PeerConnectionImpl implements PeerConnection {
             this.handleError(`data channel ${channel.id}`, event.error);
         }
 
-        channel.onmessage = msg => {
-            if (typeof msg.data === "string") {
-                if (msg.data.startsWith("/")) {
-                    this.handleChatCommand(msg.data);
-                    return;
-                }
-
-                this.onDataChannelMessage?.(this.chatName, msg.data);
-            } else {
+        channel.onmessage = (msg: MessageEvent) => {
+            if (typeof msg.data !== "string") {
                 this.handleError(`data channel ${channel.id}`, new Error(`Data channel received message that was not a string`));
+                return;
+            }
+            try {
+                const json = JSON.parse(msg.data);
+                const parsed = ChatMessageSchema.parse(json)
+                this.onDataChannelMessage?.(parsed.sender, parsed.text);
+            } catch (e) {
+                this.handleError(`data channel ${channel.id}`, new Error(`Data channel received message with the wrong format ${JSON.stringify(msg.data)}`));
             }
         }
     }
