@@ -1,5 +1,5 @@
 import { SignalingChannel, SignalingError, SignalingErrorCodes } from '@nabto/webrtc-signaling-common';
-import { createDeviceMessageTransport, DeviceMessageTransportOptions, DeviceMessageTransportSecurityMode, PerfectNegotiation, SignalingEventHandler } from "@nabto/webrtc-signaling-util";
+import { createDeviceMessageTransport, DeviceConnectionTimeout, DeviceMessageTransportOptions, DeviceMessageTransportSecurityMode, PerfectNegotiation, SignalingEventHandler } from "@nabto/webrtc-signaling-util";
 import { createLogger, Logger } from "../log";
 import { MessageTransport } from '@nabto/webrtc-signaling-util';
 import { SignalingClient } from '@nabto/webrtc-signaling-client';
@@ -59,6 +59,7 @@ class PeerConnectionImpl implements PeerConnection {
 
     private perfectNegotiation?: PerfectNegotiation;
     private signalingEventHandler?: SignalingEventHandler;
+    private deviceConnectionTimeout?: DeviceConnectionTimeout;
 
     constructor(
         private name: string,
@@ -75,6 +76,11 @@ class PeerConnectionImpl implements PeerConnection {
         this.defaultMessageTransport.on("error", (error: Error) => {
             this.handleError("DefaultMessageTransport", error);
         })
+        if (isDevice) {
+            this.deviceConnectionTimeout = new DeviceConnectionTimeout(60000, () => {
+                this.handleError("DeviceConnectionTimeout", new Error("The connection timedout due to inactivity."));
+            });
+        }
     }
 
     private createDefaultDataChannel() {
@@ -120,6 +126,10 @@ class PeerConnectionImpl implements PeerConnection {
         this.pc.onsignalingstatechange = () => this.onRtcSignalingStateChange();
         this.pc.onconnectionstatechange = () => this.onRtcConnectionStateChange();
         this.pc.ondatachannel = event => this.onDataChannel(event);
+
+        if (this.deviceConnectionTimeout) {
+            this.deviceConnectionTimeout.registerRTCPeerConnection(this.pc);
+        }
 
         this.pc.onicecandidateerror = event => {
             if (event.errorCode == 701) {
