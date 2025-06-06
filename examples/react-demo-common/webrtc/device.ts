@@ -114,6 +114,7 @@ class DeviceImpl implements Device {
 
     close() {
         this.connections.forEach(c => c.close());
+        this.connections.clear();
         this.connectionStates.clear();
         this.signaling.close();
         if (this.stream) {
