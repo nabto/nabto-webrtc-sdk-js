@@ -102,7 +102,7 @@ function App() {
         </Collapse>
         <DeviceInfoTable
           signalingServiceState={signalingServiceState}
-          peerConnectionStates={peerConnectionStates.filter(v => v.state != "failed" && v.state != "disconnected")} />
+          peerConnectionStates={peerConnectionStates} />
       </Stack>
     )
   }

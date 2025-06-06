@@ -32,10 +32,11 @@ class DeviceImpl implements Device {
     onSignalingServiceConnectionState: OnConnectionStateChangeCallback | undefined;
     onMessage: MessageCallback | undefined
     onError: onErrorCallback | undefined;
+    private idCounter = 0;
 
     private signaling: SignalingDevice
     private tokenGen: DeviceTokenGenerator
-    private connections: PeerConnection[] = []
+    private connections: Map<string, PeerConnection> = new Map<string, PeerConnection>();
     private connectionStates = new Map<string, RTCPeerConnectionState>();
     private stream?: MediaStream;
 
@@ -58,6 +59,11 @@ class DeviceImpl implements Device {
         this.signaling.start();
     }
 
+    getNextId() {
+        this.idCounter++;
+        return `connection-${this.idCounter}`;
+    }
+
     async onNewSignalingChannel(channel: SignalingChannel, authorized: boolean) {
         // Fail if central auth is required and the channel isnt authorized.
         if (this.settings.requireCentralAuth) {
@@ -72,8 +78,7 @@ class DeviceImpl implements Device {
             console.log(`${id} channel state change to ${channel.channelState}`)
         });
 
-        const index = this.connections.length;
-        const id = `connection-${index}`;
+        const id = this.getNextId();
         const peerConnection = await createPeerConnection({
             name: id,
             signalingDevice: this.signaling,
@@ -95,7 +100,8 @@ class DeviceImpl implements Device {
             });
         });
 
-        for (const pc of this.connections) {
+        const connections = this.connections.values();
+        for (const pc of connections) {
             pc.addStream(this.stream);
         }
 
@@ -108,7 +114,8 @@ class DeviceImpl implements Device {
 
     close() {
         this.connections.forEach(c => c.close());
-        this.connections = [];
+        this.connections.clear();
+        this.connectionStates.clear();
         this.signaling.close();
         if (this.stream) {
             this.stream.getTracks().forEach(track => {
@@ -132,14 +139,25 @@ class DeviceImpl implements Device {
 
         peerConnection.onRtcConnectionState = state => {
             this.connectionStates.set(id, state);
-            const converted = Array.from(this.connectionStates, ([key, value]) => ({
-                name: key,
-                state: value
-            }));
-            this.onPeerConnectionStates?.(converted);
+            this.notifyConnectionStatesChange();
         }
 
-        this.connections.push(peerConnection);
+        peerConnection.onError = (origin, error) => {
+            this.onError?.(origin, error);
+            this.connections.delete(id);
+            this.connectionStates.delete(id);
+            this.notifyConnectionStatesChange();
+        };
+
+        this.connections.set(id, peerConnection);
+    }
+
+    private notifyConnectionStatesChange() {
+        const converted = Array.from(this.connectionStates, ([key, value]) => ({
+            name: key,
+            state: value
+        }));
+        this.onPeerConnectionStates?.(converted);
     }
 }
 
