@@ -61,7 +61,6 @@ type RoutingPong = z.infer<typeof RoutingPongSchema>;
 
 export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnectionEventHandlers> implements WebSocketConnection {
   ws?: WebSocketAdapter;
-  abortSignal?: AbortController;
 
   // if oldCounter == currentCounter when testing for a ping timeout there has
   // been a timeout.
@@ -80,7 +79,6 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
   }
 
   commonConnect(ws: WebSocketAdapter) {
-    this.abortSignal = new AbortController();
     ws.on("open", () => {
       this.isConnected = true;
       this.emitSync("open");
