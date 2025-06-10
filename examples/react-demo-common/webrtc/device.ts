@@ -109,7 +109,7 @@ class DeviceImpl implements Device {
     }
 
     broadcast(sender: string, text: string) {
-        this.connections.forEach(c => c.send(JSON.stringify({ sender, text })));
+        this.connections.forEach(c => c.sendChatMessage({ sender: sender, text: text }));
     }
 
     close() {

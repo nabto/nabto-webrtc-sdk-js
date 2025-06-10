@@ -27,7 +27,7 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
     // Chat state
     const [chatMessages, setChatMessages] = useState<{ sender: string, text: string }[]>([]);
     const chatSend = useCallback((text: string) => {
-        peerConnection.current?.send(text)
+        peerConnection.current?.sendChatMessageFromThisPeer(text)
     }, []);
 
     // Connectivity state
