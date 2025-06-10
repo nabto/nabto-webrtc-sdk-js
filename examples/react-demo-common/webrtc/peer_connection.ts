@@ -32,7 +32,7 @@ export interface PeerConnection {
     onRTCPeerConnectionCreated?: () => void
     onError: ((origin: string, err: Error) => void) | undefined
 
-    sendChatMessageFromThisPeer(sender: string, text: string): void
+    sendChatMessageFromThisPeer(text: string): void
     sendChatMessage(msg: ChatMessage): void
     addStream(stream: MediaStream): void
     close(): void
