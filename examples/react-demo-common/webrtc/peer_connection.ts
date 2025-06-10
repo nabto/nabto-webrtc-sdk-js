@@ -38,13 +38,6 @@ export interface PeerConnection {
     close(): void
 }
 
-function LateInitProxy<T extends object>(): T {
-    const proxy = new Proxy<T>({} as T, {
-        get: () => { throw new Error(`PeerConnection is not properly initialized! did you forget to call the start() method?`) }
-    });
-    return proxy;
-}
-
 function generateName(length: number): string {
     const alphanum = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVXZ';
     const name: string[] = [];
@@ -64,7 +57,7 @@ class PeerConnectionImpl implements PeerConnection {
     onRTCPeerConnectionCreated: (() => void) | undefined;
 
     private log: Logger
-    private pc: RTCPeerConnection;
+    private pc?: RTCPeerConnection;
     private dc?: RTCDataChannel;
     private chatName = generateName(6);
 
@@ -80,7 +73,6 @@ class PeerConnectionImpl implements PeerConnection {
         private isDevice: boolean,
     ) {
         this.log = createLogger(name);
-        this.pc = LateInitProxy<RTCPeerConnection>();
         this.defaultMessageTransport.on("setupdone", async (iceServers?: RTCIceServer[]) => {
             this.setupPeerConnection(iceServers);
         })
@@ -99,8 +91,8 @@ class PeerConnectionImpl implements PeerConnection {
 
     // This data channel is created by the device.
     // When the device receives a message it is broadcast to all the clients.
-    private createDefaultDataChannel() {
-        this.dc = this.pc.createDataChannel("default");
+    private createDefaultDataChannel(pc: RTCPeerConnection) {
+        this.dc = pc.createDataChannel("default");
         this.dc.onmessage = (msg: MessageEvent) => {
             if (typeof msg.data !== "string") {
                 this.handleError(`data channel ${this.dc?.id}`, new Error(`Data channel received message that was not a string`));
@@ -131,9 +123,12 @@ class PeerConnectionImpl implements PeerConnection {
     }
 
     addStream(stream: MediaStream) {
-        stream.getTracks().forEach(t => {
-            this.pc.addTrack(t, stream);
-        });
+        if (this.pc) {
+            const pc = this.pc;
+            stream.getTracks().forEach(t => {
+                pc.addTrack(t, stream);
+            });
+        }
     }
 
     close() {
@@ -141,7 +136,7 @@ class PeerConnectionImpl implements PeerConnection {
         this.signalingChannel.close();
         this.dc?.close();
         this.dc = undefined;
-        this.pc.close();
+        this.pc?.close();
         this.onRtcConnectionStateChange();
         this.onRtcSignalingStateChange();
     }
@@ -168,7 +163,7 @@ class PeerConnectionImpl implements PeerConnection {
         }
 
         if (this.isDevice) {
-            this.createDefaultDataChannel();
+            this.createDefaultDataChannel(this.pc);
         }
         this.onRTCPeerConnectionCreated?.()
     }
@@ -234,13 +229,17 @@ class PeerConnectionImpl implements PeerConnection {
     }
 
     private onRtcSignalingStateChange() {
-        this.log.d(`RTC Signaling state ==> ${this.pc.signalingState}`);
-        this.onRtcSignalingState?.(this.pc.signalingState);
+        if (this.pc) {
+            this.log.d(`RTC Signaling state ==> ${this.pc.signalingState}`);
+            this.onRtcSignalingState?.(this.pc.signalingState);
+        }
     }
 
     private onRtcConnectionStateChange() {
-        this.log.d(`RTC Connection state ==> ${this.pc.connectionState}`);
-        this.onRtcConnectionState?.(this.pc.connectionState);
+        if (this.pc) {
+            this.log.d(`RTC Connection state ==> ${this.pc.connectionState}`);
+            this.onRtcConnectionState?.(this.pc.connectionState);
+        }
     }
 }
 
