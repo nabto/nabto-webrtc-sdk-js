@@ -196,7 +196,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
           connection.handleRoutingMessage(message);
         } else {
           if (!SignalingChannelImpl.isInitialMessage(message)) {
-            throw new SignalingError(SignalingErrorCodes.CHANNEL_NOT_FOUND, `The message with the channelId: ${channelId} is not found in the device.`);
+            throw new SignalingError(SignalingErrorCodes.CHANNEL_NOT_FOUND, `The device received a message with an non existing channelId: ${channelId}. The device has most likely closed the channel.`);
           } else {
             if (!this.onNewSignalingChannel) {
               throw new SignalingError(SignalingErrorCodes.INTERNAL_ERROR, "onNewSignalingChannel should be defined, dropping the channel");
