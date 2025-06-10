@@ -217,6 +217,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
       }
     })
     this.ws.on("open", () => {
+      this.connectionState = SignalingConnectionState.CONNECTED;
       this.setReconnectCounterTimeout();
       this.openedWebSockets++;
       const reconnected = this.openedWebSockets > 1
@@ -226,7 +227,6 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
       this.signalingChannels.forEach((c) => {
         c.handleWebSocketConnect();
       })
-      this.connectionState = SignalingConnectionState.CONNECTED;
     })
     this.ws.on("peerconnected", (channelId: string) => {
       const c = this.signalingChannels.get(channelId);
