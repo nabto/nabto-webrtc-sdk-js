@@ -74,7 +74,7 @@ class PeerConnectionImpl implements PeerConnection {
 
     constructor(
         private name: string,
-        private signaling: SignalingEventHandlerConnection,
+        private signalingClientOrDevice: SignalingEventHandlerConnection,
         private signalingChannel: SignalingChannel,
         private defaultMessageTransport: MessageTransport,
         private isDevice: boolean,
@@ -87,9 +87,12 @@ class PeerConnectionImpl implements PeerConnection {
         this.defaultMessageTransport.on("error", (error: Error) => {
             this.handleError("DefaultMessageTransport", error);
         })
+        this.signalingChannel.on("error", (error: Error) => {
+            this.handleError("SignalingChannel", error);
+        });
         if (isDevice) {
             this.deviceConnectionTimeout = new DeviceConnectionTimeout(60000, () => {
-                this.handleError("DeviceConnectionTimeout", new Error("The connection timedout due to inactivity."));
+                this.handleError("DeviceConnectionTimeout", new Error("The connection timed out due to inactivity."));
             });
         }
     }
@@ -123,8 +126,6 @@ class PeerConnectionImpl implements PeerConnection {
         this.sendChatMessage(msg);
     }
 
-
-
     sendChatMessage(msg: ChatMessage) {
         this.dc?.send(JSON.stringify(msg));
     }
@@ -138,6 +139,7 @@ class PeerConnectionImpl implements PeerConnection {
     close() {
         this.log.d(`Closing peer connection ${this.name}`);
         this.signalingChannel.close();
+        this.dc?.close();
         this.dc = undefined;
         this.pc.close();
         this.onRtcConnectionStateChange();
@@ -148,7 +150,7 @@ class PeerConnectionImpl implements PeerConnection {
         this.pc = new RTCPeerConnection({ iceServers });
         this.pc.ontrack = event => this.onTrack(event);
         this.perfectNegotiation = new PerfectNegotiation(this.pc, this.defaultMessageTransport);
-        this.signalingEventHandler = new SignalingEventHandler(this.pc, this.signaling);
+        this.signalingEventHandler = new SignalingEventHandler(this.pc, this.signalingClientOrDevice);
         this.pc.onsignalingstatechange = () => this.onRtcSignalingStateChange();
         this.pc.onconnectionstatechange = () => this.onRtcConnectionStateChange();
         this.pc.ondatachannel = event => this.onDataChannel(event);
@@ -232,12 +234,12 @@ class PeerConnectionImpl implements PeerConnection {
     }
 
     private onRtcSignalingStateChange() {
-        this.log.d(`Signaling state ==> ${this.pc.signalingState}`);
+        this.log.d(`RTC Signaling state ==> ${this.pc.signalingState}`);
         this.onRtcSignalingState?.(this.pc.signalingState);
     }
 
     private onRtcConnectionStateChange() {
-        this.log.d(`Connection state ==> ${this.pc.connectionState}`);
+        this.log.d(`RTC Connection state ==> ${this.pc.connectionState}`);
         this.onRtcConnectionState?.(this.pc.connectionState);
     }
 }

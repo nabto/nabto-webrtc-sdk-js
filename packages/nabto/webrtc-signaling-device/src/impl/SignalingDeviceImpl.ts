@@ -68,10 +68,11 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
       return;
     }
     this.onNewSignalingChannel = undefined;
-    this.connectionState = SignalingConnectionState.CLOSED
-    this.ws.close();
     this.signalingChannels.forEach((conn, _id) => conn.close());
     this.signalingChannels = new Map()
+    // close the channels before the connection such that we can send CHANNEL_CLOSED messages.
+    this.ws.close();
+    this.connectionState = SignalingConnectionState.CLOSED
     this.removeAllListeners();
   }
 
@@ -81,10 +82,16 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
   }
 
   sendRoutingMessage(channelId: string, message: string) {
+    if (this.connectionState !== SignalingConnectionState.CONNECTED) {
+      return;
+    }
     this.ws.sendMessage(channelId, message);
   }
 
-  async serviceSendError(channelId: string, errorCode: string, errorMessage?: string) : Promise<void> {
+  async serviceSendError(channelId: string, errorCode: string, errorMessage?: string): Promise<void> {
+    if (this.connectionState !== SignalingConnectionState.CONNECTED) {
+      return;
+    }
     this.ws.sendError(channelId, errorCode, errorMessage);
   }
 

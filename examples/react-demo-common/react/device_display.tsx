@@ -18,7 +18,7 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
     const chatSend = useCallback((text: string) => {
         if (device.current) {
             const sender = "DEVICE";
-            device.current.broadcast(sender, text);
+            device.current.broadcastChatMessage(sender, text);
             setChatMessages(s => [...s, { sender, text }]);
         }
     }, [device]);
@@ -54,7 +54,7 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
 
         if (dev) {
             dev.onError = undefined;
-            dev.onMessage = undefined;
+            dev.onChatMessage = undefined;
             dev.close();
             dev.onPeerConnectionStates = undefined;
             dev.onSignalingServiceConnectionState = undefined;
@@ -84,9 +84,10 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
             device.current = dev;
             dev.onPeerConnectionStates = setPeerConnectionStates;
             dev.onSignalingServiceConnectionState = setSignalingServiceState;
-            dev.onMessage = (sender, text) => {
+            dev.onChatMessage = (sender, text) => {
                 setChatMessages(s => [...s, { sender, text }]);
             };
+            // This is called when an error occurs on a specific signaling channel.
             dev.onError = (origin, error) => {
                 pushNotification?.({
                     type: "error",
