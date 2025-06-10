@@ -128,11 +128,13 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     this.reliability.handleConnect();
   }
 
+  // This is called when a Signaling Error is received on the connection to the signaling service, for this channel id.
   handleError(e: Error) {
     if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
       return;
     }
     this.emitSync("error", e)
+    this.channelState = SignalingChannelState.FAILED;
   }
 
   handlePeerConnected() {

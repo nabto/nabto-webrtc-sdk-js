@@ -68,13 +68,30 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
             return;
         }
 
-        const handleError = (err: unknown) => {
-            if (IsError(err)) {
-                stopConnection();
-                pushNotification?.({
-                    msg: err.message,
-                    type: "error"
-                });
+        const handleError = (origin: string, err: unknown) => {
+            stopConnection();
+            if (err instanceof SignalingError && err.errorCode === SignalingErrorCodes.CHANNEL_CLOSED) {
+                // this is expected, do nothing.
+            } else {
+                console.error(`(${origin})`, err)
+                if (IsError(err)) {
+                    if (err instanceof SignalingError) {
+                        switch (err.errorCode) {
+                            case SignalingErrorCodes.CHANNEL_CLOSED: {
+                                return;
+                            }
+                        }
+                    }
+                    pushNotification?.({
+                        msg: `${err} (${origin})`,
+                        type: "error"
+                    });
+                } else {
+                    pushNotification?.({
+                        msg: `An unknown error occurred, see the log for further details (${origin})`,
+                        type: "error"
+                    });
+                }
             }
         };
 
@@ -82,7 +99,6 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
         signalingClient.current = createSignalingClient(settings);
         const client = signalingClient.current;
         const channel = client;
-        const token = settings.requireCentralAuth ? settings.clientAccessToken : undefined;
 
         client.on("connectionstatechange", () => {
             switch (client.connectionState) {
@@ -106,26 +122,6 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
         });
 
         channel.on("channelstatechange", () => setSignalingPeerState(channel.channelState));
-        channel.on("error", (err) => {
-            console.error(err);
-            if (err instanceof SignalingError) {
-                switch (err.errorCode) {
-                    case SignalingErrorCodes.CHANNEL_CLOSED: {
-                        stopConnection();
-                        break;
-                    };
-
-                    case SignalingErrorCodes.VERIFICATION_ERROR: {
-                        pushNotification?.({
-                            msg: "Failed to verify. Incorrect shared secret.",
-                            type: "error"
-                        });
-                        stopConnection();
-                        break;
-                    }
-                }
-            }
-        });
 
         client.start();
         // TODO  setProgressState("connected");
@@ -141,13 +137,10 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
             pc.onMediaStream = setMediaStream;
             pc.onDataChannelMessage = (sender, text) => setChatMessages(s => [...s, { sender, text }]);
             pc.onError = (origin, error) => {
-                pushNotification?.({
-                    type: "error",
-                    msg: `${error} (${origin})`
-                });
+                handleError(origin, error);
             };
             peerConnection.current = pc;
-        }).catch(handleError);
+        }).catch((e) => { handleError("useClientDisplayState", e) });
     }, [progressState, pushNotification, stopConnection]);
 
     return {

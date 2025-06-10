@@ -64,6 +64,10 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.setupWs(this.ws);
   }
   sendRoutingMessage(channelId: string, message: string): void {
+    if (this.connectionState !== SignalingConnectionState.CONNECTED) {
+      // Cannot send message, the connection is not connected.
+      return;
+    }
     this.ws.sendMessage(channelId, message);
   }
   closeSignalingChannel(_channelId: string) {
@@ -93,6 +97,10 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
   }
 
   async serviceSendError(channelId: string, errorCode: string, errorMessage?: string): Promise<void> {
+    if (this.connectionState !== SignalingConnectionState.CONNECTED) {
+      // If the connection is not connected, we cannot send an error.
+      return;
+    }
     this.ws.sendError(channelId, errorCode, errorMessage);
   }
   checkAlive(): void {
@@ -103,8 +111,9 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     if (this.connectionState === SignalingConnectionState.CLOSED) {
       return;
     }
-    this.connectionState = SignalingConnectionState.CLOSED;
+    // This is potentially emitting a CHANNEL_CLOSED error on the connection,
     this.signalingChannel.close();
+    this.connectionState = SignalingConnectionState.CLOSED;
     this.ws.close();
 
     this.removeAllListeners();
@@ -204,7 +213,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     if (this.connectionState === SignalingConnectionState.FAILED || this.connectionState === SignalingConnectionState.CLOSED) {
       return;
     }
-
+    this.connectionState = SignalingConnectionState.CONNECTED;
     this.setReconnectCounterTimeout();
 
     this.openedWebSockets++;
@@ -213,7 +222,6 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       this.emitSync("connectionreconnect");
     }
     this.signalingChannel.handleWebSocketConnect();
-    this.connectionState = SignalingConnectionState.CONNECTED;
   }
 
   handleWsClosed(error: Error | WebSocketCloseReason) {
@@ -273,6 +281,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
   }
 
   private emitError(e: unknown) {
+    this.connectionState = SignalingConnectionState.FAILED;
     if (e instanceof Error) {
       this.emitSync("error", e);
     } else {
