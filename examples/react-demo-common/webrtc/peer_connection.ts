@@ -15,7 +15,7 @@ const ChatMessageSchema = z.object({
     text: z.string(),
 });
 
-type ChatMessage = z.infer<typeof ChatMessageSchema>;
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
 export enum PeerConnectionLogLevel {
     NONE = 0,
@@ -32,7 +32,8 @@ export interface PeerConnection {
     onRTCPeerConnectionCreated?: () => void
     onError: ((origin: string, err: Error) => void) | undefined
 
-    send(text: string): void
+    sendChatMessageFromThisPeer(sender: string, text: string): void
+    sendChatMessage(msg: ChatMessage): void
     addStream(stream: MediaStream): void
     close(): void
 }
@@ -87,6 +88,8 @@ class PeerConnectionImpl implements PeerConnection {
         })
     }
 
+    // This data channel is created by the device.
+    // When the device receives a message it is broadcast to all the clients.
     private createDefaultDataChannel() {
         this.dc = this.pc.createDataChannel("default");
         this.dc.onmessage = (msg: MessageEvent) => {
@@ -104,13 +107,17 @@ class PeerConnectionImpl implements PeerConnection {
         }
     }
 
-    send(text: string) {
+
+
+    sendChatMessageFromThisPeer(text: string) {
         const msg = {
             sender: this.chatName,
             text: text,
         }
         this.sendChatMessage(msg);
     }
+
+
 
     sendChatMessage(msg: ChatMessage) {
         this.dc?.send(JSON.stringify(msg));
@@ -181,6 +188,8 @@ class PeerConnectionImpl implements PeerConnection {
         }
     }
 
+    // The client does not create a data channel but listens for new chat data
+    // channels.
     private onDataChannel(event: RTCDataChannelEvent) {
         const channel = event.channel;
 
