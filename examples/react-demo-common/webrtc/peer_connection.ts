@@ -154,13 +154,6 @@ class PeerConnectionImpl implements PeerConnection {
         this.onRTCPeerConnectionCreated?.()
     }
 
-    private handleChatCommand(command: string) {
-        const subparts = command.split(" ")
-        if (subparts[0] == "/setname" && /^[a-z0-9]+$/i.test(subparts[1])) {
-            this.chatName = subparts[1].substring(0, 6);
-        }
-    }
-
     private handleError(origin: string, error: unknown) {
         this.log.e(origin, JSON.stringify(error));
         if (typeof error === "string") {
