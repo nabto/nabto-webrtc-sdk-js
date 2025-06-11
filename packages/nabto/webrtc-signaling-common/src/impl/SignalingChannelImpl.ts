@@ -81,10 +81,17 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
   }
 
   async sendMessage(message: JSONValue): Promise<void> {
+    if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
+      throw new Error("Cannot send message on a closed or failed channel.");
+    }
     await this.reliability.sendReliableMessage(message);
   }
   async sendError(errorCode: string, errorMessage?: string): Promise<void> {
+    if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
+      return;
+    }
     this.signalingService.serviceSendError(this.getChannelIdInternal(), errorCode, errorMessage);
+    this.channelState = SignalingChannelState.FAILED;
   }
 
   close(): void {
