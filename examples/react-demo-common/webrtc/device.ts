@@ -68,7 +68,9 @@ class DeviceImpl implements Device {
         // Fail if central auth is required and the channel isnt authorized.
         if (this.settings.requireCentralAuth) {
             if (!authorized) {
-                channel.sendError("UNAUTHORIZED", "The device requires central authorization, but the client is not centrally authorized to access the device.");
+                const error = new SignalingError("UNAUTHORIZED", "The device requires central authorization, but the client is not centrally authorized to access the device.");
+                this.onError?.("DeviceImpl", error);
+                channel.sendError(error.errorCode, error.errorMessage);
                 channel.close();
                 return;
             }

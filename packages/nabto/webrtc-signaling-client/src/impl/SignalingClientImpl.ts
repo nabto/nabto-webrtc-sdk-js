@@ -51,7 +51,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       this.emitSync("channelstatechange");
     })
     this.signalingChannel.on("error", (error: Error) => {
-      this.emitError(error);
+      this.emitSignalingChannelError(error);
     })
     this.signalingChannel.on("message", async (message: JSONValue) => {
       const consumers = await this.emit("message", message);
@@ -282,6 +282,14 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
 
   private emitError(e: unknown) {
     this.connectionState = SignalingConnectionState.FAILED;
+    if (e instanceof Error) {
+      this.emitSync("error", e);
+    } else {
+      this.emitSync("error", new Error(JSON.stringify(e)));
+    }
+  }
+  private emitSignalingChannelError(e: unknown) {
+    // This should not change to connection state to failed.
     if (e instanceof Error) {
       this.emitSync("error", e);
     } else {
