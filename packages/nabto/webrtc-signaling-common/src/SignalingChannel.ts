@@ -1,8 +1,9 @@
 import { JSONValue } from "./JSONValue";
 import { SignalingChannelState } from "./SignalingChannelState";
+import { SignalingError } from "./SignalingError";
 
 export interface SignalingChannelEventHandlers {
-  error: (error: Error) => void
+  error: (error: unknown) => void
   message: (message: JSONValue) => Promise<void>
   channelstatechange: () => void
 }
@@ -24,7 +25,7 @@ export interface SignalingChannel {
   * @param errorCode  The error code a string which can be handled programmatically.
   * @param errorMessage  A string which is used to explain the error.
   */
-  sendError(errorCode: string, errorMessage?: string): Promise<void>;
+  sendError(error: SignalingError): Promise<void>;
 
   /**
    * Close the signaling channel
@@ -85,14 +86,14 @@ export interface SignalingChannel {
    * @param target should be "error".
    * @param f the callback function to invoke.
    */
-  on(target: "error", f: (err: Error) => void): void;
+  on(target: "error", f: (err: unknown) => void): void;
 
   /**
    * Remove listener for signaling errors.
    * @param target should be "error".
    * @param f the callback function to remove.
    */
-  off(target: "error", f: (err: Error) => void): void;
+  off(target: "error", f: (err: unknown) => void): void;
 
   /**
    * Return the channelId, this can be used to correlate channels in the client,

@@ -16,7 +16,7 @@ enum State {
 
 interface DeviceMessageTransportImplEventHandlers {
   webrtcsignalingmessage: (message: WebrtcSignalingMessage) => Promise<void>;
-  error: (error: Error) => void;
+  error: (error: unknown) => void;
   setupdone: (iceServers?: RTCIceServer[]) => Promise<void>;
 }
 
@@ -101,14 +101,8 @@ export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageT
   }
 
   async emitError(error: unknown) {
-    if (error instanceof SignalingError) {
-      this.channel.sendError(error.errorCode, error.errorMessage);
-    }
-    if (error instanceof Error) {
-      this.emitSync("error", error);
-    } else {
-      this.emitSync("error", (new Error(JSON.stringify(error))))
-    }
+    this.channel.sendError(SignalingError.fromUnknown(error));
+    this.emitSync("error", error);
   }
 
   async emitSetupDone(iceServers?: RTCIceServer[]) {

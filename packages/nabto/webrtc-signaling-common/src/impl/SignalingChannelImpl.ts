@@ -10,7 +10,7 @@ import { Reliability, ReliabilityMessageSchema, ReliabilityUnion } from './Relia
  * communicates with the signaling service.
  */
 export interface SignalingServiceImpl {
-  serviceSendError(channelId: string, errorCode: string, errorMessage?: string): Promise<void>
+  serviceSendError(channelId: string, error: SignalingError): Promise<void>
   sendRoutingMessage(channelId: string, message: JSONValue): void
   closeSignalingChannel(channelId: string): void
 }
@@ -56,7 +56,7 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
       this.operations.push({ type: OperationType.NEW_CHANNEL, operation: initialOperation })
     }
 
-    this.on("error", (_err: Error) => {
+    this.on("error", (_err: unknown) => {
       this.channelState = SignalingChannelState.FAILED
     })
   }
@@ -86,11 +86,11 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     }
     await this.reliability.sendReliableMessage(message);
   }
-  async sendError(errorCode: string, errorMessage?: string): Promise<void> {
+  async sendError(error: SignalingError): Promise<void> {
     if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
       return;
     }
-    this.signalingService.serviceSendError(this.getChannelIdInternal(), errorCode, errorMessage);
+    this.signalingService.serviceSendError(this.getChannelIdInternal(), error);
     this.channelState = SignalingChannelState.FAILED;
   }
 
@@ -99,7 +99,7 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
       return;
     }
     if (this.channelState !== SignalingChannelState.FAILED) {
-      this.signalingService.serviceSendError(this.getChannelIdInternal(), SignalingErrorCodes.CHANNEL_CLOSED, "The channel has been closed.")
+      this.signalingService.serviceSendError(this.getChannelIdInternal(), new SignalingError(SignalingErrorCodes.CHANNEL_CLOSED, "The channel has been closed."))
     }
     this.operations = [];
     this.channelState = SignalingChannelState.CLOSED;
@@ -170,14 +170,8 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
    * Handle an error which occurs in this component. Such as a decode error.
    */
   handleErrorInThisComponent(error: unknown) {
-    if (error instanceof SignalingError) {
-      this.sendError(error.errorCode, error.errorMessage);
-    }
-    if (error instanceof Error) {
-      this.emitSync("error", error);
-    } else {
-      this.emitSync("error", new Error(JSON.stringify(error)));
-    }
+    this.sendError(SignalingError.fromUnknown(error));
+    this.emitSync("error", error);
   }
 
   static isInitialMessage(message: JSONValue): boolean {

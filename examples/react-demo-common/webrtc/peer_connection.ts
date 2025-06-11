@@ -30,7 +30,7 @@ export interface PeerConnection {
     onDataChannelMessage: ((sender: string, text: string) => void) | undefined
     // Called when the rtc peer connection has been created.
     onRTCPeerConnectionCreated?: () => void
-    onError: ((origin: string, err: Error) => void) | undefined
+    onError: ((origin: string, err: unknown) => void) | undefined
 
     sendChatMessageFromThisPeer(text: string): void
     sendChatMessage(msg: ChatMessage): void
@@ -53,7 +53,7 @@ class PeerConnectionImpl implements PeerConnection {
     onRtcConnectionState: ((state: RTCPeerConnectionState) => void) | undefined;
     onMediaStream: ((state: MediaStream) => void) | undefined;
     onDataChannelMessage: ((sender: string, text: string) => void) | undefined;
-    onError: ((origin: string, err: Error) => void) | undefined;
+    onError: ((origin: string, err: unknown) => void) | undefined;
     onRTCPeerConnectionCreated: (() => void) | undefined;
 
     private log: Logger
@@ -76,10 +76,10 @@ class PeerConnectionImpl implements PeerConnection {
         this.defaultMessageTransport.on("setupdone", async (iceServers?: RTCIceServer[]) => {
             this.setupPeerConnection(iceServers);
         })
-        this.defaultMessageTransport.on("error", (error: Error) => {
+        this.defaultMessageTransport.on("error", (error: unknown) => {
             this.handleError("DefaultMessageTransport", error);
         })
-        this.signalingChannel.on("error", (error: Error) => {
+        this.signalingChannel.on("error", (error: unknown) => {
             this.handleError("SignalingChannel", error);
         });
         if (isDevice) {
@@ -171,13 +171,7 @@ class PeerConnectionImpl implements PeerConnection {
 
     private handleError(origin: string, error: unknown) {
         this.log.e(origin, JSON.stringify(error));
-        if (typeof error === "string") {
-            this.onError?.(origin, new Error(error));
-        } else if (error instanceof Error) {
-            this.onError?.(origin, error);
-        } else {
-            this.onError?.(origin, new Error("Unknown error occurred"));
-        }
+        this.onError?.(origin, error);
     }
 
     // ----------------------------------------------

@@ -1,4 +1,4 @@
-import { SignalingConnectionState, SignalingChannelState, JSONValue } from "@nabto/webrtc-signaling-common";
+import { SignalingConnectionState, SignalingChannelState, JSONValue, SignalingError } from "@nabto/webrtc-signaling-common";
 import { SignalingClientImpl } from "./impl/SignalingClientImpl"
 
 /**
@@ -72,11 +72,9 @@ export interface SignalingClient {
   * Send an error code and message to the other peer. Signaling Errors are
   * always fatal so this call will make the device close its resources.
   *
-  * @param errorCode  The error code a string which can be handled
-  * programmatically.
-  * @param errorMessage  A string which is used to explain the error.
+  * @param error The Signaling error.
   */
-  sendError(errorCode: string, errorMessage?: string): Promise<void>;
+  sendError(error: SignalingError): Promise<void>;
 
   /**
   * Request a list of IceServers from the Signaling service.
@@ -177,14 +175,14 @@ export interface SignalingClient {
    * @param target should be "error".
    * @param f the callback function to invoke.
    */
-  on(target: "error", f: (err: Error) => void): void;
+  on(target: "error", f: (err: unknown) => void): void;
 
   /**
    * Remove listener for signaling errors.
    * @param target should be "error".
    * @param f the callback function to remove.
    */
-  off(target: "error", f: (err: Error) => void): void;
+  off(target: "error", f: (err: unknown) => void): void;
 
   /**
    * The channelId is coming from the Nabto WebRTC Signaling service. When the

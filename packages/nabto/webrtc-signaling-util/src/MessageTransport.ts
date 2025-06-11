@@ -99,7 +99,7 @@ export interface MessageTransport {
    * @param target should be "error".
    * @param f the callback function to invoke.
    */
-  on(target: "error", f: (error: Error) => void): void;
+  on(target: "error", f: (error: unknown) => void): void;
 
 
   /**
@@ -108,7 +108,7 @@ export interface MessageTransport {
    * @param target should be "error".
    * @param f the callback function to remove.
    */
-  off(target: "error", f: (error: Error) => void): void;
+  off(target: "error", f: (error: unknown) => void): void;
 
   /**
    * Add listener for when setup is completed.

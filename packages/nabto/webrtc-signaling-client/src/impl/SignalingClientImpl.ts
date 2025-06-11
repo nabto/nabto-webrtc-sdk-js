@@ -14,7 +14,7 @@ const RECONNECT_COUNTER_RESET_TIMEOUT = 10000;
 
 export interface SignalingClientEventHandlers extends SignalingChannelEventHandlers, SignalingConnectionStateChangesEventHandlers  {
   connectionreconnect: () => void
-  error: (error: Error) => void
+  error: (error: unknown) => void
 }
 
 export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventHandlers> implements SignalingClient, SignalingServiceImpl, SignalingChannel {
@@ -50,7 +50,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.signalingChannel.on("channelstatechange", () => {
       this.emitSync("channelstatechange");
     })
-    this.signalingChannel.on("error", (error: Error) => {
+    this.signalingChannel.on("error", (error: unknown) => {
       this.emitSignalingChannelError(error);
     })
     this.signalingChannel.on("message", async (message: JSONValue) => {
@@ -96,12 +96,12 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     return this.iceApi.requestIceServers(this.options.accessToken);
   }
 
-  async serviceSendError(channelId: string, errorCode: string, errorMessage?: string): Promise<void> {
+  async serviceSendError(channelId: string, error: SignalingError): Promise<void> {
     if (this.connectionState !== SignalingConnectionState.CONNECTED) {
       // If the connection is not connected, we cannot send an error.
       return;
     }
-    this.ws.sendError(channelId, errorCode, errorMessage);
+    this.ws.sendError(channelId, error);
   }
   checkAlive(): void {
     this.ws.checkAlive(CHECK_ALIVE_TIMEOUT)
@@ -282,19 +282,11 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
 
   private emitError(e: unknown) {
     this.connectionState = SignalingConnectionState.FAILED;
-    if (e instanceof Error) {
-      this.emitSync("error", e);
-    } else {
-      this.emitSync("error", new Error(JSON.stringify(e)));
-    }
+    this.emitSync("error", e);
   }
   private emitSignalingChannelError(e: unknown) {
     // This should not change to connection state to failed.
-    if (e instanceof Error) {
-      this.emitSync("error", e);
-    } else {
-      this.emitSync("error", new Error(JSON.stringify(e)));
-    }
+    this.emitSync("error", e);
   }
 
   // Signaling channel impl:
@@ -302,8 +294,8 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     return this.signalingChannel.sendMessage(message);
   }
 
-  sendError(errorCode: string, errorMessage: string) {
-    return this.signalingChannel.sendError(errorCode, errorMessage);
+  sendError(error: SignalingError) {
+    return this.signalingChannel.sendError(error);
   }
 
   get channelState() {

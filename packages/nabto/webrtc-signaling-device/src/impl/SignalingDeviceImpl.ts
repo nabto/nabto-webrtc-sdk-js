@@ -88,11 +88,11 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     this.ws.sendMessage(channelId, message);
   }
 
-  async serviceSendError(channelId: string, errorCode: string, errorMessage?: string): Promise<void> {
+  async serviceSendError(channelId: string, error: SignalingError): Promise<void> {
     if (this.connectionState !== SignalingConnectionState.CONNECTED) {
       return;
     }
-    this.ws.sendError(channelId, errorCode, errorMessage);
+    this.ws.sendError(channelId, error);
   }
 
   checkAlive() {
@@ -210,7 +210,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
         }
       } catch (e) {
         if (e instanceof SignalingError) {
-          this.serviceSendError(channelId, e.errorCode, e.errorMessage);
+          this.serviceSendError(channelId, e);
         } else {
           console.log("onMessage encountered an unhandled error", e);
         }

@@ -3,6 +3,7 @@
  */
 
 import { JSONValue } from "../JSONValue";
+import { SignalingError } from "../SignalingError";
 
 export interface WebSocketCloseReason {
   code: number,
@@ -73,7 +74,7 @@ export interface WebSocketConnection {
   /**
    * Send an error destined for the other peer of the signaling connection
    */
-  sendError(channelId: string, errorCode: string, errorMessage?: string): void
+  sendError(channelId: string, signalingError: SignalingError): void
 
   /**
    * Check if the websocket is still alive by sending an application layer ping.
