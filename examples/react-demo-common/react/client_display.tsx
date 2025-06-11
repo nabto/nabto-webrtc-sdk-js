@@ -75,13 +75,6 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
             } else {
                 console.error(`(${origin})`, err)
                 if (IsError(err)) {
-                    if (err instanceof SignalingError) {
-                        switch (err.errorCode) {
-                            case SignalingErrorCodes.CHANNEL_CLOSED: {
-                                return;
-                            }
-                        }
-                    }
                     pushNotification?.({
                         msg: `${err} (${origin})`,
                         type: "error"

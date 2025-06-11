@@ -139,6 +139,7 @@ class PeerConnectionImpl implements PeerConnection {
         this.pc?.close();
         this.onRtcConnectionStateChange();
         this.onRtcSignalingStateChange();
+        this.deviceConnectionTimeout?.close();
     }
 
     private setupPeerConnection(iceServers?: RTCIceServer[]) {
@@ -174,8 +175,6 @@ class PeerConnectionImpl implements PeerConnection {
             this.onError?.(origin, new Error(error));
         } else if (error instanceof Error) {
             this.onError?.(origin, error);
-        } else if (error instanceof SignalingError) {
-            this.onError?.(origin, new Error(error.errorCode));
         } else {
             this.onError?.(origin, new Error("Unknown error occurred"));
         }
