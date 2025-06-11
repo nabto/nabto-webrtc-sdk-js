@@ -51,6 +51,14 @@ export class SignalingError extends Error {
     super(`Signaling Error. Error Code: (${errorCode})${errorMessage ? ". " + errorMessage : ""}`);
   }
 
+  static fromUnknown(error: unknown): SignalingError {
+    if (error instanceof SignalingError) {
+      return error;
+    } else {
+      return new SignalingError(SignalingErrorCodes.INTERNAL_ERROR, "An internal error occured, check the log for further details.");
+    }
+  }
+
   /**
    * true if the origin of the error is the remote peer of the signaling
    * channel, else it will be false if the SignalingError is created by a local

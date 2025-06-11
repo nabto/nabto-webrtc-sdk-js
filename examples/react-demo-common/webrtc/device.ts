@@ -5,7 +5,7 @@ import { PeerConnection, createPeerConnection } from "./peer_connection";
 type MessageCallback = (sender: string, text: string) => void
 type PeerConnectionStatesCallback = (states: { name: string, state: RTCPeerConnectionState }[]) => void
 type OnConnectionStateChangeCallback = (state: SignalingConnectionState) => void
-type onErrorCallback = (origin: string, error: Error) => void
+type onErrorCallback = (origin: string, error: unknown) => void
 
 export type DeviceSettings = {
     endpointUrl: string;
@@ -70,7 +70,7 @@ class DeviceImpl implements Device {
             if (!authorized) {
                 const error = new SignalingError("UNAUTHORIZED", "The device requires central authorization, but the client is not centrally authorized to access the device.");
                 this.onError?.("DeviceImpl", error);
-                channel.sendError(error.errorCode, error.errorMessage);
+                channel.sendError(error);
                 channel.close();
                 return;
             }

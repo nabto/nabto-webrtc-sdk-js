@@ -5,6 +5,7 @@ import WebSocket from 'isomorphic-ws';
 import { TypedEventEmitter } from "./TypedEventEmitter";
 import { JSONValue, JSONValueSchema } from '../JSONValue'
 import { WebSocketAdapter } from "./WebSocketAdapter";
+import { SignalingError } from "../SignalingError";
 
 enum RoutingMessageType {
   MESSAGE = "MESSAGE",
@@ -137,8 +138,8 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
     this.send(msg);
   }
 
-  public sendError(channelId: string, errorCode: string, errorMessage?: string) {
-    const error: RoutingError = { type: RoutingMessageType.ERROR, channelId: channelId, error: { code: errorCode, message: errorMessage } }
+  public sendError(channelId: string, signalingError: SignalingError) {
+    const error: RoutingError = { type: RoutingMessageType.ERROR, channelId: channelId, error: { code: signalingError.errorCode, message: signalingError.errorMessage } }
     this.send(error);
   }
 
