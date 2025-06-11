@@ -98,8 +98,11 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
     if (this.channelState === SignalingChannelState.CLOSED) {
       return;
     }
+    if (this.channelState !== SignalingChannelState.FAILED) {
+      this.signalingService.serviceSendError(this.getChannelIdInternal(), SignalingErrorCodes.CHANNEL_CLOSED, "The channel has been closed.")
+    }
+    this.operations = [];
     this.channelState = SignalingChannelState.CLOSED;
-    this.signalingService.serviceSendError(this.getChannelIdInternal(), SignalingErrorCodes.CHANNEL_CLOSED, "The channel has been closed.")
     this.signalingService.closeSignalingChannel(this.getChannelIdInternal());
     this.removeAllListeners();
 
@@ -183,6 +186,9 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
   }
 
   async handleOperations() {
+    if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
+      return;
+    }
     if (this.ready) {
       if (this.handlingOperations === false) {
         if (this.operations.length > 0) {
