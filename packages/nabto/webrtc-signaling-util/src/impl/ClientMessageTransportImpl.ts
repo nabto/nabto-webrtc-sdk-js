@@ -1,4 +1,4 @@
-import { JSONValue, SignalingChannel, TypedEventEmitter } from "@nabto/webrtc-signaling-common";
+import { JSONValue, SignalingChannel, SignalingError, SignalingErrorCodes, TypedEventEmitter } from "@nabto/webrtc-signaling-common";
 import { SignalingClient } from "@nabto/webrtc-signaling-client";
 import { DefaultMessageEncoder, SignalingMessage } from "./DefaultMessageEncoder";
 import { ClientMessageTransportOptions, ClientMessageTransportSecurityMode } from "../ClientMessageTransport";
@@ -60,7 +60,7 @@ export class ClientMessageTransportImpl extends TypedEventEmitter<ClientMessageT
       if (message.type === SignalingMessageType.SETUP_RESPONSE) {
         this.emitSetupDone(message.iceServers);
       } else {
-        throw new Error(`Wrong message type, expected a ${SignalingMessageType.SETUP_RESPONSE} but got ${message.type}`);
+        throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, `Wrong message type, expected a ${SignalingMessageType.SETUP_RESPONSE} but got ${message.type}`);
       }
     } else {
       if (message.type === WebrtcSignalingMessageType.CANDIDATE || message.type === WebrtcSignalingMessageType.DESCRIPTION) {
@@ -85,10 +85,13 @@ export class ClientMessageTransportImpl extends TypedEventEmitter<ClientMessageT
   }
 
   async emitError(error: unknown) {
+    if (error instanceof SignalingError) {
+      this.signalingChannel.sendError(error.errorCode, error.errorMessage);
+    }
     if (error instanceof Error) {
-      this.emit("error", error);
+      this.emitSync("error", error);
     } else {
-      this.emit("error", (new Error(JSON.stringify(error))))
+      this.emitSync("error", (new Error(JSON.stringify(error))))
     }
   }
 

@@ -81,10 +81,17 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
   }
 
   async sendMessage(message: JSONValue): Promise<void> {
+    if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
+      throw new Error("Cannot send message on a closed or failed channel.");
+    }
     await this.reliability.sendReliableMessage(message);
   }
   async sendError(errorCode: string, errorMessage?: string): Promise<void> {
+    if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
+      return;
+    }
     this.signalingService.serviceSendError(this.getChannelIdInternal(), errorCode, errorMessage);
+    this.channelState = SignalingChannelState.FAILED;
   }
 
   close(): void {
@@ -109,15 +116,19 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
   }
 
   handleRoutingMessage(message: JSONValue) {
-    if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
-      return;
-    }
+    try {
+      if (this.channelState === SignalingChannelState.CLOSED || this.channelState === SignalingChannelState.FAILED) {
+        return;
+      }
 
-    const parsed = SignalingChannelImpl.parseReliabilityMessage(message);
-    const reliableMessage = this.reliability.handleRoutingMessage(parsed);
-    if (reliableMessage) {
-      this.operations.push({ type: OperationType.MESSAGE, message: reliableMessage })
-      this.handleOperations()
+      const parsed = SignalingChannelImpl.parseReliabilityMessage(message);
+      const reliableMessage = this.reliability.handleRoutingMessage(parsed);
+      if (reliableMessage) {
+        this.operations.push({ type: OperationType.MESSAGE, message: reliableMessage })
+        this.handleOperations()
+      }
+    } catch (e) {
+      this.handleErrorInThisComponent(e);
     }
   }
 
@@ -150,6 +161,20 @@ export class SignalingChannelImpl extends TypedEventEmitter<SignalingChannelEven
       return;
     }
     this.channelState = SignalingChannelState.DISCONNECTED;
+  }
+
+  /**
+   * Handle an error which occurs in this component. Such as a decode error.
+   */
+  handleErrorInThisComponent(error: unknown) {
+    if (error instanceof SignalingError) {
+      this.sendError(error.errorCode, error.errorMessage);
+    }
+    if (error instanceof Error) {
+      this.emitSync("error", error);
+    } else {
+      this.emitSync("error", new Error(JSON.stringify(error)));
+    }
   }
 
   static isInitialMessage(message: JSONValue): boolean {

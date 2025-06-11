@@ -1,4 +1,4 @@
-import { JSONValue, SignalingChannel, TypedEventEmitter } from "@nabto/webrtc-signaling-common";
+import { JSONValue, SignalingChannel, SignalingError, SignalingErrorCodes, TypedEventEmitter } from "@nabto/webrtc-signaling-common";
 import { SignalingDevice } from "@nabto/webrtc-signaling-device";
 import { DefaultMessageEncoder, SignalingMessage } from "./DefaultMessageEncoder";
 import { MessageSigner } from "./MessageSigner";
@@ -57,7 +57,7 @@ export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageT
         // This blocks the recv logic but only on this specific signaling channel
         await this.handleDeviceSetupRequest();
       } else {
-        throw new Error(`Wrong message type, expected a ${SignalingMessageType.SETUP_REQUEST} but got ${message.type}`);
+        throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, `Wrong message type, expected a ${SignalingMessageType.SETUP_REQUEST} but got ${message.type}`);
       }
     } else {
       if (message.type === WebrtcSignalingMessageType.CANDIDATE || message.type === WebrtcSignalingMessageType.DESCRIPTION) {
@@ -77,7 +77,7 @@ export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageT
       const sharedSecret = await this.options.sharedSecretCallback(keyId);
       this.messageSigner = new JWTMessageSigner(sharedSecret, keyId);
     } else {
-      throw new Error("Unknown security mode.")
+      throw new SignalingError(SignalingErrorCodes.INTERNAL_ERROR, "Unknown security mode.")
     }
   }
 
@@ -101,10 +101,13 @@ export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageT
   }
 
   async emitError(error: unknown) {
+    if (error instanceof SignalingError) {
+      this.channel.sendError(error.errorCode, error.errorMessage);
+    }
     if (error instanceof Error) {
-      this.emit("error", error);
+      this.emitSync("error", error);
     } else {
-      this.emit("error", (new Error(JSON.stringify(error))))
+      this.emitSync("error", (new Error(JSON.stringify(error))))
     }
   }
 
