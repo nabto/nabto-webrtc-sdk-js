@@ -7,7 +7,7 @@ const path = require("path");
 const projectRoot = __dirname;
 const monorepoRoot = path.resolve(projectRoot, "../..");
 const monorepoPackages = {
-    "@nabto/signaling": path.resolve(monorepoRoot, "sdk/js"),
+    "@nabto/webrtc-signaling-client": path.resolve(monorepoRoot, "packages/nabto/webrtc-signaling-client"),
     "@nabto/signaling-util": path.resolve(monorepoRoot, "sdk/js-util"),
     "@nabto/react-demo-common": path.resolve(monorepoRoot, "examples/common")
 };
