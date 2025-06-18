@@ -70,6 +70,7 @@ export function useDeviceState(props: DeviceConnectionDisplayProps) {
         }
 
         setProgressState("connecting");
+        setChatMessages([]);
         setCreateDeviceError(undefined);
         setDeviceConnectError(undefined);
         setDeviceError(undefined);

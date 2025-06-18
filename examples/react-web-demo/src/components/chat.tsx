@@ -55,7 +55,7 @@ type ChatBoxProps = {
 }
 
 export default function ChatBox(props: ChatBoxProps) {
-  const ref = useRef<HTMLElement>();
+  const ref = useRef<HTMLDivElement>(null);
 
   /*
   //@TODO: Fix scrolling
@@ -73,9 +73,16 @@ export default function ChatBox(props: ChatBoxProps) {
   }
   */
 
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.scrollTop = ref.current.scrollHeight;
+    }
+  }, [props.messages]);
+
   return (<>
     <Stack>
       <Paper 
+        ref={ref}
         sx={{
           height: "100%",
           width: 400,
@@ -87,7 +94,6 @@ export default function ChatBox(props: ChatBoxProps) {
           {
             props.messages.map((msg, index) => (<ChatMessage key={index} sender={msg.sender}>{msg.text}</ChatMessage>))
           }
-          <Box ref={ref}></Box>
       </Paper>
       <ChatInput onSend={props.onSend}/>
     </Stack>

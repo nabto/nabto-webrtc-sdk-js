@@ -66,6 +66,7 @@ export function useClientState(props: ConnectionDisplayProps) {
 
         // reset state
         setProgressState("connecting");
+        setChatMessages([]);
         setSignalingError(undefined);
         setCreateClientError(undefined);
         setCreatePeerConnectionError(undefined);
