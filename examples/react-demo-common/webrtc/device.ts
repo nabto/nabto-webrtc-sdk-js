@@ -5,7 +5,7 @@ import { PeerConnection, createPeerConnection } from "./peer_connection";
 type MessageCallback = (sender: string, text: string) => void
 type PeerConnectionStatesCallback = (states: { name: string, state: RTCPeerConnectionState }[]) => void
 type OnConnectionStateChangeCallback = (state: SignalingConnectionState) => void
-type onErrorCallback = (origin: string, error: unknown) => void
+type onErrorCallback = (origin: string, error: Error) => void
 
 export type DeviceSettings = {
     endpointUrl: string;

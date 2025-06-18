@@ -56,6 +56,9 @@ type ChatBoxProps = {
 
 export default function ChatBox(props: ChatBoxProps) {
   const ref = useRef<HTMLElement>();
+
+  /*
+  //@TODO: Fix scrolling
   const [scroll, setScroll] = useState(0);
 
   useEffect(() => {
@@ -68,6 +71,7 @@ export default function ChatBox(props: ChatBoxProps) {
     const t = event.currentTarget;
     setScroll(t.scrollHeight - t.offsetHeight - t.scrollTop);
   }
+  */
 
   return (<>
     <Stack>
@@ -79,7 +83,6 @@ export default function ChatBox(props: ChatBoxProps) {
           overflowY: "scroll",
           overflowAnchor: "none"
         }}
-        onScroll={onscroll}
         variant="outlined">
           {
             props.messages.map((msg, index) => (<ChatMessage key={index} sender={msg.sender}>{msg.text}</ChatMessage>))

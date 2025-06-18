@@ -80,6 +80,7 @@ export function useClientState(props: ConnectionDisplayProps) {
         const token = settings.requireCentralAuth ? settings.clientAccessToken : undefined;
 
         client.on("connectionstatechange", () => setSignalingConnectionState(client.connectionState));
+        client.on("channelstatechange", () => setSignalingPeerState(client.channelState));
         client.on("error", err => {
             setSignalingError(undefined);
             if (err instanceof SignalingError) {
