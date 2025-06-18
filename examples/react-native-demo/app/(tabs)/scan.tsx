@@ -1,12 +1,12 @@
 import KeyboardAwareScreen from "@/components/KeyboardAwareScreen";
-import { Text, View, StyleSheet, Dimensions, Platform, SafeAreaView, AppState, StatusBar, LayoutChangeEvent } from "react-native";
+import { Text, View, StyleSheet, Dimensions, Platform, SafeAreaView, AppState, StatusBar, LayoutChangeEvent, Button } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Canvas, DiffRect, rect, rrect, Paragraph, Skia, TextAlign } from "@shopify/react-native-skia";
 import { useRef, useEffect, useLayoutEffect, useState, useMemo } from "react";
 import * as Linking from "expo-linking";
 import { RelativePathString, router } from "expo-router";
 import Constants from "expo-constants";
-import { Button, Colors } from "react-native-ui-lib";
+import { useTranslation } from "react-i18next";
 
 declare module "react-native" {
     interface View {
@@ -14,32 +14,26 @@ declare module "react-native" {
     }
 }
 
+let scanCounter = 0;
+
 function PermissionsPage({ requestPermission }: { requestPermission: () => void }) {
+    const { t } = useTranslation();
+
     return (
         <KeyboardAwareScreen>
             <Text style={{ textAlign: "center", padding: 10 }}>
-                To use scanning functionality, please allow this app to use your camera.
+                {t("scanTab.permissionsInfo")}
             </Text>
             <Button 
-                backgroundColor={Colors.orange30}
-                borderRadius={8}
                 onPress={requestPermission} 
-                label="Grant permission"/>
-        </KeyboardAwareScreen>
-    )
-}
-
-function NoCameraDevicePage() {
-    return (
-        <KeyboardAwareScreen>
-            <Text>
-                This device has no camera.
-            </Text>
+                title={t("scanTab.grantPermission")}/>
         </KeyboardAwareScreen>
     )
 }
 
 function CameraOverlay({width, height, dim, failed}: {width: number, height: number, dim: number, failed: boolean}) {
+    const { t } = useTranslation();
+    
     const w = width;
     const h = height;
     const d = dim;
@@ -61,7 +55,7 @@ function CameraOverlay({width, height, dim, failed}: {width: number, height: num
                 fontSize: 18
             }
         })
-        .addText("Position QR code above")
+        .addText(t("scanTab.scanLabel"))
         .build();
     }, []);
 
@@ -73,7 +67,7 @@ function CameraOverlay({width, height, dim, failed}: {width: number, height: num
                 color: Skia.Color("red")
             }
         })
-        .addText("Invalid QR code")
+        .addText(t("scanTab.scanError"))
         .build();
     }, []);
 
@@ -100,12 +94,12 @@ async function tryParse(data: string): Promise<RelativePathString> {
 
     function validate(id: string) {
         if (!url.queryParams) {
-            throw new Error("Invalid QR code.");
+            return "";
         }
 
         const param = url.queryParams[id];
         if (!param || typeof param != "string") {
-            throw new Error(`QR code does not contain ${id}`);
+            return "";
         }
 
         return param;
@@ -115,7 +109,8 @@ async function tryParse(data: string): Promise<RelativePathString> {
     const productId = validate("productId");
     const sharedSecret = validate("sharedSecret");
 
-    const params = {deviceId, productId, sharedSecret};
+    scanCounter++;
+    const params = {deviceId, productId, sharedSecret, scanCounter};
 
     let result = "";
     for (const [key, value] of Object.entries(params)) {

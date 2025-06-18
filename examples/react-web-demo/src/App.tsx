@@ -4,7 +4,7 @@ import { styled } from '@mui/material/styles';
 import { useState } from 'react';
 import Settings, { SettingsValues } from './components/settings';
 
-import { useClientDisplayState, useDeviceDisplayState } from "@nabto/react-demo-common/state";
+import { useClientState, useDeviceDisplayState } from "@nabto/react-demo-common/state";
 import { ClientInfoTable } from "./components/clientinfo";
 import { useNotificationState } from "./components/notifications";
 import { NotificationStack } from "./components/notification_stack";
@@ -48,7 +48,7 @@ function App() {
   const [clientDisabled, setClientDisabled] = useState(false);
   const [deviceDisabled, setDeviceDisabled] = useState(false);
 
-  const clientState = useClientDisplayState({
+  const clientState = useClientState({
     onProgress: (progress) => setClientDisabled(progress != "disconnected"),
     pushNotification
   });

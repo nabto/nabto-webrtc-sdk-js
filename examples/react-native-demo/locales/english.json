@@ -1,0 +1,44 @@
+{
+    "homeTab": {
+        "title": "Home",
+        "body": {
+            "clientText": "Use the live stream function and fill in a product ID and device ID to connect to a WebRTC-enabled camera that is using Nabto Signaling and display its live feed.",
+            "scanText": "Use the scan function to scan a QR code that has been shared to you to automatically fill in connection details for a camera you wish to connect to.",
+            "moreInfo": "More Information",
+            "moreInfoText": "You may find more information about this app and contact us on [nabto.com](https://www.nabto.com/)"
+        }
+    },
+
+    "clientTab": {
+        "title": "Live Stream",
+        "headerTitle": "Live Stream",
+        "signalingConnectionState": "Signaling service state",
+        "signalingPeerState": "Signaling channel state",
+        "rtcConnectionState": "RTC connection state",
+        "verificationError": "Verification error. Ensure your password is valid.",
+        "streamOffline": "The stream is currently offline."
+    },
+
+    "scanTab": {
+        "title": "Scan",
+        "headerTitle": "Scan",
+        "scanLabel": "Position QR code above",
+        "scanError": "Invalid QR code",
+        "permissionsInfo": "To use scanning functionality, please allow this app to use your camera.",
+        "grantPermission": "Grant permission"
+    },
+
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "disconnect": "Disconnect",
+    "connect": "Connect",
+
+    "titleSignalingError": "Signaling failed",
+    "titleCreateClientError": "Could not start signaling client",
+    "titleCreatePeerConnectionError": "Failed to create peer connection",
+    "titlePeerConnectionError": "RTC peer connection error",
+
+    "productId": "Product ID",
+    "deviceId": "Device ID",
+    "sharedSecret": "Password"
+}
