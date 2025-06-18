@@ -9,7 +9,7 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
       productId: testClient.productId,
       deviceId: testClient.deviceId,
       testId: testClient.testId,
-      endpointUrl: "http://127.0.0.1:13745"
+      endpointUrl: testClient.endpointUrl
     }
   }, {
     body: TestClientOptionsSchema,

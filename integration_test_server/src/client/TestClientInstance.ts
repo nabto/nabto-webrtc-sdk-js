@@ -15,6 +15,7 @@ type Message = Static<typeof messageType>
 export const TestClientOptionsSchema = t.Object({
   failHttp: t.Optional(t.Boolean()),
   failWs: t.Optional(t.Boolean()),
+  endpointUrl: t.Optional(t.String({description: "specify the endpoint url the server returns in the test create response and the websocket url. Format http://<ip>:<port>"})),
   extraClientConnectResponseData: t.Optional(t.Boolean())
 });
 
@@ -28,6 +29,7 @@ class TestClientInstance {
   productId: string = crypto.randomUUID();
   deviceId: string = crypto.randomUUID();
   testId: string = this.productId;
+  endpointUrl: string = "http://127.0.0.1:13745";
 
   device: SimulatedDevice;
 
@@ -37,6 +39,9 @@ class TestClientInstance {
   wsClose?: wsCloseCallback
   constructor(public options: TestClientOptions) {
     this.device = new SimulatedDevice(this.channelId, (msg: Routing) => { this.sendMessage(msg) });
+    if (options.endpointUrl) {
+      this.endpointUrl = options.endpointUrl;
+    }
   }
   clientConnected(wsSender: wsSendMessageCallback, wsClose: wsCloseCallback) {
     this.wsSender = wsSender;
