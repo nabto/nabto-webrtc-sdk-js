@@ -85,9 +85,7 @@ class DeviceImpl implements Device {
             name: id,
             signalingDevice: this.signalingDevice,
             signalingChannel: channel,
-            centralAuth: this.settings.requireCentralAuth,
             sharedSecret: this.settings.sharedSecret,
-            accessToken: await this.tokenGen.generateToken(),
             isDevice: true
         });
 

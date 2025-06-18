@@ -76,9 +76,14 @@ export function useClientState(props: ConnectionDisplayProps) {
         setRtcConnectionState(undefined);
         setMediaStream(undefined);
 
-        signalingClient.current = createSignalingClient(settings);
+        signalingClient.current = createSignalingClient({
+            productId: settings.productId,
+            deviceId: settings.deviceId,
+            accessToken: settings.clientAccessToken,
+            endpointUrl: settings.endpointUrl,
+            requireOnline: settings.requireOnline
+        });
         const client = signalingClient.current;
-        const token = settings.requireCentralAuth ? settings.clientAccessToken : undefined;
 
         client.on("connectionstatechange", () => setSignalingConnectionState(client.connectionState));
         client.on("channelstatechange", () => setSignalingPeerState(client.channelState));
@@ -95,7 +100,6 @@ export function useClientState(props: ConnectionDisplayProps) {
             signalingClient: client,
             signalingChannel: client,
             sharedSecret: settings.sharedSecret,
-            centralAuth: settings.requireCentralAuth,
             isDevice: false
         }).then(pc => {
             setProgressState("connected");

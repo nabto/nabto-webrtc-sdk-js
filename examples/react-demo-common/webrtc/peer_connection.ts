@@ -248,10 +248,8 @@ export type PeerConnectionOptions = {
     signalingClient?: SignalingClient,
     signalingDevice?: SignalingDevice,
     signalingChannel: SignalingChannel,
-    centralAuth: boolean,
     name?: string,
     sharedSecret?: string,
-    accessToken?: string,
     isDevice: boolean,
 };
 

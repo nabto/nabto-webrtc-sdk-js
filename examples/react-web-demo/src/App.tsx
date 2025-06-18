@@ -143,8 +143,6 @@ function App() {
   });
 
   const deviceState = useDeviceState({
-    useAudio: true,
-    useVideo: true,
     onProgress: (progress) => setDeviceDisabled(progress != "disconnected"),
   });
 
