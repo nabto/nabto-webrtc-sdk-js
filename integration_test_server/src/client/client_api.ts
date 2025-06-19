@@ -22,7 +22,7 @@ export const clientHttp = new Elysia()
       console.log("adding extra data")
       extraData = {"extra_field_in_the_response": "for testing"}
     }
-    return { signalingUrl: `ws://127.0.0.1:13745/client-ws/${test.testId}`, deviceOnline: test.isDeviceConnected(), channelId: test.testId, ...extraData }
+    return { signalingUrl: test.endpointUrl.replace("http://", "ws://") + `/client-ws/${test.testId}`, deviceOnline: test.isDeviceConnected(), channelId: test.testId, ...extraData }
   }, {
     body: t.Object({
       deviceId: t.String(),
