@@ -1,10 +1,9 @@
 import ConnectedTvIcon from '@mui/icons-material/ConnectedTv';
 import { Collapse, LinearProgress, CssBaseline, Paper, Stack, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Settings, { SettingsValues } from './components/settings';
-
-import { useClientDisplayState, useDeviceDisplayState } from "@nabto/react-demo-common/state";
+import { ClientState, DeviceState, useClientState, useDeviceState } from "@nabto/react-demo-common/state";
 import { ClientInfoTable } from "./components/clientinfo";
 import { useNotificationState } from "./components/notifications";
 import { NotificationStack } from "./components/notification_stack";
@@ -42,70 +41,110 @@ const MainContainer = styled(Stack)(({ theme }) => ({
   },
 }));
 
+function ClientApp({ clientState }: { clientState: ClientState }) {
+  const {
+    mediaStream,
+    chatSend,
+    chatMessages,
+    progressState,
+
+    // Connection states
+    signalingConnectionState,
+    signalingPeerState,
+    rtcConnectionState,
+    rtcSignalingState,
+
+    // Error states
+    createClientError,
+    createPeerConnectionError,
+    peerConnectionError,
+    signalingError
+  } = clientState;
+
+  const [notifications, pushNotification, clearNotification] = useNotificationState();
+  const pushError = useCallback((err: Error | undefined) => {
+    if (err) {
+      pushNotification({ msg: err.message, type: "error" });
+    }
+  }, [pushNotification]);
+
+  useEffect(() => pushError(createClientError), [pushError, createClientError]);
+  useEffect(() => pushError(createPeerConnectionError), [pushError, createPeerConnectionError]);
+  useEffect(() => pushError(peerConnectionError), [pushError, peerConnectionError]);
+  useEffect(() => pushError(signalingError), [pushError, signalingError]);
+
+  return (
+    <>
+      <NotificationStack clearNotification={clearNotification} notifications={notifications}></NotificationStack>
+      <VideoAndChat mediaStream={mediaStream} onSendChat={chatSend} chatMessages={chatMessages} />
+      <Collapse unmountOnExit in={progressState == "connecting"}>
+        <LinearProgress />
+      </Collapse>
+      <ClientInfoTable
+        signalingServiceState={signalingConnectionState}
+        signalingPeerState={signalingPeerState}
+        rtcConnectionState={rtcConnectionState}
+        rtcSignalingState={rtcSignalingState} />
+    </>
+  );
+}
+
+function DeviceApp({ deviceState }: { deviceState: DeviceState }) {
+  const {
+    mediaStream,
+    chatSend,
+    chatMessages,
+    progressState,
+
+    // Connection states
+    signalingServiceState,
+    peerConnectionStates,
+
+    // Error states
+    createDeviceError,
+    deviceConnectError,
+    userMediaError,
+    deviceError
+  } = deviceState;
+
+  const [notifications, pushNotification, clearNotification] = useNotificationState();
+  const pushError = useCallback((err: Error | undefined) => {
+    if (err) {
+      pushNotification({ msg: err.message, type: "error" });
+    }
+  }, [pushNotification]);
+    
+  useEffect(() => pushError(createDeviceError), [pushError, createDeviceError]);
+  useEffect(() => pushError(deviceConnectError), [pushError, deviceConnectError]);
+  useEffect(() => pushError(userMediaError), [pushError, userMediaError]);
+  useEffect(() => pushError(deviceError), [pushError, deviceError]);
+
+  return (
+    <>
+      <NotificationStack clearNotification={clearNotification} notifications={notifications}></NotificationStack>
+      <VideoAndChat mediaStream={mediaStream} onSendChat={chatSend} chatMessages={chatMessages} />
+      <Collapse unmountOnExit in={progressState == "connecting"}>
+        <LinearProgress />
+      </Collapse>
+      <DeviceInfoTable
+        signalingServiceState={signalingServiceState}
+        peerConnectionStates={peerConnectionStates.filter(v => v.state != "failed" && v.state != "disconnected")} />
+    </>
+  )
+}
+
 function App() {
   const [mode, setMode] = useState<"device" | "client">("client");
-  const [notifications, pushNotification, clearNotification] = useNotificationState();
   const [clientDisabled, setClientDisabled] = useState(false);
   const [deviceDisabled, setDeviceDisabled] = useState(false);
 
-  const clientState = useClientDisplayState({
-    onProgress: (progress) => setClientDisabled(progress != "disconnected"),
-    pushNotification
+  const clientState = useClientState({
+    onProgress: (progress) => setClientDisabled(progress != "disconnected")
   });
 
-  const deviceState = useDeviceDisplayState({
+  const deviceState = useDeviceState({
     onProgress: (progress) => setDeviceDisabled(progress != "disconnected"),
-    pushNotification
   });
-
-  let display: JSX.Element | undefined = undefined;
-  if (mode == "client") {
-    const {
-      mediaStream,
-      chatSend,
-      chatMessages,
-      progressState,
-      signalingConnectionState,
-      signalingPeerState,
-      rtcConnectionState: rtConnectionState,
-      rtcSignalingState: rtcSignalingState,
-    } = clientState;
-    display = (
-      <Stack direction="column" gap={3}>
-        <NotificationStack clearNotification={clearNotification} notifications={notifications}></NotificationStack>
-        <VideoAndChat mediaStream={mediaStream} onSendChat={chatSend} chatMessages={chatMessages} />
-        <Collapse unmountOnExit in={progressState == "connecting"}>
-          <LinearProgress />
-        </Collapse>
-        <ClientInfoTable
-          signalingServiceState={signalingConnectionState}
-          signalingPeerState={signalingPeerState}
-          rtcConnectionState={rtConnectionState}
-          rtcSignalingState={rtcSignalingState} />
-      </Stack>
-    );
-  } else {
-    const {
-      mediaStream,
-      chatSend,
-      chatMessages,
-      progressState,
-      signalingServiceState,
-      peerConnectionStates
-    } = deviceState;
-    display = (
-      <Stack direction="column" gap={3}>
-        <NotificationStack clearNotification={clearNotification} notifications={notifications}></NotificationStack>
-        <VideoAndChat mediaStream={mediaStream} muted={true} onSendChat={chatSend} chatMessages={chatMessages} />
-        <Collapse unmountOnExit in={progressState == "connecting"}>
-          <LinearProgress />
-        </Collapse>
-        <DeviceInfoTable
-          signalingServiceState={signalingServiceState}
-          peerConnectionStates={peerConnectionStates} />
-      </Stack>
-    )
-  }
 
   const handleConnect = async (incomingSettings: SettingsValues) => {
     if (mode == "client") {
@@ -131,12 +170,14 @@ function App() {
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Stack alignItems="center" direction="row" gap={2}>
               <ConnectedTvIcon color="primary" sx={{ fontSize: 48 }} />
-              <Typography component="h1" variant="h4" >Nabto Signaling Demo</Typography>
+              <Typography component="h1" variant="h4" >Nabto WebRTC Demo</Typography>
             </Stack>
           </Stack>
         </CustomPaper>
         <CustomPaper>
-          {display}
+          <Stack direction="column" gap={3}>
+            {mode == "client" ? <ClientApp clientState={clientState} /> : <DeviceApp deviceState={deviceState} />}
+          </Stack>
         </CustomPaper>
         <CustomPaper>
           <Settings onModeChanged={setMode} disabled={mode == "client" ? clientDisabled : deviceDisabled} onDisconnectPressed={handleDisconnect} onConnectPressed={handleConnect} />

@@ -8,17 +8,17 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
     "extra": {
       "appLinksUrl": "applinks.nabto.com",
       "signalingEndpoint": "https://eu.webrtc.nabto.net"
     },
-
     "ios": {
       "supportsTablet": true,
       "bitcode": false,
       "bundleIdentifier": "com.nabto.signaling.application",
-      "associatedDomains": ["applinks:applinks.nabto.com"],
+      "associatedDomains": [
+        "applinks:applinks.nabto.com"
+      ],
       "infoPlist": {
         "LSApplicationCategoryType": "public.utility"
       }
@@ -72,6 +72,14 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#f47b30"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "1.9.25"
+          }
         }
       ]
     ],

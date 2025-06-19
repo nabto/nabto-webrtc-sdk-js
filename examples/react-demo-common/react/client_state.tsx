@@ -1,22 +1,27 @@
-import {
+import { 
     SignalingClient,
     SignalingConnectionState,
     createSignalingClient,
-    SignalingErrorCodes,
     SignalingError
 } from "@nabto/webrtc-signaling-client";
 import { SignalingChannelState } from "@nabto/webrtc-signaling-common";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPeerConnection, PeerConnection } from "../webrtc";
-import { ProgressState, ConnectionDisplayProps, IsError, SettingsValues } from "./shared";
+import { ProgressState, ConnectionDisplayProps, SettingsValues } from "./shared";
 
-export function useClientDisplayState(props: ConnectionDisplayProps) {
-    const { onProgress, pushNotification } = props;
+export type ClientState = ReturnType<typeof useClientState>
+export function useClientState(props: ConnectionDisplayProps) {
+    const { onProgress } = props;
 
     const [rtcConnectionState, setRtcConnectionState] = useState<RTCPeerConnectionState>();
     const [rtcSignalingState, setRtcSignalingState] = useState<RTCSignalingState>();
     const [signalingConnectionState, setSignalingConnectionState] = useState<SignalingConnectionState>();
     const [signalingPeerState, setSignalingPeerState] = useState<SignalingChannelState>();
+
+    const [signalingError, setSignalingError] = useState<SignalingError>();
+    const [createClientError, setCreateClientError] = useState<Error>();
+    const [createPeerConnectionError, setCreatePeerConnectionError] = useState<Error>();
+    const [peerConnectionError, setPeerConnectionError] = useState<Error>();
 
     const signalingClient = useRef<SignalingClient>();
     const peerConnection = useRef<PeerConnection>();
@@ -43,24 +48,15 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
         if (pc) {
             pc.onMediaStream = undefined;
             pc.onDataChannelMessage = undefined;
-            pc.onError = undefined;
             pc.close();
-            pc.onRtcConnectionState = undefined;
-            pc.onRtcSignalingState = undefined;
-
         }
 
         if (client) {
             client.close();
         }
 
-        if (pc || client)
-        {
-            setProgressState("connecting");
-            setTimeout(() => {
-                setProgressState("disconnected");
-            }, 500);
-        }
+        setMediaStream(undefined);
+        setProgressState("disconnected");
     }, []);
 
     const startConnection = useCallback((settings: SettingsValues) => {
@@ -68,83 +64,75 @@ export function useClientDisplayState(props: ConnectionDisplayProps) {
             return;
         }
 
-        const handleError = (origin: string, err: unknown) => {
-            stopConnection();
-            if (err instanceof SignalingError && err.errorCode === SignalingErrorCodes.CHANNEL_CLOSED) {
-                // this is expected, do nothing.
-            } else {
-                console.error(`(${origin})`, err)
-                if (IsError(err)) {
-                    pushNotification?.({
-                        msg: `${err} (${origin})`,
-                        type: "error"
-                    });
-                } else {
-                    pushNotification?.({
-                        msg: `An unknown error occurred, see the log for further details (${origin})`,
-                        type: "error"
-                    });
-                }
-            }
-        };
-
+        // reset state
         setProgressState("connecting");
-        signalingClient.current = createSignalingClient(settings);
+        setChatMessages([]);
+        setSignalingError(undefined);
+        setCreateClientError(undefined);
+        setCreatePeerConnectionError(undefined);
+        setPeerConnectionError(undefined);
+        setSignalingConnectionState(undefined);
+        setSignalingPeerState(undefined);
+        setRtcConnectionState(undefined);
+        setMediaStream(undefined);
+
+        signalingClient.current = createSignalingClient({
+            productId: settings.productId,
+            deviceId: settings.deviceId,
+            accessToken: settings.clientAccessToken,
+            endpointUrl: settings.endpointUrl,
+            requireOnline: settings.requireOnline
+        });
         const client = signalingClient.current;
-        const channel = client;
 
-        client.on("connectionstatechange", () => {
-            switch (client.connectionState) {
-                case SignalingConnectionState.CONNECTED: {
-                    setProgressState("connected");
-                    break;
-                }
-
-                case SignalingConnectionState.CONNECTING: {
-                    setProgressState("connecting");
-                    break;
-                }
-
-                case SignalingConnectionState.FAILED:
-                case SignalingConnectionState.CLOSED: {
-                    setProgressState("disconnected");
-                    break;
-                }
+        client.on("connectionstatechange", () => setSignalingConnectionState(client.connectionState));
+        client.on("channelstatechange", () => setSignalingPeerState(client.channelState));
+        client.on("error", err => {
+            setSignalingError(undefined);
+            if (err instanceof SignalingError) {
+                setSignalingError(err);
+                stopConnection();
             }
-            setSignalingConnectionState(client.connectionState)
         });
 
-        channel.on("channelstatechange", () => setSignalingPeerState(channel.channelState));
-
         client.start();
-        // TODO  setProgressState("connected");
         createPeerConnection({
             signalingClient: client,
-            signalingChannel: channel,
+            signalingChannel: client,
             sharedSecret: settings.sharedSecret,
-            centralAuth: settings.requireCentralAuth,
-            isDevice: false,
+            isDevice: false
         }).then(pc => {
+            setProgressState("connected");
             pc.onRtcConnectionState = setRtcConnectionState;
             pc.onRtcSignalingState = setRtcSignalingState;
             pc.onMediaStream = setMediaStream;
             pc.onDataChannelMessage = (sender, text) => setChatMessages(s => [...s, { sender, text }]);
-            pc.onError = (origin, error) => {
-                handleError(origin, error);
-            };
+            pc.onError = (_, error) => {
+                setPeerConnectionError(undefined);
+                if (error instanceof Error) {
+                    setPeerConnectionError(error);
+                }
+            }
             peerConnection.current = pc;
-        }).catch((e) => { handleError("useClientDisplayState", e) });
-    }, [progressState, pushNotification, stopConnection]);
+        });
+    }, [progressState, stopConnection]);
 
     return {
         mediaStream,
         chatSend,
         chatMessages,
         progressState,
+
         signalingConnectionState,
         signalingPeerState,
-        rtcSignalingState: rtcSignalingState,
-        rtcConnectionState: rtcConnectionState,
+        rtcSignalingState,
+        rtcConnectionState,
+
+        signalingError,
+        createClientError,
+        createPeerConnectionError,
+        peerConnectionError,
+
         startConnection,
         stopConnection
     };

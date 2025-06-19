@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Device, createDevice } from "../webrtc";
-import { ProgressState, IsError, SettingsValues, DeviceConnectionDisplayProps } from "./shared";
+import { ProgressState, SettingsValues, DeviceConnectionDisplayProps } from "./shared";
 
-export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
-    const { onProgress, pushNotification } = props;
+export type DeviceState = ReturnType<typeof useDeviceState>
+export function useDeviceState(props: DeviceConnectionDisplayProps) {
+    const { onProgress } = props;
 
     const [signalingServiceState, setSignalingServiceState] = useState<string>();
     const [peerConnectionStates, setPeerConnectionStates] = useState<{ name: string, state: RTCPeerConnectionState }[]>([])
     const device = useRef<Device>();
+    
+    // error state
+    const [userMediaError, setUserMediaError] = useState<Error>();
+    const [createDeviceError, setCreateDeviceError] = useState<Error>();
+    const [deviceConnectError, setDeviceConnectError] = useState<Error>();
+    const [deviceError, setDeviceError] = useState<Error>();
 
     // media
     const [mediaStream, setMediaStream] = useState<MediaStream>();
@@ -28,6 +35,7 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
     useEffect(() => onProgress(progressState));
 
     const updateUserMedia = useCallback((userMedia: MediaDeviceInfo[], useVideo: boolean, useAudio: boolean) => {
+        setUserMediaError(undefined);
         if (device.current && userMedia.length > 0) {
             const cams = userMedia.filter(d => d.kind == "videoinput");
             const mics = userMedia.filter(d => d.kind == "audioinput");
@@ -38,14 +46,11 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
             .then(setMediaStream)
             .catch(err => {
                 if (err instanceof Error) {
-                    pushNotification?.({
-                        type: "error",
-                        msg: err.message
-                    })
+                    setUserMediaError(err);
                 }
             });
         }
-    }, [pushNotification]);
+    }, []);
 
     const stop = useCallback(() => {
         const dev = device.current;
@@ -53,11 +58,7 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
         setMediaStream(undefined);
 
         if (dev) {
-            dev.onError = undefined;
-            dev.onChatMessage = undefined;
             dev.close();
-            dev.onPeerConnectionStates = undefined;
-            dev.onSignalingServiceConnectionState = undefined;
         }
 
         setProgressState("disconnected");
@@ -68,17 +69,11 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
             return;
         }
 
-        const handleError = (err: unknown) => {
-            if (IsError(err)) {
-                stop();
-                pushNotification?.({
-                    msg: err.message,
-                    type: "error"
-                });
-            }
-        };
-
         setProgressState("connecting");
+        setChatMessages([]);
+        setCreateDeviceError(undefined);
+        setDeviceConnectError(undefined);
+        setDeviceError(undefined);
 
         createDevice(settings).then(dev => {
             device.current = dev;
@@ -87,26 +82,28 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
             dev.onChatMessage = (sender, text) => {
                 setChatMessages(s => [...s, { sender, text }]);
             };
-            // This is called when an error occurs on a specific signaling channel.
-            dev.onError = (origin, error) => {
-                pushNotification?.({
-                    type: "error",
-                    msg: `${error} (${origin})`
-                });
-            }
+            dev.onError = (_, error) => {
+                if (error instanceof Error) {
+                    setDeviceError(error);
+                }
+            };
             setProgressState("connected");
-
             navigator.mediaDevices.enumerateDevices().then(userMedia => {
                 updateUserMedia(userMedia, settings.openVideoStream, settings.openAudioStream);
-            }).catch(handleError);
+            });
 
             navigator.mediaDevices.ondevicechange = () => {
                 navigator.mediaDevices.enumerateDevices().then(userMedia => {
                     updateUserMedia(userMedia, settings.openVideoStream, settings.openAudioStream);
-                }).catch(handleError);
+                });
             }
-        }).catch(handleError);
-    }, [pushNotification, progressState, stop, updateUserMedia]);
+        }).catch(err => {
+            stop();
+            if (err instanceof Error) {
+                setCreateDeviceError(err);
+            }
+        });
+    }, [progressState, stop, updateUserMedia]);
 
     return {
         mediaStream,
@@ -115,6 +112,10 @@ export function useDeviceDisplayState(props: DeviceConnectionDisplayProps) {
         progressState,
         signalingServiceState,
         peerConnectionStates,
+        userMediaError,
+        createDeviceError,
+        deviceConnectError,
+        deviceError,
         start,
         stop
     };

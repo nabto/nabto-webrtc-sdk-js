@@ -323,7 +323,7 @@ export default function Settings(props: SettingsProperties) {
                                 </FormControl>
 
                                 <FormGroup>
-                                    <Stack direction="row">
+                                    <Stack direction="column">
                                         <FormControlLabel
                                             disabled={disabled}
                                             name="openVideoStream"
@@ -338,6 +338,13 @@ export default function Settings(props: SettingsProperties) {
                                             id="openAudioStream"
                                             control={<Checkbox checked={openAudioStream} onChange={e => setOpenAudioStream(e.target.checked)} color="primary" />}
                                             label="Open audio stream" />
+                                        <FormControlLabel
+                                            disabled={disabled}
+                                            name="requireCentralAuth"
+                                            id="requireCentralAuth"
+                                            defaultChecked={false}
+                                            control={<Checkbox checked={requireCentralAuth} onChange={e => setRequireCentralAuth(e.target.checked)} color="primary" />}
+                                            label="Central Authorization" />
                                     </Stack>
                                 </FormGroup>
 
@@ -362,15 +369,6 @@ export default function Settings(props: SettingsProperties) {
                             </>
                         )
                         }
-                        <FormGroup>
-                            <FormControlLabel
-                                disabled={disabled}
-                                name="requireCentralAuth"
-                                id="requireCentralAuth"
-                                defaultChecked={false}
-                                control={<Checkbox checked={requireCentralAuth} onChange={e => setRequireCentralAuth(e.target.checked)} color="primary" />}
-                                label="Central Authorization" />
-                        </FormGroup>
                     </Box>
                 </AccordionDetails>
             </Accordion>

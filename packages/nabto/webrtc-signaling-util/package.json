@@ -11,12 +11,13 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@nabto/webrtc-signaling-common": "workspace:*",
     "@nabto/webrtc-signaling-client": "workspace:*",
+    "@nabto/webrtc-signaling-common": "workspace:*",
     "@nabto/webrtc-signaling-device": "workspace:*",
     "jsrsasign": "^11.1.0",
     "jsrsasign-util": "^1.0.5",
     "typescript": "^5.8.3",
+    "uuid": "^11.1.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -1,0 +1,18 @@
+{
+  "platforms": [
+    "apple",
+    "android",
+    "web"
+  ],
+  "apple": {
+    "modules": [
+      "UniversalLinkSupportModule"
+    ],
+    "appDelegateSubscribers": ["UniversalLinkSupportAppLifecycleDelegate"]
+  },
+  "android": {
+    "modules": [
+      "expo.modules.universallinksupport.UniversalLinkSupportModule"
+    ]
+  }
+}

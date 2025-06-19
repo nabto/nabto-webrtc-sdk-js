@@ -1,20 +1,22 @@
-import { ScrollView, SafeAreaView, Platform, View, Text } from 'react-native';
+import { ScrollView, SafeAreaView, View, Text } from 'react-native';
 import Markdown from "@ronradtke/react-native-markdown-display";
 import { useTheme } from '@react-navigation/native';
-
-const copy = `
-### **Connect**
-Use the connect function and fill in a product ID and device ID to connect to a WebRTC-enabled camera that is using Nabto Signaling.
-
-### **Scan**
-Use the scan function to scan a QR code that has been shared to you to automatically fill in connection details for a camera you wish to connect to.
-
-### **More Information**
-You may find more information about this app and contact us on [docs.nabto.com](https://docs.nabto.com/)
-`
+import { useTranslation } from 'react-i18next';
 
 export default function Tab() {
   const theme = useTheme();
+  const { t } = useTranslation();
+
+  const copy = `
+### **${t("clientTab.title")}**
+${t("homeTab.body.clientText")}
+
+### **${t("scanTab.title")}**
+${t("homeTab.body.scanText")}
+
+### **${t("homeTab.body.moreInfo")}**
+${t("homeTab.body.moreInfoText")}
+`
 
   return (
     <SafeAreaView>

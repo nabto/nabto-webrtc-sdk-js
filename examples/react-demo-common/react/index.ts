@@ -1,3 +1,3 @@
-export * from "./client_display";
-export * from "./device_display";
-export type { ProgressState, SettingsValues, Notification, NotificationType } from "./shared";
+export * from "./client_state";
+export * from "./device_state";
+export type { ProgressState, SettingsValues } from "./shared";
