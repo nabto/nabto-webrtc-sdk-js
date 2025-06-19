@@ -1,8 +1,7 @@
 import KeyboardAwareScreen from "@/components/KeyboardAwareScreen";
 import SettingsInput from "@/components/SettingsInput";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ProgressState, useClientState } from "@nabto/react-demo-common/react";
-import Constants from "expo-constants";
+import { useClientState } from "@nabto/react-demo-common/react";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -88,9 +87,7 @@ export default function Tab() {
   const appState = useRef(AppState.currentState);
   const localSearchParams = useLocalSearchParams<ClientSearchParams>();
   const scanCounter = Number(localSearchParams.scanCounter);
-  const endpointUrl = (Constants.expoConfig?.extra?.endpointUrl as string | undefined) ?? "https://eu.webrtc.nabto.net";
 
-  const [progressState, setProgressState] = useState<ProgressState>("disconnected");
   const [deviceId, setDeviceId] = useState("");
   const [productId, setProductId] = useState("");
   const [sharedSecret, setSharedSecret] = useState("");
@@ -99,18 +96,23 @@ export default function Tab() {
   // Connection state
   const {
     mediaStream,
+    progressState,
     startConnection,
     stopConnection,
-    rtcConnectionState,
-    signalingPeerState,
-    signalingConnectionState,
 
-    signalingError,
+    // Connection states
+    signalingConnectionState,
+    signalingPeerState,
+    rtcConnectionState,
+    rtcSignalingState,
+
+    // Error states
     createClientError,
     createPeerConnectionError,
-    peerConnectionError
+    peerConnectionError,
+    signalingError
   } = useClientState({
-    onProgress: setProgressState
+    onProgress: (progress) => {}
   });
 
   useEffect(() => {
@@ -130,7 +132,7 @@ export default function Tab() {
      deviceId: d,
      productId: p,
      sharedSecret: s,
-     endpointUrl,
+     endpointUrl: `https://${p}.webrtc.nabto.net`,
      privateKey: "",
      openVideoStream: true,
      openAudioStream: true,
@@ -286,6 +288,7 @@ export default function Tab() {
         >
           <View style={{ flex: 1, margin: 8 }}>
             <Button
+              color="orange"
               disabled={progressState != "disconnected"}
               onPress={() => onConnectPressed(deviceId, productId, sharedSecret)}
               title={t("connect")}
@@ -294,6 +297,7 @@ export default function Tab() {
 
           <View style={{ flex: 1, margin: 8 }}>
             <Button
+              color="orange"
               disabled={progressState != "connected"}
               onPress={onDisconnectPressed}
               title={t("disconnect")}
