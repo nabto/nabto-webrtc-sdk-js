@@ -1,5 +1,11 @@
 import { useCallback, useState } from "react";
-import { Notification } from "@nabto/react-demo-common/state";
+
+export type NotificationType = "error" | "info" | "success" | "warning"
+
+export type Notification = {
+    type: NotificationType,
+    msg: string
+};
 
 export function useNotificationState() {
     const [notifications, setNotifications] = useState<(Notification)[]>([]);
