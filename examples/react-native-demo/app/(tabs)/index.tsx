@@ -1,4 +1,4 @@
-import { ScrollView, SafeAreaView, Platform, View, Text } from 'react-native';
+import { ScrollView, SafeAreaView, View, Text } from 'react-native';
 import Markdown from "@ronradtke/react-native-markdown-display";
 import { useTheme } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';

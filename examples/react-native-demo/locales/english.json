@@ -12,9 +12,10 @@
     "clientTab": {
         "title": "Live Stream",
         "headerTitle": "Live Stream",
-        "signalingConnectionState": "Signaling service state",
-        "signalingPeerState": "Signaling channel state",
-        "rtcConnectionState": "RTC connection state",
+        "signalingConnectionState": "Signaling Service Connection State",
+        "signalingPeerState": "Signaling Service Peer State",
+        "rtcConnectionState": "RTC Connection State",
+        "rtcSignalingState": "RTC Signaling State",
         "verificationError": "Verification error. Ensure your password is valid.",
         "streamOffline": "The stream is currently offline."
     },

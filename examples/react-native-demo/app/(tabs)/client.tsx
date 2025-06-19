@@ -3,7 +3,7 @@ import SettingsInput from "@/components/SettingsInput";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useClientState } from "@nabto/react-demo-common/react";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, AppState, Text, Button, View } from "react-native";
 import { Notifier, NotifierComponents } from "react-native-notifier";
@@ -117,17 +117,17 @@ export default function Tab() {
 
   useEffect(() => {
     const listener = AppState.addEventListener("change", nextAppState => {
-      if (appState.current == "active" && nextAppState != "active") {
+      if (appState.current === "active" && nextAppState !== "active") {
         stopConnection();
       }
     });
 
     return () => listener.remove();
-  }, []);
+  }, [stopConnection]);
 
   //////////////////////////////////////////////////////
   // Connect and disconnect button callbacks
-  const onConnectPressed = (d: string, p: string, s: string) => {
+  const onConnectPressed = useCallback((d: string, p: string, s: string) => {
     startConnection({
      deviceId: d,
      productId: p,
@@ -143,10 +143,10 @@ export default function Tab() {
      requireCentralAuth: false
    });
 
-   AsyncStorage.setItem("device-id", deviceId).catch(_ => null);
-   AsyncStorage.setItem("product-id", productId).catch(_ => null);
-   AsyncStorage.setItem("shared-secret", sharedSecret).catch(_ => null);
- }
+   AsyncStorage.setItem("device-id", d).catch(_ => null);
+   AsyncStorage.setItem("product-id", p).catch(_ => null);
+   AsyncStorage.setItem("shared-secret", s).catch(_ => null);
+ }, [startConnection]);
 
   const onDisconnectPressed = () => {
     stopConnection();
@@ -155,7 +155,7 @@ export default function Tab() {
   //////////////////////////////////////////////////////
   // universal link handling
 
-  const tryParseAndConnect = (url: string) => {
+  const tryParseAndConnect = useCallback((url: string) => {
     const parsed = Linking.parse(url)
     const validate = (id: string) => {
       const param = parsed.queryParams?.[id];
@@ -173,7 +173,7 @@ export default function Tab() {
       setSharedSecret(sharedSecret);
       onConnectPressed(deviceId, productId, sharedSecret);
     }
-  };
+  }, [onConnectPressed]);
 
   useEffect(() => {
     Promise.all([
@@ -186,7 +186,7 @@ export default function Tab() {
         tryParseAndConnect(universalLink);
       }
     });
-  }, []);
+  }, [tryParseAndConnect]);
 
   useEffect(() => {
     const eventsub = UniversalLinkSupportModule.addListener("onUniversalLink", params => {
@@ -198,7 +198,7 @@ export default function Tab() {
     return () => {
       eventsub.remove();
     }
-  }, []);
+  }, [tryParseAndConnect]);
 
   useEffect(() => {
     if (scanCounter > 0) {
@@ -210,7 +210,7 @@ export default function Tab() {
         onConnectPressed(localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret);
       }
     }
-  }, [scanCounter])
+  }, [scanCounter, localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret, onConnectPressed])
 
   useEffect(() => {
     if (signalingError || createClientError || createPeerConnectionError || peerConnectionError) {
@@ -237,7 +237,7 @@ export default function Tab() {
     } else {
      Notifier.hideNotification();
     }
-  }, [signalingError, createClientError, createPeerConnectionError, peerConnectionError]);
+  }, [signalingError, createClientError, createPeerConnectionError, peerConnectionError, t]);
 
   return (
     <KeyboardAwareScreen>
@@ -254,8 +254,8 @@ export default function Tab() {
           </RTCView>
 
           {
-            progressState == "connecting" ? <VideoSpinner/> :
-            progressState == "disconnected" ? <VideoDisconnectedLabel/> :
+            progressState === "connecting" ? <VideoSpinner/> :
+            progressState === "disconnected" ? <VideoDisconnectedLabel/> :
             undefined
           }
       </View>
@@ -266,9 +266,10 @@ export default function Tab() {
         paddingEnd: 12,
         marginTop: 12
       }}>
+        <StatusLabel label={t("clientTab.rtcConnectionState")} status={rtcConnectionState?.toUpperCase() ?? "N/A"}/>
+        <StatusLabel label={t("clientTab.rtcSignalingState")} status={rtcSignalingState?.toUpperCase() ?? "N/A"}/>
         <StatusLabel label={t("clientTab.signalingConnectionState")} status={signalingConnectionState?.toUpperCase() ?? "N/A"}/>
         <StatusLabel label={t("clientTab.signalingPeerState")} status={signalingPeerState?.toUpperCase() ?? "N/A"} />
-        <StatusLabel label={t("clientTab.rtcConnectionState")} status={rtcConnectionState?.toUpperCase() ?? "N/A"}/>
 
         <View style={{height: 8}} />
 
@@ -289,7 +290,7 @@ export default function Tab() {
           <View style={{ flex: 1, margin: 8 }}>
             <Button
               color="orange"
-              disabled={progressState != "disconnected"}
+              disabled={progressState !== "disconnected"}
               onPress={() => onConnectPressed(deviceId, productId, sharedSecret)}
               title={t("connect")}
             />
@@ -298,7 +299,7 @@ export default function Tab() {
           <View style={{ flex: 1, margin: 8 }}>
             <Button
               color="orange"
-              disabled={progressState != "connected"}
+              disabled={progressState !== "connected"}
               onPress={onDisconnectPressed}
               title={t("disconnect")}
             />

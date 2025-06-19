@@ -1,12 +1,12 @@
 import KeyboardAwareScreen from "@/components/KeyboardAwareScreen";
-import { Text, View, StyleSheet, Dimensions, Platform, SafeAreaView, AppState, StatusBar, LayoutChangeEvent, Button } from "react-native";
+import { Canvas, DiffRect, Paragraph, rect, rrect, Skia, TextAlign } from "@shopify/react-native-skia";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { Canvas, DiffRect, rect, rrect, Paragraph, Skia, TextAlign } from "@shopify/react-native-skia";
-import { useRef, useEffect, useLayoutEffect, useState, useMemo } from "react";
+import Constants from "expo-constants";
 import * as Linking from "expo-linking";
 import { RelativePathString, router } from "expo-router";
-import Constants from "expo-constants";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button, LayoutChangeEvent, Platform, SafeAreaView, StyleSheet, Text, View } from "react-native";
 
 declare module "react-native" {
     interface View {
@@ -57,7 +57,7 @@ function CameraOverlay({width, height, dim, failed}: {width: number, height: num
         })
         .addText(t("scanTab.scanLabel"))
         .build();
-    }, []);
+    }, [t]);
 
     const failedParagraph = useMemo(() => {
         return Skia.ParagraphBuilder.Make({
@@ -69,11 +69,11 @@ function CameraOverlay({width, height, dim, failed}: {width: number, height: num
         })
         .addText(t("scanTab.scanError"))
         .build();
-    }, []);
+    }, [t]);
 
 
     return (
-        <Canvas style={Platform.OS == "android" ? { flex: 1 } : StyleSheet.absoluteFillObject}>
+        <Canvas style={Platform.OS === "android" ? { flex: 1 } : StyleSheet.absoluteFillObject}>
             <DiffRect outer={outer} inner={inner} opacity={0.6}/>
             <DiffRect outer={borderOuter} inner={inner} color={failed ? "red" : "yellow"}/>
             <Paragraph paragraph={failed ? failedParagraph : paragraph} x={0} y={textPosition} width={width}/>
@@ -88,7 +88,7 @@ async function boundsCheck() {
 async function tryParse(data: string): Promise<RelativePathString> {
     const url = Linking.parse(data);
     const desiredHostname = Constants.expoConfig?.extra?.appLinksUrl;
-    if (desiredHostname && url.hostname != desiredHostname) {
+    if (desiredHostname && url.hostname !== desiredHostname) {
         throw new Error("Invalid URL address in QR code.");
     }
 
