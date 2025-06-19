@@ -8,6 +8,12 @@
         "lint": "pnpm --stream -r run lint",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
+    "private": true,
+    "workspaces": [
+        "packages/nabto/*",
+        "packages/types/*",
+        "examples/*"
+      ],
     "keywords": [],
     "author": "",
     "license": "ISC",
