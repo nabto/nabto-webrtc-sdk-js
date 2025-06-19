@@ -1,10 +1,10 @@
-import { KeyboardEvent, useRef, useState, PropsWithChildren, useEffect, SyntheticEvent } from 'react';
+import { KeyboardEvent, useRef, PropsWithChildren, useEffect } from 'react';
 import Paper from '@mui/material/Paper';
 import InputBase from '@mui/material/InputBase';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
-import { Box, Stack, Typography } from '@mui/material';
+import { Stack, Typography } from '@mui/material';
 
 function ChatInput(props: { onSend?: (text: string) => void }) {
   const ref = useRef<HTMLInputElement>();
@@ -56,22 +56,6 @@ type ChatBoxProps = {
 
 export default function ChatBox(props: ChatBoxProps) {
   const ref = useRef<HTMLDivElement>(null);
-
-  /*
-  //@TODO: Fix scrolling
-  const [scroll, setScroll] = useState(0);
-
-  useEffect(() => {
-    if (scroll < 10) {
-      ref.current?.scrollIntoView();
-    }
-  }, [props.messages, scroll]);
-
-  const onscroll = (event: SyntheticEvent<HTMLDivElement>) => {
-    const t = event.currentTarget;
-    setScroll(t.scrollHeight - t.offsetHeight - t.scrollTop);
-  }
-  */
 
   useEffect(() => {
     if (ref.current) {
