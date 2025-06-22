@@ -37,6 +37,7 @@ class TestClientInstance {
 
   wsSender?: wsSendMessageCallback
   wsClose?: wsCloseCallback
+  activeWebSockets: number = 0;
   constructor(public options: TestClientOptions) {
     this.device = new SimulatedDevice(this.channelId, (msg: Routing) => { this.sendMessage(msg) });
     if (options.endpointUrl) {
@@ -48,6 +49,7 @@ class TestClientInstance {
     this.wsClose = wsClose;
     this.droppingClientMessages = false;
     this.device.handlePeerConnected();
+    this.activeWebSockets++;
   }
 
   async connectDevice() {
@@ -60,6 +62,10 @@ class TestClientInstance {
 
   disconnectDevice() {
     this.device.disconnect();
+  }
+
+  handleWsClose(code: string, reason: string) {
+    this.activeWebSockets--;
   }
 
   async dropDeviceMessages() {
@@ -78,6 +84,12 @@ class TestClientInstance {
 
   async sendNewFieldInKnownMessageType() {
     this.wsSender?.(JSON.stringify({"type": "PEER_CONNECTED", "channelId": "42", "new_field": "data"}))
+  }
+
+  async getActiveWebSockets(): Promise<number> {
+
+    // This is a stub, in a real implementation this would return the number of active WebSocket connections
+    return 1;
   }
 
   sendMessage(msg: Routing) {

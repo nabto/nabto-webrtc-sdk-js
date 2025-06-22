@@ -64,6 +64,13 @@ export const clientWs = new Elysia()
       }
       test.clientConnected((msg: string) => { console.log(`sending ws message ${msg}`); ws.send(msg) }, (errorCode: number, message: string) => { ws.close(errorCode, message) });
     },
+    close(ws, code, reason) {
+      const test = ws.data.testClients.getByTestId(ws.data.params.testId);
+      if (test) {
+        console.log(`WebSocket closed with code ${code} and reason: ${reason}`);
+        test.handleWsClose(code, reason);
+      }
+    },
     message(ws, message) {
       const test = ws.data.testClients.getByTestId(ws.data.params.testId)
       if (test) {

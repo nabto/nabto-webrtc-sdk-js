@@ -189,6 +189,24 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
         404: t.String({ description: "failure" })
       }
     }
+)
+  .post("/:testId/get-active-websockets", async ({ params, testClients, error }) => {
+    const test = testClients.getByTestId(params.testId);
+    if (!test) {
+      return error(404, "No such test id")
+    }
+    const activeWebSockets = await test.getActiveWebSockets();
+    return {activeWebSockets: activeWebSockets}
+  },
+    {
+      body: t.Object({}),
+      response: {
+        200: t.Object({
+          "activeWebSockets": t.Number()
+        }, { description: "success" }),
+        404: t.String({ description: "failure" })
+      }
+    }
   )
   .delete("/:testId", async ({ params, testClients }) => {
     testClients.deleteTest(params.testId);
