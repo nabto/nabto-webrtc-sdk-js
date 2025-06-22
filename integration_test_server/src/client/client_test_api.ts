@@ -174,7 +174,22 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
       }
     }
   )
-
+  .post("/:testId/send-new-field-in-known-message-type", async ({ params, testClients, error }) => {
+    const test = testClients.getByTestId(params.testId);
+    if (!test) {
+      return error(404, "No such test id")
+    }
+    await test.sendNewFieldInKnownMessageType();
+    return {}
+  },
+    {
+      body: t.Object({}),
+      response: {
+        200: t.Object({}, { description: "success" }),
+        404: t.String({ description: "failure" })
+      }
+    }
+  )
   .delete("/:testId", async ({ params, testClients }) => {
     testClients.deleteTest(params.testId);
     return {
