@@ -209,4 +209,13 @@ describe("Signaling channel states", async () => {
     client.close();
     expect(client.channelState).to.be.equal(SignalingChannelState.CLOSED);
   })
+  test("Client connectivity test 9", async () => {
+    client.start();
+    await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
+    await testInstance.dropClientMessages();
+    client.checkAlive();
+    await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED, SignalingConnectionState.WAIT_RETRY, SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
+    const activeWebSockets = await testInstance.getActiveWebSockets();
+    expect(activeWebSockets).toBe(1);
+  })
 })
