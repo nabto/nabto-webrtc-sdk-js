@@ -64,7 +64,7 @@ class TestClientInstance {
     this.device.disconnect();
   }
 
-  handleWsClose(code: string, reason: string) {
+  handleWsClose(code: number, reason: string) {
     this.activeWebSockets--;
   }
 
