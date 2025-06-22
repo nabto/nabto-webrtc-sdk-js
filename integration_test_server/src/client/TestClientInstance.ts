@@ -76,7 +76,12 @@ class TestClientInstance {
     this.wsSender?.(JSON.stringify({"type": "NEW_MESSAGE_TYPE", "new_message_type_field": "data"}))
   }
 
+  async sendNewFieldInKnownMessageType() {
+    this.wsSender?.(JSON.stringify({"type": "PEER_CONNECTED", "channelId": "42", "new_field": "data"}))
+  }
+
   sendMessage(msg: Routing) {
+    console.log("Sending routing message", msg);
     this.wsSender?.(JSON.stringify(msg));
   }
 
