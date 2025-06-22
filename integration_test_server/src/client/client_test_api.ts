@@ -20,9 +20,9 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
           deviceId: t.String(),
           endpointUrl: t.String(),
           testId: t.String()
-        }, { description: "success"}
+        }, { description: "success" }
       ),
-      400: t.String({ description: "failure"})
+      400: t.String({ description: "failure" })
     }
   })
   .post("/:testId/connect-device", async ({ error, params, testClients }) => {
@@ -34,9 +34,9 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
     return {}
   }, {
     response: {
-      200: t.Object({}, { description: "success"}
+      200: t.Object({}, { description: "success" }
       ),
-      404: t.String({ description: "failure"})
+      404: t.String({ description: "failure" })
     }
   })
   .post("/:testId/disconnect-device", async ({ error, params, testClients }) => {
@@ -48,9 +48,9 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
     return {}
   }, {
     response: {
-      200: t.Object({}, { description: "success"}
+      200: t.Object({}, { description: "success" }
       ),
-      404: t.String({ description: "failure"})
+      404: t.String({ description: "failure" })
     }
   })
   .post("/:testId/drop-device-messages", async ({ error, params, testClients }) => {
@@ -62,9 +62,9 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
     return {}
   }, {
     response: {
-      200: t.Object({}, { description: "success"}
+      200: t.Object({}, { description: "success" }
       ),
-      404: t.String({ description: "failure"})
+      404: t.String({ description: "failure" })
     }
   })
   .post("/:testId/disconnect-client", async ({ error, params, testClients }) => {
@@ -76,9 +76,9 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
     return {}
   }, {
     response: {
-      200: t.Object({}, { description: "success"}
+      200: t.Object({}, { description: "success" }
       ),
-      404: t.String({ description: "failure"})
+      404: t.String({ description: "failure" })
     }
   })
   .post("/:testId/drop-client-messages", async ({ error, params, testClients }) => {
@@ -90,9 +90,9 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
     return {}
   }, {
     response: {
-      200: t.Object({}, { description: "success"}
+      200: t.Object({}, { description: "success" }
       ),
-      404: t.String({ description: "failure"})
+      404: t.String({ description: "failure" })
     }
   })
 
@@ -114,9 +114,9 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
       response: {
         200: t.Object({
           messages: t.Optional(t.Array(t.Unknown()))
-        }, { description: "success"}
-      ),
-      404: t.String({ description: "failure"})
+        }, { description: "success" }
+        ),
+        404: t.String({ description: "failure" })
       }
     }
   )
@@ -125,6 +125,7 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
     if (!test) {
       return error(404, "No such test id")
     }
+    console.log(`Sending device messages: ${JSON.stringify(body.messages)}`);
     await test.deviceSendMessages(body.messages);
     return {}
   },
@@ -133,8 +134,8 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
         messages: t.Array(t.Unknown())
       }),
       response: {
-        200: t.Object({}, { description: "success"}),
-        404: t.String({ description: "failure"})
+        200: t.Object({}, { description: "success" }),
+        404: t.String({ description: "failure" })
       }
     }
   )
@@ -152,8 +153,8 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
         errorMessage: t.Optional(t.String()),
       }),
       response: {
-        200: t.Object({}, { description: "success"}),
-        404: t.String({ description: "failure"})
+        200: t.Object({}, { description: "success" }),
+        404: t.String({ description: "failure" })
       }
     }
   )
@@ -165,20 +166,21 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
     await test.sendNewMessageType();
     return {}
   },
-  {
-    body: t.Object({ }),
-    response: {
-      200: t.Object({}, { description: "success"}),
-      404: t.String({ description: "failure"})
+    {
+      body: t.Object({}),
+      response: {
+        200: t.Object({}, { description: "success" }),
+        404: t.String({ description: "failure" })
+      }
     }
-  }
   )
+
   .delete("/:testId", async ({ params, testClients }) => {
     testClients.deleteTest(params.testId);
     return {
     }
   }, {
     response: {
-      200: t.Object({}, { description: "success"})
+      200: t.Object({}, { description: "success" })
     }
   })

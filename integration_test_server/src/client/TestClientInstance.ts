@@ -77,6 +77,7 @@ class TestClientInstance {
   }
 
   sendMessage(msg: Routing) {
+    console.log("Sending routing message", msg);
     this.wsSender?.(JSON.stringify(msg));
   }
 
