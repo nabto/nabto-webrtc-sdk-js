@@ -1,12 +1,12 @@
 import KeyboardAwareScreen from "@/components/KeyboardAwareScreen";
-import { Text, View, StyleSheet, Dimensions, Platform, SafeAreaView, AppState, StatusBar, LayoutChangeEvent } from "react-native";
+import { Canvas, DiffRect, Paragraph, rect, rrect, Skia, TextAlign } from "@shopify/react-native-skia";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { Canvas, DiffRect, rect, rrect, Paragraph, Skia, TextAlign } from "@shopify/react-native-skia";
-import { useRef, useEffect, useLayoutEffect, useState, useMemo } from "react";
+import Constants from "expo-constants";
 import * as Linking from "expo-linking";
 import { RelativePathString, router } from "expo-router";
-import Constants from "expo-constants";
-import { Button, Colors } from "react-native-ui-lib";
+import { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Button, LayoutChangeEvent, Platform, SafeAreaView, StyleSheet, Text, View } from "react-native";
 
 declare module "react-native" {
     interface View {
@@ -14,32 +14,26 @@ declare module "react-native" {
     }
 }
 
+let scanCounter = 0;
+
 function PermissionsPage({ requestPermission }: { requestPermission: () => void }) {
+    const { t } = useTranslation();
+
     return (
         <KeyboardAwareScreen>
             <Text style={{ textAlign: "center", padding: 10 }}>
-                To use scanning functionality, please allow this app to use your camera.
+                {t("scanTab.permissionsInfo")}
             </Text>
             <Button 
-                backgroundColor={Colors.orange30}
-                borderRadius={8}
                 onPress={requestPermission} 
-                label="Grant permission"/>
-        </KeyboardAwareScreen>
-    )
-}
-
-function NoCameraDevicePage() {
-    return (
-        <KeyboardAwareScreen>
-            <Text>
-                This device has no camera.
-            </Text>
+                title={t("scanTab.grantPermission")}/>
         </KeyboardAwareScreen>
     )
 }
 
 function CameraOverlay({width, height, dim, failed}: {width: number, height: number, dim: number, failed: boolean}) {
+    const { t } = useTranslation();
+    
     const w = width;
     const h = height;
     const d = dim;
@@ -61,9 +55,9 @@ function CameraOverlay({width, height, dim, failed}: {width: number, height: num
                 fontSize: 18
             }
         })
-        .addText("Position QR code above")
+        .addText(t("scanTab.scanLabel"))
         .build();
-    }, []);
+    }, [t]);
 
     const failedParagraph = useMemo(() => {
         return Skia.ParagraphBuilder.Make({
@@ -73,13 +67,13 @@ function CameraOverlay({width, height, dim, failed}: {width: number, height: num
                 color: Skia.Color("red")
             }
         })
-        .addText("Invalid QR code")
+        .addText(t("scanTab.scanError"))
         .build();
-    }, []);
+    }, [t]);
 
 
     return (
-        <Canvas style={Platform.OS == "android" ? { flex: 1 } : StyleSheet.absoluteFillObject}>
+        <Canvas style={Platform.OS === "android" ? { flex: 1 } : StyleSheet.absoluteFillObject}>
             <DiffRect outer={outer} inner={inner} opacity={0.6}/>
             <DiffRect outer={borderOuter} inner={inner} color={failed ? "red" : "yellow"}/>
             <Paragraph paragraph={failed ? failedParagraph : paragraph} x={0} y={textPosition} width={width}/>
@@ -94,18 +88,18 @@ async function boundsCheck() {
 async function tryParse(data: string): Promise<RelativePathString> {
     const url = Linking.parse(data);
     const desiredHostname = Constants.expoConfig?.extra?.appLinksUrl;
-    if (desiredHostname && url.hostname != desiredHostname) {
+    if (desiredHostname && url.hostname !== desiredHostname) {
         throw new Error("Invalid URL address in QR code.");
     }
 
     function validate(id: string) {
         if (!url.queryParams) {
-            throw new Error("Invalid QR code.");
+            return "";
         }
 
         const param = url.queryParams[id];
         if (!param || typeof param != "string") {
-            throw new Error(`QR code does not contain ${id}`);
+            return "";
         }
 
         return param;
@@ -115,7 +109,8 @@ async function tryParse(data: string): Promise<RelativePathString> {
     const productId = validate("productId");
     const sharedSecret = validate("sharedSecret");
 
-    const params = {deviceId, productId, sharedSecret};
+    scanCounter++;
+    const params = {deviceId, productId, sharedSecret, scanCounter};
 
     let result = "";
     for (const [key, value] of Object.entries(params)) {

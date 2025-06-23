@@ -1,10 +1,3 @@
-export type NotificationType = "error" | "info" | "success" | "warning"
-
-export type Notification = {
-    type: NotificationType,
-    msg: string
-};
-
 export type SettingsValues = {
     endpointUrl: string;
     productId: string;
@@ -15,6 +8,7 @@ export type SettingsValues = {
     openAudioStream: boolean;
     clientAccessToken: string;
     requireCentralAuth: boolean;
+    requireOnline?: boolean;
 };
 
 export type ProgressState = 
@@ -23,7 +17,6 @@ export type ProgressState =
     | "connected";
 
 export type ConnectionDisplayProps = {
-    pushNotification?: (notification: Notification) => void,
     onProgress: (progress: ProgressState) => void,
 };
 

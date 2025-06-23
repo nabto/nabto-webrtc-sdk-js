@@ -30,7 +30,7 @@ export interface PeerConnection {
     onDataChannelMessage: ((sender: string, text: string) => void) | undefined
     // Called when the rtc peer connection has been created.
     onRTCPeerConnectionCreated?: () => void
-    onError: ((origin: string, err: unknown) => void) | undefined
+    onError: ((origin: string, err: Error) => void) | undefined
 
     sendChatMessageFromThisPeer(text: string): void
     sendChatMessage(msg: ChatMessage): void
@@ -53,7 +53,7 @@ class PeerConnectionImpl implements PeerConnection {
     onRtcConnectionState: ((state: RTCPeerConnectionState) => void) | undefined;
     onMediaStream: ((state: MediaStream) => void) | undefined;
     onDataChannelMessage: ((sender: string, text: string) => void) | undefined;
-    onError: ((origin: string, err: unknown) => void) | undefined;
+    onError: ((origin: string, err: Error) => void) | undefined;
     onRTCPeerConnectionCreated: (() => void) | undefined;
 
     private log: Logger
@@ -170,8 +170,16 @@ class PeerConnectionImpl implements PeerConnection {
     }
 
     private handleError(origin: string, error: unknown) {
-        this.log.e(origin, JSON.stringify(error));
-        this.onError?.(origin, error);
+        //this.log.e(origin, JSON.stringify(error));
+        if (typeof error === "string") {
+            this.onError?.(origin, new Error(error));
+        } else if (error instanceof Error) {
+            this.onError?.(origin, error);
+        } else if (error instanceof SignalingError) {
+            this.onError?.(origin, error);
+        } else {
+            this.onError?.(origin, new Error("Unknown error occurred"));
+        }
     }
 
     // ----------------------------------------------
@@ -240,10 +248,8 @@ export type PeerConnectionOptions = {
     signalingClient?: SignalingClient,
     signalingDevice?: SignalingDevice,
     signalingChannel: SignalingChannel,
-    centralAuth: boolean,
     name?: string,
     sharedSecret?: string,
-    accessToken?: string,
     isDevice: boolean,
 };
 

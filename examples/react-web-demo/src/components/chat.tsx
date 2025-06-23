@@ -1,10 +1,10 @@
-import { KeyboardEvent, useRef, useState, PropsWithChildren, useEffect, SyntheticEvent } from 'react';
+import { KeyboardEvent, useRef, PropsWithChildren, useEffect } from 'react';
 import Paper from '@mui/material/Paper';
 import InputBase from '@mui/material/InputBase';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
-import { Box, Stack, Typography } from '@mui/material';
+import { Stack, Typography } from '@mui/material';
 
 function ChatInput(props: { onSend?: (text: string) => void }) {
   const ref = useRef<HTMLInputElement>();
@@ -55,23 +55,18 @@ type ChatBoxProps = {
 }
 
 export default function ChatBox(props: ChatBoxProps) {
-  const ref = useRef<HTMLElement>();
-  const [scroll, setScroll] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scroll < 10) {
-      ref.current?.scrollIntoView();
+    if (ref.current) {
+      ref.current.scrollTop = ref.current.scrollHeight;
     }
-  }, [props.messages, scroll]);
-
-  const onscroll = (event: SyntheticEvent<HTMLDivElement>) => {
-    const t = event.currentTarget;
-    setScroll(t.scrollHeight - t.offsetHeight - t.scrollTop);
-  }
+  }, [props.messages]);
 
   return (<>
     <Stack>
       <Paper 
+        ref={ref}
         sx={{
           height: "100%",
           width: 400,
@@ -79,12 +74,10 @@ export default function ChatBox(props: ChatBoxProps) {
           overflowY: "scroll",
           overflowAnchor: "none"
         }}
-        onScroll={onscroll}
         variant="outlined">
           {
             props.messages.map((msg, index) => (<ChatMessage key={index} sender={msg.sender}>{msg.text}</ChatMessage>))
           }
-          <Box ref={ref}></Box>
       </Paper>
       <ChatInput onSend={props.onSend}/>
     </Stack>

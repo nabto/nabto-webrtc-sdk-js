@@ -1,7 +1,7 @@
 import { Close } from "@mui/icons-material";
 import { Alert, IconButton } from "@mui/material";
 import { PropsWithChildren } from "react";
-import { Notification, NotificationType } from "@nabto/react-demo-common/state";
+import { Notification, NotificationType } from "./notifications";
 
 type NotificationProps = PropsWithChildren<{
     onClose: () => void,

@@ -1,15 +1,17 @@
 import KeyboardAwareScreen from "@/components/KeyboardAwareScreen";
 import SettingsInput from "@/components/SettingsInput";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Constants from "expo-constants";
-import { useIsFocused } from "@react-navigation/native";
-import { Notification, ProgressState, useClientDisplayState } from "@nabto/react-demo-common/react";
-import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
-import { Button, Colors, View } from "react-native-ui-lib";
+import { useClientState } from "@nabto/react-demo-common/react";
+import { useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import { ActivityIndicator, AppState, Text, Button, View } from "react-native";
+import { Notifier, NotifierComponents } from "react-native-notifier";
 import { RTCView } from "react-native-webrtc";
-import { showMessage, MessageType } from "react-native-flash-message";
-import { ActivityIndicator } from "react-native";
+import { SignalingError, SignalingErrorCodes } from "@nabto/webrtc-signaling-client";
+import AntDesign from "@expo/vector-icons/AntDesign";
+import UniversalLinkSupportModule from "@/modules/universal-link-support/src/UniversalLinkSupportModule";
+import * as Linking from "expo-linking";
 
 declare global {
   interface MediaStream {
@@ -20,123 +22,243 @@ declare global {
 type ClientSearchParams = {
   productId?: string,
   deviceId?: string,
-  sharedSecret?: string
+  sharedSecret?: string,
+  scanCounter?: string
 };
 
-function NotificationTypeToFlashMessageType(notification: Notification): MessageType {
-  switch (notification.type) {
-    case "error": return "danger";
-    case "info": return "info";
-    case "success": return "success";
-    case "warning": return "warning";
-    default: return "default";
+function StatusLabel({label, status}: {label: string, status: string}) {
+  return (
+    <View style={{ flexDirection: "row" }}>
+      <Text style={{flex: 1}}>{label}</Text>
+      <Text>{status}</Text>
+    </View>
+  )
+}
+
+function VideoDisconnectedLabel() {
+  const { t } = useTranslation();
+
+  return (
+    <View style={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      zIndex: 1,
+    }}>
+      <View style={{
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+      }}>
+        <View style={{ backgroundColor: "red", borderRadius: 12, padding: 12, flexDirection: "row" }}>
+          <AntDesign name="disconnect" size={24} />
+          <Text
+            style={{
+              marginStart: 4,
+              color: "black",
+              fontSize: 16,
+              alignSelf: "center"
+            }}
+          >
+            {t("clientTab.streamOffline")}
+          </Text>
+        </View>
+      </View>
+    </View>
+  )
+}
+
+function VideoSpinner() {
+  return (<ActivityIndicator size="large" color="orange" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 2  }}/>);
+}
+
+function SignalingErrorToText(err: SignalingError, t: (s: string) => string): string {
+  switch (err.errorCode) {
+    case SignalingErrorCodes.VERIFICATION_ERROR: return t("clientTab.verificationError");
   }
+  return err.errorMessage ?? err.errorCode;
 }
 
 export default function Tab() {
-  const isFocused = useIsFocused();
-  const params = useLocalSearchParams<ClientSearchParams>();
-  const endpointUrl = (Constants.expoConfig?.extra?.endpointUrl as string | undefined) ?? "https://eu.webrtc.nabto.net";
+  const { t } = useTranslation();
 
-  const [progressState, setProgressState] = useState<ProgressState>("disconnected");
+  const appState = useRef(AppState.currentState);
+  const localSearchParams = useLocalSearchParams<ClientSearchParams>();
+  const scanCounter = Number(localSearchParams.scanCounter);
+  const [prevCounter, setPrevCounter] = useState(0);
+
   const [deviceId, setDeviceId] = useState("");
   const [productId, setProductId] = useState("");
   const [sharedSecret, setSharedSecret] = useState("");
 
+  //////////////////////////////////////////////////////
+  // Connection state
+  const {
+    mediaStream,
+    progressState,
+    startConnection,
+    stopConnection,
+
+    // Connection states
+    signalingConnectionState,
+    signalingPeerState,
+    rtcConnectionState,
+    rtcSignalingState,
+
+    // Error states
+    createClientError,
+    createPeerConnectionError,
+    peerConnectionError,
+    signalingError
+  } = useClientState({
+    onProgress: (progress) => {}
+  });
+
+  useEffect(() => {
+    const listener = AppState.addEventListener("change", nextAppState => {
+      if (appState.current === "active" && nextAppState !== "active") {
+        stopConnection();
+      }
+    });
+
+    return () => listener.remove();
+  }, [stopConnection]);
 
   //////////////////////////////////////////////////////
   // Connect and disconnect button callbacks
-  const onConnectPressed = (d: string, p: string, s: string) => {
-    console.log(deviceId, productId, sharedSecret);
+  const onConnectPressed = useCallback((d: string, p: string, s: string) => {
     startConnection({
      deviceId: d,
      productId: p,
      sharedSecret: s,
-     endpointUrl,
+     endpointUrl: `https://${p}.webrtc.nabto.net`,
      privateKey: "",
      openVideoStream: true,
      openAudioStream: true,
+     requireOnline: true,
 
      // @TODO: Central auth
      clientAccessToken: "",
      requireCentralAuth: false
    });
 
-   AsyncStorage.setItem("device-id", deviceId).catch(_ => null);
-   AsyncStorage.setItem("product-id", productId).catch(_ => null);
-   AsyncStorage.setItem("shared-secret", sharedSecret).catch(_ => null);
- }
+   AsyncStorage.setItem("device-id", d).catch(_ => null);
+   AsyncStorage.setItem("product-id", p).catch(_ => null);
+   AsyncStorage.setItem("shared-secret", s).catch(_ => null);
+ }, [startConnection]);
 
-  const onDisconnectPressed = () => {
+  const onDisconnectPressed = useCallback(() => {
     stopConnection();
-  };
+  }, [stopConnection]);
 
   //////////////////////////////////////////////////////
-  // Hooks for query params (universal/app links)
-  const loadField = (id: string, param: string | undefined, setField: (v: string) => void) => {
-    if (param) {
-      setField(param);
-    } else {
-      AsyncStorage.getItem(id).catch(_ => null).then(s => setField(s ?? ""));
+  // universal link handling
+
+  const tryParseAndConnect = useCallback((url: string) => {
+    const parsed = Linking.parse(url)
+    const validate = (id: string) => {
+      const param = parsed.queryParams?.[id];
+      return (!param || typeof param != "string") ? undefined : param;
     }
-  }
+
+    const deviceId = validate("deviceId");
+    const productId = validate("productId");
+    const sharedSecret = validate("sharedSecret");
+
+
+    if (deviceId && productId && sharedSecret) {
+      setDeviceId(deviceId);
+      setProductId(productId);
+      setSharedSecret(sharedSecret);
+      onConnectPressed(deviceId, productId, sharedSecret);
+    }
+  }, [onConnectPressed]);
 
   useEffect(() => {
-    loadField("device-id", params.deviceId, setDeviceId);
-    loadField("product-id", params.productId, setProductId);
-    loadField("shared-secret", params.sharedSecret, setSharedSecret);
-  }, [isFocused, params.deviceId, params.productId, params.sharedSecret]);
-
-  useEffect(() => {
-    if (params.deviceId && params.productId && params.sharedSecret) {
-      onConnectPressed(params.deviceId, params.productId, params.sharedSecret);
-    }
-  }, [params.deviceId, params.productId, params.sharedSecret]);
-
-  //////////////////////////////////////////////////////
-  // Notifications
-  const pushNotification = useCallback((notification: Notification) => {
-    showMessage({
-      message: notification.msg,
-      type: NotificationTypeToFlashMessageType(notification),
-      duration: 5000
+    Promise.all([
+      AsyncStorage.getItem("device-id").catch(_ => "").then(s => setDeviceId(s ?? "")),
+      AsyncStorage.getItem("product-id").catch(_ => "").then(s => setProductId(s ?? "")),
+      AsyncStorage.getItem("shared-secret").catch(_ => "").then(s => setSharedSecret(s ?? ""))
+    ]).then(() => {
+      const universalLink = UniversalLinkSupportModule.getInitialUniversalLink()
+      if (universalLink) {
+        tryParseAndConnect(universalLink);
+      }
     });
-  }, []);
+  }, [tryParseAndConnect]);
 
   useEffect(() => {
-    if (progressState == "connected") {
-      showMessage({
-        message: "Connected.",
-        type: "success"
-      });
-    }
-  }, [progressState])
+    const eventsub = UniversalLinkSupportModule.addListener("onUniversalLink", params => {
+      if (params.data) {
+        tryParseAndConnect(params.data);
+      }
+    });
 
-  //////////////////////////////////////////////////////
-  // Connection state
-  const { mediaStream, startConnection, stopConnection } = useClientDisplayState({
-    onProgress: setProgressState,
-    pushNotification
-  });
+    return () => {
+      eventsub.remove();
+    }
+  }, [tryParseAndConnect]);
+
+  useEffect(() => {
+    if (scanCounter > 0 && scanCounter !== prevCounter) {
+      setPrevCounter(scanCounter);
+      if (localSearchParams.deviceId && localSearchParams.productId && localSearchParams.sharedSecret) {
+        setDeviceId(localSearchParams.deviceId);
+        setProductId(localSearchParams.productId);
+        setSharedSecret(localSearchParams.sharedSecret);
+  
+        onConnectPressed(localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret);
+      }
+    }
+  }, [scanCounter, prevCounter, localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret, onConnectPressed])
+
+  useEffect(() => {
+    if (signalingError || createClientError || createPeerConnectionError || peerConnectionError) {
+      const title =
+        signalingError ? "Signaling failed" :
+        createClientError ? "Could not start signaling client" :
+        createPeerConnectionError ? "Failed to create Peer Connection" :
+        peerConnectionError ? "RTC Peer Connection Error" : undefined;
+      const description =
+        signalingError ? SignalingErrorToText(signalingError, t) :
+        createClientError?.message ??
+        createPeerConnectionError?.message ??
+        peerConnectionError?.message ??
+        undefined;
+      Notifier.showNotification({
+        title,
+        description,
+        duration: 0,
+        Component: NotifierComponents.Alert,
+        componentProps: {
+          alertType: "error"
+        }
+      })
+    } else {
+     Notifier.hideNotification();
+    }
+  }, [signalingError, createClientError, createPeerConnectionError, peerConnectionError, t]);
 
   return (
     <KeyboardAwareScreen>
       <View style={{
         width: "100%",
-        height: 250,
-        overflow: "hidden",
-        backgroundColor: "black"
+        height: 250
       }}>
         <RTCView
           objectFit="cover"
           streamURL={mediaStream?.toURL()}
           style={{
             flex: 1
-          }} />
+          }}>
+          </RTCView>
 
-          {progressState == "connecting" ?
-            <ActivityIndicator size="large" color="orange" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 2  }}/>
-            : undefined
+          {
+            progressState === "connecting" ? <VideoSpinner/> :
+            progressState === "disconnected" ? <VideoDisconnectedLabel/> :
+            undefined
           }
       </View>
 
@@ -144,12 +266,20 @@ export default function Tab() {
         width: "100%",
         paddingStart: 12,
         paddingEnd: 12,
-        marginTop: 24
+        marginTop: 12
       }}>
+        <StatusLabel label={t("clientTab.rtcConnectionState")} status={rtcConnectionState?.toUpperCase() ?? "N/A"}/>
+        <StatusLabel label={t("clientTab.rtcSignalingState")} status={rtcSignalingState?.toUpperCase() ?? "N/A"}/>
+        <StatusLabel label={t("clientTab.signalingConnectionState")} status={signalingConnectionState?.toUpperCase() ?? "N/A"}/>
+        <StatusLabel label={t("clientTab.signalingPeerState")} status={signalingPeerState?.toUpperCase() ?? "N/A"} />
 
-        <SettingsInput value={productId} onChangeText={setProductId} label="Product ID" />
-        <SettingsInput value={deviceId} onChangeText={setDeviceId} label="Device ID" />
-        <SettingsInput value={sharedSecret} onChangeText={setSharedSecret} label="Shared secret" />
+        <View style={{height: 8}} />
+
+        <View style={{ gap: 8 }}>
+          <SettingsInput value={productId} onChangeText={setProductId} label={t("productId")}/>
+          <SettingsInput value={deviceId} onChangeText={setDeviceId} label={"hallo"} />
+          <SettingsInput value={sharedSecret} onChangeText={setSharedSecret} label={t("sharedSecret")} />
+        </View>
 
         <View
           style={{
@@ -161,21 +291,19 @@ export default function Tab() {
         >
           <View style={{ flex: 1, margin: 8 }}>
             <Button
-              disabled={progressState != "disconnected"}
+              color="orange"
+              disabled={progressState !== "disconnected"}
               onPress={() => onConnectPressed(deviceId, productId, sharedSecret)}
-              label="Connect"
-              backgroundColor={Colors.orange30}
-              borderRadius={8}
+              title={t("connect")}
             />
           </View>
 
           <View style={{ flex: 1, margin: 8 }}>
             <Button
-              disabled={progressState != "connected"}
+              color="orange"
+              disabled={progressState !== "connected"}
               onPress={onDisconnectPressed}
-              label="Disconnect"
-              backgroundColor={Colors.red30}
-              borderRadius={8}
+              title={t("disconnect")}
             />
           </View>
         </View>

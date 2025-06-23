@@ -1,6 +1,7 @@
 import * as rs from "jsrsasign";
 import { JWTHeader, JWTClaims, MessageSigner, JWTClaimsSchema, ProtocolSigningMessageTypes, ProtocolSigningMessage, ProtocolSigningMessageSchema, JWTHeaderSchema } from './MessageSigner';
 import { JSONValue, SignalingError, SignalingErrorCodes } from "@nabto/webrtc-signaling-common";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Takes in a message and signs or verifies it.
@@ -21,7 +22,7 @@ export class JWTMessageSigner implements MessageSigner {
   /**
    * Nonces are used to ensure the messages are replay protected in this sesison.
    */
-  myNonce: string = crypto.randomUUID()
+  myNonce: string = uuidv4();
   remoteNonce?: string
 
   /**
