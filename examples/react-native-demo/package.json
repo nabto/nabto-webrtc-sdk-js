@@ -14,6 +14,11 @@
     "preset": "jest-expo"
   },
   "private": true,
+  "workspaces": [
+      "../../packages/nabto/*",
+      "../../packages/types/*",
+      "../react-demo-common"
+    ],
   "dependencies": {
     "@config-plugins/react-native-webrtc": "^10.0.0",
     "@expo/vector-icons": "^14.0.2",

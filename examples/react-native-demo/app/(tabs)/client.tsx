@@ -87,6 +87,7 @@ export default function Tab() {
   const appState = useRef(AppState.currentState);
   const localSearchParams = useLocalSearchParams<ClientSearchParams>();
   const scanCounter = Number(localSearchParams.scanCounter);
+  const [prevCounter, setPrevCounter] = useState(0);
 
   const [deviceId, setDeviceId] = useState("");
   const [productId, setProductId] = useState("");
@@ -148,9 +149,9 @@ export default function Tab() {
    AsyncStorage.setItem("shared-secret", s).catch(_ => null);
  }, [startConnection]);
 
-  const onDisconnectPressed = () => {
+  const onDisconnectPressed = useCallback(() => {
     stopConnection();
-  };
+  }, [stopConnection]);
 
   //////////////////////////////////////////////////////
   // universal link handling
@@ -201,7 +202,8 @@ export default function Tab() {
   }, [tryParseAndConnect]);
 
   useEffect(() => {
-    if (scanCounter > 0) {
+    if (scanCounter > 0 && scanCounter !== prevCounter) {
+      setPrevCounter(scanCounter);
       if (localSearchParams.deviceId && localSearchParams.productId && localSearchParams.sharedSecret) {
         setDeviceId(localSearchParams.deviceId);
         setProductId(localSearchParams.productId);
@@ -210,7 +212,7 @@ export default function Tab() {
         onConnectPressed(localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret);
       }
     }
-  }, [scanCounter, localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret, onConnectPressed])
+  }, [scanCounter, prevCounter, localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret, onConnectPressed])
 
   useEffect(() => {
     if (signalingError || createClientError || createPeerConnectionError || peerConnectionError) {

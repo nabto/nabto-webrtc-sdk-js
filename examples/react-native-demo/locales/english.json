@@ -12,8 +12,8 @@
     "clientTab": {
         "title": "Live Stream",
         "headerTitle": "Live Stream",
-        "signalingConnectionState": "Signaling Service Connection State",
-        "signalingPeerState": "Signaling Service Peer State",
+        "signalingConnectionState": "Signaling Connection State",
+        "signalingPeerState": "Signaling Peer State",
         "rtcConnectionState": "RTC Connection State",
         "rtcSignalingState": "RTC Signaling State",
         "verificationError": "Verification error. Ensure your password is valid.",
