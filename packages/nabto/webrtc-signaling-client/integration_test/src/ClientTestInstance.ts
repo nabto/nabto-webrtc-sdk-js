@@ -1,6 +1,6 @@
 import { createSignalingClient, SignalingChannelState, SignalingClient, SignalingConnectionState } from '../../src'
 
-import { deleteTestClientByTestId, postTestClient, postTestClientByTestIdConnectDevice, postTestClientByTestIdDisconnectClient, postTestClientByTestIdDisconnectDevice, postTestClientByTestIdDropClientMessages, postTestClientByTestIdDropDeviceMessages, postTestClientByTestIdSendDeviceError, postTestClientByTestIdSendDeviceMessages, postTestClientByTestIdSendNewMessageType, postTestClientByTestIdWaitForDeviceMessages } from '../generated/client'
+import { deleteTestClientByTestId, postTestClient, postTestClientByTestIdConnectDevice, postTestClientByTestIdDisconnectClient, postTestClientByTestIdDisconnectDevice, postTestClientByTestIdDropClientMessages, postTestClientByTestIdDropDeviceMessages, postTestClientByTestIdGetActiveWebsockets, postTestClientByTestIdSendDeviceError, postTestClientByTestIdSendDeviceMessages, postTestClientByTestIdSendNewMessageType, postTestClientByTestIdWaitForDeviceMessages } from '../generated/client'
 
 export interface ClientTestOptions {
   failHttp?: boolean
@@ -48,7 +48,15 @@ export class ClientTestInstance {
   async dropClientMessages(): Promise<void> {
     await postTestClientByTestIdDropClientMessages({ path: { testId: this.testId } })
   }
-  async deviceWaitForMessagesIsReceived(messages: unknown[], timeout: number): Promise<unknown[]> {
+
+  async getActiveWebSockets(): Promise<number> {
+    const response = await postTestClientByTestIdGetActiveWebsockets({ path: { testId: this.testId }, body: {} })
+    if (!response.data) {
+      throw new Error("Missing response data");
+    }
+    return response.data?.activeWebSockets;
+  }
+  async deviceWaitForMessagesIsReceived(messages: unknown[], timeout: number): Promise < unknown[] > {
     const response = await postTestClientByTestIdWaitForDeviceMessages({ path: { testId: this.testId }, body: { messages: messages, timeout: timeout } })
     if (response.data && response.data.messages) {
       return response.data?.messages;

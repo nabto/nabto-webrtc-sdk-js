@@ -99,6 +99,10 @@ export type PostTestClientData = {
     body: {
         failHttp?: boolean;
         failWs?: boolean;
+        /**
+         * specify the endpoint url the server returns in the test create response and the websocket url. Format http://<ip>:<port>
+         */
+        endpointUrl?: string;
         extraClientConnectResponseData?: boolean;
     };
     path?: never;
@@ -371,7 +375,7 @@ export type PostTestClientByTestIdSendDeviceErrorResponse = PostTestClientByTest
 
 export type PostTestClientByTestIdSendNewMessageTypeData = {
     body: {
-        [key: string]: never;
+        [key: string]: unknown;
     };
     path: {
         testId: string;
@@ -399,6 +403,68 @@ export type PostTestClientByTestIdSendNewMessageTypeResponses = {
 };
 
 export type PostTestClientByTestIdSendNewMessageTypeResponse = PostTestClientByTestIdSendNewMessageTypeResponses[keyof PostTestClientByTestIdSendNewMessageTypeResponses];
+
+export type PostTestClientByTestIdSendNewFieldInKnownMessageTypeData = {
+    body: {
+        [key: string]: unknown;
+    };
+    path: {
+        testId: string;
+    };
+    query?: never;
+    url: '/test/client/{testId}/send-new-field-in-known-message-type';
+};
+
+export type PostTestClientByTestIdSendNewFieldInKnownMessageTypeErrors = {
+    /**
+     * failure
+     */
+    404: string;
+};
+
+export type PostTestClientByTestIdSendNewFieldInKnownMessageTypeError = PostTestClientByTestIdSendNewFieldInKnownMessageTypeErrors[keyof PostTestClientByTestIdSendNewFieldInKnownMessageTypeErrors];
+
+export type PostTestClientByTestIdSendNewFieldInKnownMessageTypeResponses = {
+    /**
+     * success
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type PostTestClientByTestIdSendNewFieldInKnownMessageTypeResponse = PostTestClientByTestIdSendNewFieldInKnownMessageTypeResponses[keyof PostTestClientByTestIdSendNewFieldInKnownMessageTypeResponses];
+
+export type PostTestClientByTestIdGetActiveWebsocketsData = {
+    body: {
+        [key: string]: unknown;
+    };
+    path: {
+        testId: string;
+    };
+    query?: never;
+    url: '/test/client/{testId}/get-active-websockets';
+};
+
+export type PostTestClientByTestIdGetActiveWebsocketsErrors = {
+    /**
+     * failure
+     */
+    404: string;
+};
+
+export type PostTestClientByTestIdGetActiveWebsocketsError = PostTestClientByTestIdGetActiveWebsocketsErrors[keyof PostTestClientByTestIdGetActiveWebsocketsErrors];
+
+export type PostTestClientByTestIdGetActiveWebsocketsResponses = {
+    /**
+     * success
+     */
+    200: {
+        activeWebSockets: number;
+    };
+};
+
+export type PostTestClientByTestIdGetActiveWebsocketsResponse = PostTestClientByTestIdGetActiveWebsocketsResponses[keyof PostTestClientByTestIdGetActiveWebsocketsResponses];
 
 export type DeleteTestClientByTestIdData = {
     body?: never;

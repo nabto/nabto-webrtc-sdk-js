@@ -15,6 +15,7 @@ type Message = Static<typeof messageType>
 export const TestClientOptionsSchema = t.Object({
   failHttp: t.Optional(t.Boolean()),
   failWs: t.Optional(t.Boolean()),
+  endpointUrl: t.Optional(t.String({description: "specify the endpoint url the server returns in the test create response and the websocket url. Format http://<ip>:<port>"})),
   extraClientConnectResponseData: t.Optional(t.Boolean())
 });
 
@@ -28,6 +29,7 @@ class TestClientInstance {
   productId: string = crypto.randomUUID();
   deviceId: string = crypto.randomUUID();
   testId: string = this.productId;
+  endpointUrl: string = "http://127.0.0.1:13745";
 
   device: SimulatedDevice;
 
@@ -35,14 +37,19 @@ class TestClientInstance {
 
   wsSender?: wsSendMessageCallback
   wsClose?: wsCloseCallback
+  activeWebSockets: number = 0;
   constructor(public options: TestClientOptions) {
     this.device = new SimulatedDevice(this.channelId, (msg: Routing) => { this.sendMessage(msg) });
+    if (options.endpointUrl) {
+      this.endpointUrl = options.endpointUrl;
+    }
   }
   clientConnected(wsSender: wsSendMessageCallback, wsClose: wsCloseCallback) {
     this.wsSender = wsSender;
     this.wsClose = wsClose;
     this.droppingClientMessages = false;
     this.device.handlePeerConnected();
+    this.activeWebSockets++;
   }
 
   async connectDevice() {
@@ -55,6 +62,10 @@ class TestClientInstance {
 
   disconnectDevice() {
     this.device.disconnect();
+  }
+
+  handleWsClose(code: number, reason: string) {
+    this.activeWebSockets--;
   }
 
   async dropDeviceMessages() {
@@ -71,7 +82,18 @@ class TestClientInstance {
     this.wsSender?.(JSON.stringify({"type": "NEW_MESSAGE_TYPE", "new_message_type_field": "data"}))
   }
 
+  async sendNewFieldInKnownMessageType() {
+    this.wsSender?.(JSON.stringify({"type": "PEER_CONNECTED", "channelId": "42", "new_field": "data"}))
+  }
+
+  async getActiveWebSockets(): Promise<number> {
+
+    // This is a stub, in a real implementation this would return the number of active WebSocket connections
+    return 1;
+  }
+
   sendMessage(msg: Routing) {
+    console.log("Sending routing message", msg);
     this.wsSender?.(JSON.stringify(msg));
   }
 

@@ -22,8 +22,7 @@ export interface SignalingChannel {
 
   /**
   * Send an error code and message to the other peer.
-  * @param errorCode  The error code a string which can be handled programmatically.
-  * @param errorMessage  A string which is used to explain the error.
+  * @param error  The signaling error to send.
   */
   sendError(error: SignalingError): Promise<void>;
 

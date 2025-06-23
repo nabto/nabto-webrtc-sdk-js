@@ -22,7 +22,7 @@ export const clientHttp = new Elysia()
       console.log("adding extra data")
       extraData = {"extra_field_in_the_response": "for testing"}
     }
-    return { signalingUrl: `ws://127.0.0.1:13745/client-ws/${test.testId}`, deviceOnline: test.isDeviceConnected(), channelId: test.testId, ...extraData }
+    return { signalingUrl: test.endpointUrl.replace("http://", "ws://") + `/client-ws/${test.testId}`, deviceOnline: test.isDeviceConnected(), channelId: test.testId, ...extraData }
   }, {
     body: t.Object({
       deviceId: t.String(),
@@ -63,6 +63,13 @@ export const clientWs = new Elysia()
         return;
       }
       test.clientConnected((msg: string) => { console.log(`sending ws message ${msg}`); ws.send(msg) }, (errorCode: number, message: string) => { ws.close(errorCode, message) });
+    },
+    close(ws, code, reason) {
+      const test = ws.data.testClients.getByTestId(ws.data.params.testId);
+      if (test) {
+        console.log(`WebSocket closed with code ${code} and reason: ${reason}`);
+        test.handleWsClose(code, reason);
+      }
     },
     message(ws, message) {
       const test = ws.data.testClients.getByTestId(ws.data.params.testId)
