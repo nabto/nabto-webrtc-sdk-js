@@ -106,4 +106,11 @@ export class ClientTestInstance {
       })
     })
   }
+  async waitForErrorResolveWithError(signalingClient: SignalingClient) {
+    return new Promise<unknown>((resolve, reject) => {
+      signalingClient.on("error", (error: unknown) => {
+        resolve(error);
+      })
+    })
+  }
 }

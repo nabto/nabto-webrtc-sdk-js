@@ -2,6 +2,7 @@ import { test, afterEach, beforeEach, describe, expect } from 'vitest'
 
 import { ClientTestInstance } from '../../src/ClientTestInstance'
 import { SignalingChannelState, SignalingClient, SignalingErrorCodes } from '../../../src'
+import { SignalingError } from '@nabto/webrtc-signaling-common'
 import { SignalingConnectionState } from '../../../src'
 
 describe("Test of connection to the signaling service", async () => {
@@ -217,5 +218,21 @@ describe("Signaling channel states", async () => {
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED, SignalingConnectionState.WAIT_RETRY, SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
     const activeWebSockets = await testInstance.getActiveWebSockets();
     expect(activeWebSockets).toBe(1);
+  })
+  test("Client connectivity test 10", async () => {
+    client.start();
+    await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
+    await testInstance.connectDevice();
+    const waitForError = testInstance.waitForErrorResolveWithError(client);
+    const errorCode = "INTERNAL_ERROR";
+    const errorMessage = "Internal error.";
+    await testInstance.deviceSendError(errorCode, errorMessage);
+    const error = await waitForError;
+    if (error instanceof SignalingError) {
+      expect(error.errorCode).toBe(errorCode);
+      expect(error.errorMessage).toBe(errorMessage);
+    } else {
+      throw new Error('Expected error to be instance of SignalingError');
+    }
   })
 })
