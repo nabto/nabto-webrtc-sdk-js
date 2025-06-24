@@ -58,13 +58,4 @@ export class SignalingError extends Error {
       return new SignalingError(SignalingErrorCodes.INTERNAL_ERROR, "An internal error occured, check the log for further details.");
     }
   }
-
-  /**
-   * true if the origin of the error is the remote peer of the signaling
-   * channel, else it will be false if the SignalingError is created by a local
-   * component.
-   *
-   * If isRemote is true the SignalingError should not be sent to the remote peer.
-   */
-  isRemote: boolean = false;
 }
