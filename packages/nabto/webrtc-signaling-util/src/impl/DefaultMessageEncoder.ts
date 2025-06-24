@@ -1,4 +1,4 @@
-import { JSONValue } from "@nabto/webrtc-signaling-common";
+import { JSONValue, SignalingError, SignalingErrorCodes } from "@nabto/webrtc-signaling-common";
 import { z } from "zod";
 import { SignalingCandidate, SignalingDescription, WebrtcSignalingMessageType } from "../MessageTransport";
 
@@ -130,6 +130,10 @@ export class DefaultMessageEncoder {
    * @throws Error if parsing failed
    */
   decodeMessage(msg: JSONValue): SignalingMessage {
-    return ProtocolSignalingMessageToSignalingMessage.parse(msg);
+    const res =  ProtocolSignalingMessageToSignalingMessage.safeParse(msg);
+    if (!res.success) {
+      throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, `The message is not understood ${msg}. Error: ${res.error}`);
+    }
+    return res.data;
   }
 }
