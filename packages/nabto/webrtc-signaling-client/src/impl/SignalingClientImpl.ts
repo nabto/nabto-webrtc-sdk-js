@@ -199,7 +199,6 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
 
     ws.on("channelerror", (_channelId, errorCode, errorMessage) => {
       const e = new SignalingError(errorCode, errorMessage);
-      e.isRemote = true;
       this.signalingChannel.handleError(e)
     })
     this.ws.on("pingtimeout", () => {

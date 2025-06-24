@@ -186,7 +186,6 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     this.ws.on("channelerror", (channelId: string, errorCode: string, errorMessage?: string) => {
       const c = this.signalingChannels.get(channelId);
       const e = new SignalingError(errorCode, errorMessage);
-      e.isRemote = true;
       c?.handleError(e)
     })
     this.ws.on("message", (channelId: string, message: JSONValue, authorized: boolean) => {
