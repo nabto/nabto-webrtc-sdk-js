@@ -14,7 +14,12 @@ export class NoneMessageSigner implements MessageSigner {
   }
 
   async verifyMessage(message: JSONValue): Promise<JSONValue> {
-    const signingMessage = ProtocolSigningMessageSchema.parse(message);
+    const signingMessageRes = ProtocolSigningMessageSchema.safeParse(message);
+    if (!signingMessageRes.success) {
+      throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, "Failed to decode the message.");
+    }
+    const signingMessage = signingMessageRes.data;
+
     if (signingMessage.type !== ProtocolSigningMessageTypes.NONE) {
       throw new SignalingError(SignalingErrorCodes.VERIFICATION_ERROR, `Expected a ${ProtocolSigningMessageTypes.NONE} signed message but got a signing message of type ${signingMessage.type}.`);
     }

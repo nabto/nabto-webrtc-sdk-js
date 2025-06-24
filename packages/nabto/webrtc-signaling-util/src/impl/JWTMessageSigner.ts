@@ -43,8 +43,11 @@ export class JWTMessageSigner implements MessageSigner {
    * @returns the keyId from the JWT header or undefined if no key id is in the header.
    */
   static async getKeyId(message: JSONValue): Promise<string | undefined> {
-    const signingMessage = ProtocolSigningMessageSchema.parse(message);
-
+    const signingMessageRes = ProtocolSigningMessageSchema.safeParse(message);
+    if (!signingMessageRes.success) {
+      throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, "Failed to decode the message.");
+    }
+    const signingMessage = signingMessageRes.data;
     if (signingMessage.type !== ProtocolSigningMessageTypes.JWT) {
       throw new SignalingError(SignalingErrorCodes.VERIFICATION_ERROR, `Expected a JWT signed message but got a signing message of type ${signingMessage.type}.`);
     }
@@ -82,7 +85,12 @@ export class JWTMessageSigner implements MessageSigner {
   }
 
   async verifyMessage(message: JSONValue): Promise<JSONValue> {
-    const signingMessage = ProtocolSigningMessageSchema.parse(message);
+    const signingMessageRes = ProtocolSigningMessageSchema.safeParse(message);
+    if (!signingMessageRes.success) {
+      throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, "Failed to decode the message.");
+    }
+    const signingMessage = signingMessageRes.data;
+
     if (signingMessage.type !== ProtocolSigningMessageTypes.JWT) {
       throw new SignalingError(SignalingErrorCodes.VERIFICATION_ERROR, `Expected a JWT signed message but got a signing message of type ${signingMessage.type}.`);
     }
