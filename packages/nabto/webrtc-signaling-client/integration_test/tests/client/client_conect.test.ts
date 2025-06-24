@@ -50,7 +50,7 @@ describe("Test of failing http connection to the signaling service", async () =>
     expect(client.connectionState).to.be.equal(SignalingConnectionState.NEW);
     client.start()
     const observedStates = testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.FAILED])
-    await expect(testInstance.waitForError(client)).rejects.toThrowError('Bad')
+    await expect(testInstance.waitForErrorRejectWithError(client)).rejects.toThrowError('Bad')
     await observedStates;
     expect(client.connectionState).to.be.equal(SignalingConnectionState.FAILED);
     client.close();
@@ -72,7 +72,7 @@ describe("Test of failing websocket connection to the signaling service", async 
   test('websocket service returns error', async () => {
     const client = testInstance.createSignalingClient();
     client.start()
-    await expect(() => testInstance.waitForError(client)).rejects.toThrowError('error')
+    await expect(() => testInstance.waitForErrorRejectWithError(client)).rejects.toThrowError('error')
   })
 })
 
@@ -171,7 +171,7 @@ describe("Test connection to a device which is offline but is required to be onl
   })
   test('Device is offline', async () => {
     client.start();
-    await expect(testInstance.waitForError(client)).rejects.toThrowError('The requested device is not online')
+    await expect(testInstance.waitForErrorRejectWithError(client)).rejects.toThrowError('The requested device is not online')
   })
 })
 
