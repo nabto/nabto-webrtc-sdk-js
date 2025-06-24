@@ -76,7 +76,7 @@ export interface MessageTransport {
    * Send a message through the MessageTransport
    * @param message The message to send.
    */
-  sendWebRTCSignalingMessage(message: WebrtcSignalingMessage): Promise<void>;
+  sendWebrtcSignalingMessage(message: WebrtcSignalingMessage): Promise<void>;
 
   /**
    * Add an event listener invoked when a message is received.

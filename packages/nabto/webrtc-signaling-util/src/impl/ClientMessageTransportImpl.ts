@@ -52,7 +52,7 @@ export class ClientMessageTransportImpl extends TypedEventEmitter<ClientMessageT
   }
 
   /**
-   * get a Signaling message and forward it, if it is a WebRTCSignalingMessage
+   * get a Signaling message and forward it, if it is a WebrtcSignalingMessage
    */
   async handleSignalingMessage(message: SignalingMessage) {
     console.log("signalingMessageHandler", message)
@@ -97,7 +97,7 @@ export class ClientMessageTransportImpl extends TypedEventEmitter<ClientMessageT
     }
   }
 
-  async sendWebRTCSignalingMessage(message: WebrtcSignalingMessage): Promise < void> {
+  async sendWebrtcSignalingMessage(message: WebrtcSignalingMessage): Promise < void> {
     return this.sendSignalingMessage(message);
   }
 

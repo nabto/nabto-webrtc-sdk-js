@@ -61,13 +61,13 @@ export class PerfectNegotiation {
 
   async sendDescription(description: RTCSessionDescription | null) {
     if (description) {
-      this.messageTransport.sendWebRTCSignalingMessage({ type: WebrtcSignalingMessageType.DESCRIPTION, description: description });
+      this.messageTransport.sendWebrtcSignalingMessage({ type: WebrtcSignalingMessageType.DESCRIPTION, description: description });
     }
   }
 
   async sendCandidate(candidate: RTCIceCandidate | null) {
     if (candidate) {
-      this.messageTransport.sendWebRTCSignalingMessage({ type: WebrtcSignalingMessageType.CANDIDATE, candidate: candidate });
+      this.messageTransport.sendWebrtcSignalingMessage({ type: WebrtcSignalingMessageType.CANDIDATE, candidate: candidate });
     }
   }
 

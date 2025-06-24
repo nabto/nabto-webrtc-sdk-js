@@ -48,7 +48,7 @@ export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageT
   }
 
   /**
-   * get a Signaling message and forward it, if it is a WebRTCSignalingMessage
+   * get a Signaling message and forward it, if it is a WebrtcSignalingMessage
    */
   async handleSignalingMessage(message: SignalingMessage) {
     console.log("signalingMessageHandler", message)
@@ -113,7 +113,7 @@ export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageT
     }
   }
 
-  async sendWebRTCSignalingMessage(message: WebrtcSignalingMessage): Promise<void> {
+  async sendWebrtcSignalingMessage(message: WebrtcSignalingMessage): Promise<void> {
     if (this.state !== State.SIGNALING) {
       throw new Error("Trying to send a signaling message before setup has completed.");
     }
