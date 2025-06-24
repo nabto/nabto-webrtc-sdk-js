@@ -74,11 +74,15 @@ function VideoSpinner() {
   return (<ActivityIndicator size="large" color="orange" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 2  }}/>);
 }
 
-function SignalingErrorToText(err: SignalingError, t: (s: string) => string): string {
-  switch (err.errorCode) {
-    case SignalingErrorCodes.VERIFICATION_ERROR: return t("clientTab.verificationError");
+function SignalingErrorToText(err: Error, t: (s: string) => string): string {
+  if (err instanceof SignalingError) {
+    switch (err.errorCode) {
+      case SignalingErrorCodes.VERIFICATION_ERROR: return t("clientTab.verificationError");
+    }
+    return err.errorMessage ?? err.errorCode;
+  } else {
+    return err.message;
   }
-  return err.errorMessage ?? err.errorCode;
 }
 
 export default function Tab() {
@@ -277,7 +281,7 @@ export default function Tab() {
 
         <View style={{ gap: 8 }}>
           <SettingsInput value={productId} onChangeText={setProductId} label={t("productId")}/>
-          <SettingsInput value={deviceId} onChangeText={setDeviceId} label={"hallo"} />
+          <SettingsInput value={deviceId} onChangeText={setDeviceId} label={t("deviceId")} />
           <SettingsInput value={sharedSecret} onChangeText={setSharedSecret} label={t("sharedSecret")} />
         </View>
 

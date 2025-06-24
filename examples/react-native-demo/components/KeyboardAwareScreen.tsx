@@ -9,8 +9,7 @@ export default function KeyboardAwareScreen({ children }: PropsWithChildren<obje
                     style={{
                         flex: 1,
                         alignItems: "center",
-                        width: "100%",
-                        marginTop: 50
+                        width: "100%"
                     }}
                 >
                     {children}

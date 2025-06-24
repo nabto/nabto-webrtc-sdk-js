@@ -18,7 +18,7 @@ export function useClientState(props: ConnectionDisplayProps) {
     const [signalingConnectionState, setSignalingConnectionState] = useState<SignalingConnectionState>();
     const [signalingPeerState, setSignalingPeerState] = useState<SignalingChannelState>();
 
-    const [signalingError, setSignalingError] = useState<SignalingError>();
+    const [signalingError, setSignalingError] = useState<Error>();
     const [createClientError, setCreateClientError] = useState<Error>();
     const [createPeerConnectionError, setCreatePeerConnectionError] = useState<Error>();
     const [peerConnectionError, setPeerConnectionError] = useState<Error>();
@@ -88,11 +88,10 @@ export function useClientState(props: ConnectionDisplayProps) {
         client.on("connectionstatechange", () => setSignalingConnectionState(client.connectionState));
         client.on("channelstatechange", () => setSignalingPeerState(client.channelState));
         client.on("error", err => {
-            setSignalingError(undefined);
-            if (err instanceof SignalingError) {
+            if (err instanceof Error) {
                 setSignalingError(err);
-                stopConnection();
             }
+            stopConnection();
         });
 
         client.start();
