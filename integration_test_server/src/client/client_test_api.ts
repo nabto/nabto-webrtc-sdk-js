@@ -109,7 +109,7 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
     {
       body: t.Object({
         messages: t.Array(t.Unknown()),
-        timeout: t.Number()
+        timeout: t.Number({format: "double"})
       }),
       response: {
         200: t.Object({
