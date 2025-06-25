@@ -2,7 +2,7 @@ import { ServerWebSocket } from "bun";
 
 import { Elysia, t, Static } from 'elysia'
 import { SimulatedDevice } from "./SimulatedDevice";
-import { Routing, RoutingTypes } from "../WebsocketProtocolDataTypes";
+import { Routing, RoutingTypes, SignalingError } from "../WebsocketProtocolDataTypes";
 
 const messageType = t.Object({
   type: t.String(),
@@ -100,6 +100,10 @@ class TestClientInstance {
   async waitForMessages(messages: unknown[], timeout: number): Promise<unknown[]>
   {
     return await this.device.waitForMessages(messages, timeout)
+  }
+  async waitForDeviceError(timeout: number): Promise<SignalingError | undefined>
+  {
+    return await this.device.waitForError(timeout)
   }
   getReceivedMessages(): unknown[] {
     return this.device.receivedMessages;

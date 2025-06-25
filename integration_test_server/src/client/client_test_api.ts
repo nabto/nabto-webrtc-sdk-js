@@ -120,6 +120,32 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
       }
     }
   )
+  .post("/:testId/wait-for-device-error", async ({ error, params, testClients, body }) => {
+    const test = testClients.getByTestId(params.testId);
+    if (!test) {
+      return error(404, "No such test id")
+    }
+    const e = await test.waitForDeviceError(body.timeout);
+      return {
+        error: e
+    }
+  },
+    {
+      body: t.Object({
+        timeout: t.Number({format: "double"})
+      }),
+      response: {
+        200: t.Object({
+          error: t.Optional(t.Object({
+            code: t.String(),
+            message: t.Optional(t.String())
+          }))
+        }, { description: "success" }
+        ),
+        404: t.String({ description: "failure" })
+      }
+    }
+  )
   .post("/:testId/send-device-messages", async ({ params, body, testClients, error }) => {
     const test = testClients.getByTestId(params.testId);
     if (!test) {
