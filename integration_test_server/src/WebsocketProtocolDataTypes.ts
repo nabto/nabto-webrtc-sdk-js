@@ -17,12 +17,14 @@ export const RoutingMessageScheme = t.Object({
   authorized: t.Optional(t.Boolean()),
 })
 
-export const RoutingErrorScheme = t.Object({
-  type: t.Literal(RoutingTypes.ERROR),
-  error: t.Object({
+export const RoutingSignalingErrorSchema = t.Object({
     code: t.String(),
     message: t.Optional(t.String()),
-  }),
+  })
+
+export const RoutingErrorScheme = t.Object({
+  type: t.Literal(RoutingTypes.ERROR),
+  error: RoutingSignalingErrorSchema,
   channelId: t.String()
 })
 
@@ -51,6 +53,7 @@ export const RoutingUnionScheme = t.Union([RoutingMessageScheme, RoutingErrorSch
 export type RoutingMessage = Static<typeof RoutingMessageScheme>
 export type RoutingError = Static<typeof RoutingErrorScheme>
 export type Routing = Static<typeof RoutingUnionScheme>
+export type SignalingError = Static<typeof RoutingSignalingErrorSchema>
 
 export enum ReliabilityTypes {
   ACK = "ACK",

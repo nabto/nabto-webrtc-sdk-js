@@ -1,7 +1,7 @@
 import { Type as t, Static } from "@sinclair/typebox"
 import { Value } from '@sinclair/typebox/value';
 
-import { ReliabilityAck, ReliabilityMessage, ReliabilityTypes, ReliabilityUnion, ReliabilityUnionScheme, Routing, RoutingMessage, RoutingMessageScheme, RoutingTypes, RoutingUnionScheme } from '../WebsocketProtocolDataTypes'
+import { ReliabilityAck, ReliabilityMessage, ReliabilityTypes, ReliabilityUnion, ReliabilityUnionScheme, Routing, RoutingMessage, RoutingMessageScheme, RoutingTypes, RoutingUnionScheme, SignalingError } from '../WebsocketProtocolDataTypes'
 import { Reliability } from "../Reliability";
 import { EventEmitter } from 'node:events'
 
@@ -16,11 +16,13 @@ export class SimulatedDevice {
   reliability: Reliability;
 
   receivedMessages: Array<unknown> = new Array();
+  error: SignalingError | undefined = undefined;
 
   eventEmitter: EventEmitter = new EventEmitter();
 
   connected: boolean = false;
   dropIncomingMessages: boolean = false;
+
 
   constructor(private channelId: string, private wsSender: (msg: Routing) => void) {
     this.reliability = new Reliability((message: ReliabilityUnion) => {
@@ -75,6 +77,8 @@ export class SimulatedDevice {
       if (reliableMessage) {
         this.handleReliableMessage(reliableMessage);
       }
+    } else if (routing.type === RoutingTypes.ERROR) {
+      this.handleError(routing.error);
     }
   }
 
@@ -85,6 +89,12 @@ export class SimulatedDevice {
   handleReliableMessage(message: unknown) {
     this.receivedMessages.push(message);
     this.eventEmitter.emit("message", message)
+  }
+
+  handleError(error: SignalingError) {
+    console.log("Got error: ", error);
+    this.error = error;
+    this.eventEmitter.emit("error", error);
   }
 
   hasReceivedMessages(messages: unknown[]): boolean {
@@ -108,6 +118,20 @@ export class SimulatedDevice {
     })
     await promise
     return this.receivedMessages;
+  }
+
+  async waitForError(timeout: number): Promise<SignalingError | undefined> {
+    if (this.error) {
+      return this.error;
+    }
+    const promise = new Promise((resolve, reject) => {
+      this.eventEmitter.on("error", (error: SignalingError) => {
+        resolve(true);
+      })
+      setTimeout(() => { resolve(true) }, timeout);
+    })
+    await promise
+    return this.error;
   }
 
   async sendMessages(messages: unknown[]) {
