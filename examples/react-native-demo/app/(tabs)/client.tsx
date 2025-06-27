@@ -3,7 +3,7 @@ import SettingsInput from "@/components/SettingsInput";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useClientState } from "@nabto/react-demo-common/react";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, EffectCallback, DependencyList } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, AppState, Text, Button, View } from "react-native";
 import { Notifier, NotifierComponents } from "react-native-notifier";
@@ -85,13 +85,27 @@ function SignalingErrorToText(err: Error, t: (s: string) => string): string {
   }
 }
 
+function useCompareEffect(
+  effect: EffectCallback,
+  compareDeps: DependencyList,
+  staticDeps: DependencyList
+) {
+  const ref = useRef<DependencyList>();
+
+  if (!ref.current || !compareDeps.every((dep, i) => Object.is(dep, ref.current?.[i]))) {
+    ref.current = [...compareDeps, ...staticDeps]
+  }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useEffect(effect, ref.current);
+}
+
 export default function Tab() {
   const { t } = useTranslation();
 
   const appState = useRef(AppState.currentState);
   const localSearchParams = useLocalSearchParams<ClientSearchParams>();
   const scanCounter = Number(localSearchParams.scanCounter);
-  const [prevCounter, setPrevCounter] = useState(0);
 
   const [deviceId, setDeviceId] = useState("");
   const [productId, setProductId] = useState("");
@@ -133,6 +147,7 @@ export default function Tab() {
   //////////////////////////////////////////////////////
   // Connect and disconnect button callbacks
   const onConnectPressed = useCallback((d: string, p: string, s: string) => {
+    console.log("onconnectpressed called")
     startConnection({
      deviceId: d,
      productId: p,
@@ -176,11 +191,12 @@ export default function Tab() {
       setDeviceId(deviceId);
       setProductId(productId);
       setSharedSecret(sharedSecret);
+      console.log("tryparseandconnect called onconnectpressed")
       onConnectPressed(deviceId, productId, sharedSecret);
     }
   }, [onConnectPressed]);
 
-  useEffect(() => {
+  useCompareEffect(() => {
     Promise.all([
       AsyncStorage.getItem("device-id").catch(_ => "").then(s => setDeviceId(s ?? "")),
       AsyncStorage.getItem("product-id").catch(_ => "").then(s => setProductId(s ?? "")),
@@ -191,7 +207,7 @@ export default function Tab() {
         tryParseAndConnect(universalLink);
       }
     });
-  }, [tryParseAndConnect]);
+  }, [], [tryParseAndConnect]);
 
   useEffect(() => {
     const eventsub = UniversalLinkSupportModule.addListener("onUniversalLink", params => {
@@ -205,18 +221,18 @@ export default function Tab() {
     }
   }, [tryParseAndConnect]);
 
-  useEffect(() => {
-    if (scanCounter > 0 && scanCounter !== prevCounter) {
-      setPrevCounter(scanCounter);
+  useCompareEffect(() => {
+    if (scanCounter > 0) {
       if (localSearchParams.deviceId && localSearchParams.productId && localSearchParams.sharedSecret) {
         setDeviceId(localSearchParams.deviceId);
         setProductId(localSearchParams.productId);
         setSharedSecret(localSearchParams.sharedSecret);
   
+        console.log("scancounter useffect called onconnectpressed")
         onConnectPressed(localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret);
       }
     }
-  }, [scanCounter, prevCounter, localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret, onConnectPressed])
+  }, [scanCounter], [localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret, onConnectPressed])
 
   useEffect(() => {
     if (signalingError || createClientError || createPeerConnectionError || peerConnectionError) {
