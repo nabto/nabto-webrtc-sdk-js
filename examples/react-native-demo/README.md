@@ -5,28 +5,28 @@ Intro:
 This showcases a react native demo for android and ios.
 
 ## Get started
-bun has been used for development but using npm or yarn should work too.
+Prerequisites:
+* Install bun from [bun.sh]()
+* Install pnpm
 
-1. Install dependencies
 
-   ```bash
-   bun install
-   # OR
-   npm install
-   ```
+### Install dependencies
 
-3. Start android app
+Note that there is currently a "bug" where pnpm install must be run first. So you should run both of the below commands.
+
+```
+pnpm install
+bun install
+```
+
+### Start android app
 
 ```
 bun run android
-# OR
-npm run android
 ```
 
-4. Start ios
+### Start ios
 
 ```
 bun run ios
-# OR
-npm run ios
 ```
