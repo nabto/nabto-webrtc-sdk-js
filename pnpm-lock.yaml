@@ -314,9 +314,6 @@ importers:
       '@stylistic/eslint-plugin':
         specifier: ^2.10.1
         version: 2.13.0(eslint@9.26.0)(typescript@5.8.3)
-      '@types/jsrsasign':
-        specifier: workspace:*
-        version: link:../../types/jsrsasign
       eslint:
         specifier: ^9.26.0
         version: 9.26.0

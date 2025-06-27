@@ -1,6 +1,7 @@
 {
     "name": "@nabto/react-demo-common",
     "version": "1.0.0",
+    "private": "true",
     "exports": {
         "./webrtc": "./webrtc/index.ts",
         "./state": "./react/index.ts"

@@ -4,6 +4,7 @@
   "description": "",
   "source": "sdk_exports.ts",
   "main": "dist/bundle.js",
+  "private": "true",
   "scripts": {
     "install": "npm run build",
     "build": "npx esbuild sdk_exports.ts --bundle --outfile=dist/sdk_exports.js  --format=iife --global-name=SDK"
