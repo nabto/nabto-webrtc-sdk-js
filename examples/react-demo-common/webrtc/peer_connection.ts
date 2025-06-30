@@ -5,7 +5,7 @@ import { MessageTransport } from '@nabto/webrtc-signaling-util';
 import { SignalingClient } from '@nabto/webrtc-signaling-client';
 import { SignalingEventHandlerConnection } from '@nabto/webrtc-signaling-util';
 import { SignalingDevice } from '@nabto/webrtc-signaling-device';
-import { ClientMessageTransportSecurityMode, createClientMessageTransport } from '@nabto/webrtc-signaling-util/src/ClientMessageTransport';
+import { ClientMessageTransportSecurityMode, createClientMessageTransport } from '@nabto/webrtc-signaling-util';
 
 import { z } from 'zod';
 
