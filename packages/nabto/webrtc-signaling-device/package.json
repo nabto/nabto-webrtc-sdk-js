@@ -2,19 +2,26 @@
   "name": "@nabto/webrtc-signaling-device",
   "version": "0.0.1",
   "description": "Implementation of the Nabto WebRTC Signaling protocol for Devices such as Cameras",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "vitest",
     "lint": "eslint .",
     "test:i": "vitest --config ./vitest.integration.ts",
-    "build": "tsc"
+    "build": "tsup src/index.ts --format cjs,esm --dts"
   },
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
+    "@nabto/webrtc-signaling-common": "workspace:*",
     "isomorphic-ws": "^5.0.0",
-    "zod": "^3.24.1",
-    "@nabto/webrtc-signaling-common": "workspace:*"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.26.0",
@@ -25,6 +32,7 @@
     "eslint": "^9.26.0",
     "fastify": "^5.2.1",
     "globals": "^15.15.0",
+    "tsup": "^8.5.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.1",
     "vite-tsconfig-paths": "^5.1.4",
