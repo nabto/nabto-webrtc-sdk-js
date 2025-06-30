@@ -1,7 +1,7 @@
 import { SignalingDeviceImpl } from "./impl/SignalingDeviceImpl";
 import { SignalingChannel } from "@nabto/webrtc-signaling-common";
 import { SignalingConnectionState } from "@nabto/webrtc-signaling-common";
-import { SignalingConnectionStateChanges } from "@nabto/webrtc-signaling-common/src/SignalingConnectionState";
+import { SignalingConnectionStateChanges } from "@nabto/webrtc-signaling-common"
 
 /**
  * Options for creating a SignalingDevice.

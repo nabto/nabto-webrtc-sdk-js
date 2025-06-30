@@ -1,0 +1,12 @@
+{
+  "extends": "../../config/tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist/common",
+    "rootDir": "./src",
+    "jsx": "react",
+    "moduleResolution": "node",
+    "target": "es2016",
+    "module": "commonjs"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

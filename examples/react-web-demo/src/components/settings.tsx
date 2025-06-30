@@ -2,9 +2,9 @@ import { ExpandMore } from '@mui/icons-material';
 import { Button, FormControl, Stack, Typography, Box, FormLabel, TextField, FormControlLabel, Checkbox, FormGroup, Accordion, AccordionSummary, AccordionDetails, ToggleButtonGroup, ToggleButton, Modal } from '@mui/material';
 import { FormEvent, MouseEvent, useEffect, useState } from 'react';
 import { Help, StylizedHelp } from './help';
-import { SettingsValues } from '@nabto/react-demo-common/state';
+import { SettingsValues } from '@nabto/react-demo-common';
 import QRCode from 'react-qr-code';
-export { type SettingsValues } from '@nabto/react-demo-common/state';
+export { type SettingsValues } from '@nabto/react-demo-common';
 
 const helpProductId = (
     <StylizedHelp title="Nabto Product ID">

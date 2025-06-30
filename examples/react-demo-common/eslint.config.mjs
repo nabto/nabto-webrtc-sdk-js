@@ -1,4 +1,4 @@
-import globals from "globals";
+//import globals from "globals";
 import pluginJs from "@eslint/js";
 import tseslint from "typescript-eslint";
 import stylistic from '@stylistic/eslint-plugin'
@@ -9,10 +9,9 @@ export default [
     ignores: ["integration_test/generated/**/*", "src/impl/backend/**/*", "dist/**/*"]
   },
   {
-    files: ["**/*.{js,mjs,cjs,ts}"],
+    files: ["react/**/*.{js,mjs,cjs,ts}", "webrtc/**/*.{js,mjs,cjs,ts}"],
   },
   {
-    languageOptions: { globals: { ...globals.browser, ...globals.node } }
   },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
@@ -21,7 +20,7 @@ export default [
       '@stylistic': stylistic,
     },
     rules: {
-      '@stylistic/indent': ['error', 2],
+      //'@stylistic/indent': ['error', 4],
       "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
     }
   }

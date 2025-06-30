@@ -3,7 +3,7 @@ import { Collapse, LinearProgress, CssBaseline, Paper, Stack, Typography } from 
 import { styled } from '@mui/material/styles';
 import { useState, useEffect, useCallback } from 'react';
 import Settings, { SettingsValues } from './components/settings';
-import { ClientState, DeviceState, useClientState, useDeviceState } from "@nabto/react-demo-common/state";
+import { ClientState, DeviceState, useClientState, useDeviceState } from "@nabto/react-demo-common";
 import { ClientInfoTable } from "./components/clientinfo";
 import { useNotificationState } from "./components/notifications";
 import { NotificationStack } from "./components/notification_stack";
@@ -113,7 +113,7 @@ function DeviceApp({ deviceState }: { deviceState: DeviceState }) {
       pushNotification({ msg: err.message, type: "error" });
     }
   }, [pushNotification]);
-    
+
   useEffect(() => pushError(createDeviceError), [pushError, createDeviceError]);
   useEffect(() => pushError(deviceConnectError), [pushError, deviceConnectError]);
   useEffect(() => pushError(userMediaError), [pushError, userMediaError]);

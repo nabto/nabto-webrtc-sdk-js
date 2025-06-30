@@ -1,7 +1,7 @@
 import KeyboardAwareScreen from "@/components/KeyboardAwareScreen";
 import SettingsInput from "@/components/SettingsInput";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useClientState } from "@nabto/react-demo-common/react";
+import { useClientState } from "@nabto/react-demo-common";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState, useCallback, EffectCallback, DependencyList } from "react";
 import { useTranslation } from "react-i18next";
@@ -226,8 +226,7 @@ export default function Tab() {
       if (localSearchParams.deviceId && localSearchParams.productId && localSearchParams.sharedSecret) {
         setDeviceId(localSearchParams.deviceId);
         setProductId(localSearchParams.productId);
-        setSharedSecret(localSearchParams.sharedSecret);
-  
+        setSharedSecret(localSearchParams.sharedSecret);  
         console.log("scancounter useffect called onconnectpressed")
         onConnectPressed(localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret);
       }

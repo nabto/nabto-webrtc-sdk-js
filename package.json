@@ -1,8 +1,9 @@
 {
-    "name": "nabto-signaling-js",
+    "name": "nabto-webrtc-sdk-js",
     "version": "1.0.0",
     "description": "",
     "main": "index.js",
+    "private": "true",
     "scripts": {
         "build": "pnpm --stream -r run build",
         "lint": "pnpm --stream -r run lint",

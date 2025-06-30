@@ -6,6 +6,9 @@ import stylistic from '@stylistic/eslint-plugin'
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
+    "ignores": ["dist/**/*" ]
+  },
+  {
     files: ["**/*.{js,mjs,cjs,ts}"],
   },
   {

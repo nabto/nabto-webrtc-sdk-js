@@ -34,10 +34,10 @@ jobs:
           cache: 'pnpm'
       - name: Build
         run: |
-          pnpm install
-          pnpm run lint
-          pnpm run build
-        working-directory: ./examples/react-web-demo
+          pnpm --filter @nabto/react-web-demo... install
+          pnpm --filter @nabto/react-web-demo... build
+          pnpm --filter @nabto/react-web-demo... lint
+        working-directory: ./
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

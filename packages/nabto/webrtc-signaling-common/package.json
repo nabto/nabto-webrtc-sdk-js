@@ -2,12 +2,22 @@
   "name": "@nabto/webrtc-signaling-common",
   "version": "0.0.1",
   "description": "Implementation of common functionality for client and devices for the Nabto WebRTC Signaling protocol",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "types": "dist/index.d.ts",
+  "files": [
+    "./dist"
+  ],
   "scripts": {
     "test": "vitest",
     "lint": "eslint .",
     "test:i": "vitest --config ./vitest.integration.ts",
-    "install": "tsc"
+    "build": "tsup src/index.ts --format cjs,esm --dts"
   },
   "author": "",
   "license": "Apache-2.0",
@@ -24,6 +34,7 @@
     "eslint": "^9.26.0",
     "fastify": "^5.2.1",
     "globals": "^15.15.0",
+    "tsup": "^8.5.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.1",
     "vite-tsconfig-paths": "^5.1.4",

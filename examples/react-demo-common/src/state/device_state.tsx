@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Device, createDevice } from "../webrtc";
+import { Device, createDevice } from "../webrtc/device";
 import { ProgressState, SettingsValues, DeviceConnectionDisplayProps } from "./shared";
 
 export type DeviceState = ReturnType<typeof useDeviceState>
@@ -9,7 +9,7 @@ export function useDeviceState(props: DeviceConnectionDisplayProps) {
     const [signalingServiceState, setSignalingServiceState] = useState<string>();
     const [peerConnectionStates, setPeerConnectionStates] = useState<{ name: string, state: RTCPeerConnectionState }[]>([])
     const device = useRef<Device>();
-    
+
     // error state
     const [userMediaError, setUserMediaError] = useState<Error>();
     const [createDeviceError, setCreateDeviceError] = useState<Error>();
