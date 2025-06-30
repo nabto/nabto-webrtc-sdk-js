@@ -6,7 +6,7 @@ import stylistic from '@stylistic/eslint-plugin'
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
-    ignores: ["integration_test/generated/**/*", "src/impl/backend/**/*"]
+    ignores: ["integration_test/generated/**/*", "src/impl/backend/**/*", "dist/**/*"]
   },
   {
     files: ["**/*.{js,mjs,cjs,ts}"],
