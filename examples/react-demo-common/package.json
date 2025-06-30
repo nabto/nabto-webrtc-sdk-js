@@ -2,14 +2,27 @@
     "name": "@nabto/react-demo-common",
     "version": "1.0.0",
     "private": "true",
-    "main": "dist/common/index.js",
-    "module": "dist/module/index.js",
+    "main": "dist/index.js",
+    "module": "dist/index.mjs",
     "files": [
         "dist"
     ],
     "scripts": {
-        "build": "tsc -p tsconfig.json && tsc -p tsconfig.module.json",
+        "build": "tsup",
         "lint": "eslint ."
+    },
+    "tsup": {
+        "entry": [
+            "src/index.ts"
+        ],
+        "splitting": false,
+        "sourcemap": true,
+        "clean": true,
+        "dts": true,
+        "format": [
+            "esm",
+            "cjs"
+        ]
     },
     "peerDependencies": {
         "@nabto/webrtc-signaling-client": "workspace:*",
@@ -25,6 +38,7 @@
         "@types/react": "^18.3.12",
         "@types/react-dom": "^18.3.1",
         "eslint": "^9.26.0",
+        "tsup": "^8.5.0",
         "typescript": "^5.8.3",
         "typescript-eslint": "^8.35.0"
     },
