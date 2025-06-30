@@ -5,7 +5,7 @@ import {
 } from "@nabto/webrtc-signaling-client";
 import { SignalingChannelState } from "@nabto/webrtc-signaling-common";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createPeerConnection, PeerConnection } from "../webrtc";
+import { createPeerConnection, PeerConnection } from "../webrtc/peer_connection";
 import { ProgressState, ConnectionDisplayProps, SettingsValues } from "./shared";
 
 export type ClientState = ReturnType<typeof useClientState>

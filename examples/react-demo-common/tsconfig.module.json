@@ -1,12 +1,12 @@
 {
   "extends": "../../config/tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist/common",
+    "outDir": "./dist/module",
     "rootDir": "./src",
     "jsx": "react",
     "moduleResolution": "node",
-    "target": "es2016",
-    "module": "commonjs"
+    "target": "es6",
+    "module": "es6"
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*"]
 }
