@@ -3,8 +3,12 @@
     "version": "1.0.0",
     "private": "true",
     "exports": {
-        "./webrtc": "./webrtc/index.ts",
-        "./state": "./react/index.ts"
+        "./webrtc": "./dist/webrtc/index.js",
+        "./state": "./dist/react/index.js"
+    },
+    "scripts": {
+        "build": "tsc",
+        "lint": "eslint ."
     },
     "peerDependencies": {
         "@nabto/webrtc-signaling-client": "workspace:*",
@@ -15,8 +19,13 @@
         "react-dom": "^18.3.1"
     },
     "devDependencies": {
+        "@eslint/js": "^9.30.0",
+        "@stylistic/eslint-plugin": "^2.13.0",
         "@types/react": "^18.3.12",
-        "@types/react-dom": "^18.3.1"
+        "@types/react-dom": "^18.3.1",
+        "eslint": "^9.26.0",
+        "typescript": "^5.8.3",
+        "typescript-eslint": "^8.35.0"
     },
     "dependencies": {
         "zod": "^3.24.4"

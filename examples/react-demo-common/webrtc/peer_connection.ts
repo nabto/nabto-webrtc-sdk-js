@@ -1,5 +1,5 @@
-import { SignalingChannel, SignalingError, SignalingErrorCodes } from '@nabto/webrtc-signaling-common';
-import { createDeviceMessageTransport, DeviceConnectionTimeout, DeviceMessageTransportOptions, DeviceMessageTransportSecurityMode, PerfectNegotiation, SignalingEventHandler } from "@nabto/webrtc-signaling-util";
+import { SignalingChannel, SignalingError } from '@nabto/webrtc-signaling-common';
+import { createDeviceMessageTransport, DeviceConnectionTimeout, DeviceMessageTransportSecurityMode, PerfectNegotiation, SignalingEventHandler } from "@nabto/webrtc-signaling-util";
 import { createLogger, Logger } from "../log";
 import { MessageTransport } from '@nabto/webrtc-signaling-util';
 import { SignalingClient } from '@nabto/webrtc-signaling-client';
@@ -102,7 +102,7 @@ class PeerConnectionImpl implements PeerConnection {
                 const json = JSON.parse(msg.data);
                 const parsed = ChatMessageSchema.parse(json);
                 this.onDataChannelMessage?.(parsed.sender, parsed.text);
-            } catch (e) {
+            } catch {
                 this.handleError(`data channel ${this.dc?.id}`, new Error(`Data channel received message with the wrong format ${JSON.stringify(msg.data)}`));
             }
         }
@@ -223,7 +223,7 @@ class PeerConnectionImpl implements PeerConnection {
                 const json = JSON.parse(msg.data);
                 const parsed = ChatMessageSchema.parse(json)
                 this.onDataChannelMessage?.(parsed.sender, parsed.text);
-            } catch (e) {
+            } catch {
                 this.handleError(`data channel ${channel.id}`, new Error(`Data channel received message with the wrong format ${JSON.stringify(msg.data)}`));
             }
         }
@@ -268,7 +268,7 @@ export async function createPeerConnection(options: PeerConnectionOptions): Prom
             const sharedSecret = options.sharedSecret;
             messageTransport = createDeviceMessageTransport(options.signalingDevice, options.signalingChannel, {
                 securityMode: DeviceMessageTransportSecurityMode.SHARED_SECRET,
-                sharedSecretCallback: async (keyId) => {
+                sharedSecretCallback: async () => {
                     return sharedSecret;
                 },
             })

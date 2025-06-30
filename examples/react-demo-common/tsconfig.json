@@ -1,0 +1,9 @@
+{
+   "extends": "../../config/tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": ".",
+    "jsx": "react-jsx"
+  },
+  "include": ["react/**/*.ts", "webrtc/**/*.ts"]
+}

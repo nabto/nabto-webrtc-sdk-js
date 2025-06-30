@@ -1,8 +1,7 @@
-import { 
+import {
     SignalingClient,
     SignalingConnectionState,
-    createSignalingClient,
-    SignalingError
+    createSignalingClient
 } from "@nabto/webrtc-signaling-client";
 import { SignalingChannelState } from "@nabto/webrtc-signaling-common";
 import { useCallback, useEffect, useRef, useState } from "react";
