@@ -30,4 +30,4 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - if: github.event_name == 'pull_request'
-        run: pnpm -r publish --provenance --access public --dryrun
+        run: pnpm -r publish --provenance --access public --dry-run
