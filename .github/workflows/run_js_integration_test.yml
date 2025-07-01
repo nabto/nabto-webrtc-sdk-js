@@ -6,7 +6,7 @@ jobs:
   test:
     strategy:
       matrix:
-        component: [ @nabto/webrtc-signaling-client, @nabto/webrtc-signaling-device]
+        project: [ "@nabto/webrtc-signaling-client", "@nabto/webrtc-signaling-device"]
     runs-on: ubuntu-latest
     steps:
      - name: Checkout repository
