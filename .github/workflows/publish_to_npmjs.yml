@@ -1,0 +1,35 @@
+name: Publish Package to npmjs
+on:
+  release:
+    types: [published]
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+      - run: |
+          pnpm install
+          pnpm run build
+      - if: github.event_name == 'release' && github.event.action == 'published'
+        run: pnpm -r publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - if: github.event_name == 'pull_request'
+        run: pnpm -r publish --provenance --access public --dry-run --no-git-checks
