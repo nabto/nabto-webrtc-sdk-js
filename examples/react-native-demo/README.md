@@ -14,8 +14,14 @@ Prerequisites:
 
 Note that there is currently a "bug" where pnpm install must be run first. So you should run both of the below commands.
 
+in the root folder run
 ```
 pnpm install
+pnpm run build
+```
+
+in this folder run:
+```
 bun install
 ```
 
@@ -29,4 +35,11 @@ bun run android
 
 ```
 bun run ios
+```
+
+### Build an android release apk:
+
+```
+npx expo eject
+cd android && ./gradlew assembleRelease
 ```
