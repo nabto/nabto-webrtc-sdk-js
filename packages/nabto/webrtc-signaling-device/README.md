@@ -1,12 +1,8 @@
-# Run integration tests
 
-The integration tests are tested against an integration test server.
+# Nabto WebRTC Signaling Device
 
-1. run the integration test server in ../../integration_test_server
-2. generate openapi type definitions
+The Nabto WebRTC Signaling Device is a signaling library used for device
+applications (such as IoT cameras) using the Nabto WebRTC Signaling Service.
 
-```
-npx @hey-api/openapi-ts -i http://127.0.0.1:13745/swagger/json -o integration_test/generated/client -c @hey-api/client-fetch
-```
-
-3. run the tests `npm run test:i`
+Nabto WebRTC is an offering which makes it easy to create IoT WebRTC solutions.
+See [Nabto WebRTC](https://docs.nabto.com) for more documentation.
