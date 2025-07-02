@@ -74,3 +74,10 @@ npx @hey-api/openapi-ts -i http://127.0.0.1:13745/swagger/json -o integration_te
 ```
 
 3. run the tests `npm run test:i`
+
+
+## Publishing guide.
+
+When the code looks appropriate, tag a release in git, a github actions job will
+create npm packages and upload the packages to npm. The version of the packages
+will be extracted from the git tag.
