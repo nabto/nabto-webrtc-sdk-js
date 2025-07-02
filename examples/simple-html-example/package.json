@@ -1,6 +1,6 @@
 {
   "name": "simple-html-example",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "",
   "source": "sdk_exports.ts",
   "main": "dist/bundle.js",
