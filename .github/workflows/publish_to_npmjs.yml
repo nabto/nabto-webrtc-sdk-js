@@ -28,8 +28,8 @@ jobs:
           pnpm install
           pnpm run build
       - if: github.event_name == 'release' && github.event.action == 'published'
-        run: pnpm -r publish --provenance --access public
+        run: pnpm -r publish --provenance --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - if: github.event_name == 'pull_request'
-        run: pnpm -r publish --provenance --access public --dry-run --no-git-checks
+        run: pnpm -r publish --provenance --access public --no-git-checks --dry-run
