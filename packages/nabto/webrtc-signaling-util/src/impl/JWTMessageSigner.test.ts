@@ -1,6 +1,4 @@
 import { test, assert, expect } from 'vitest'
-import { DefaultMessageEncoder, SignalingMessageType } from './DefaultMessageEncoder'
-import { WebrtcSignalingMessageType } from '../MessageTransport';
 import { JWTMessageSigner } from './JWTMessageSigner';
 
 test('Test sign and verify', async () => {
