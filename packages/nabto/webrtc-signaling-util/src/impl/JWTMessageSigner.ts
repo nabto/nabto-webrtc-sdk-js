@@ -22,7 +22,7 @@ export class JWTMessageSigner implements MessageSigner {
   /**
    * Nonces are used to ensure the messages are replay protected in this sesison.
    */
-  myNonce: string = uuidv4();
+  myNonce: string | undefined = undefined;
   remoteNonce?: string
 
   /**
@@ -32,7 +32,6 @@ export class JWTMessageSigner implements MessageSigner {
    * @param keyId The key ID to use. Optional, if not set the JWT header will omit the key id.
    */
   constructor(private sharedSecret: string, private keyId?: string) {
-
   };
 
   /**
@@ -68,6 +67,15 @@ export class JWTMessageSigner implements MessageSigner {
   async signMessage(msg: JSONValue): Promise<ProtocolSigningMessage> {
     if (this.nextMessageSignSeq !== 0 && this.remoteNonce === undefined) {
       throw new Error("Cannot sign the message with sequence number > 1, as we have not yet received a valid message from the remote peer.");
+    }
+
+    if (this.myNonce === undefined) {
+      try {
+        this.myNonce = uuidv4();
+      } catch (e) {
+        console.error("Cannot generate a nonce for the JWTMessageSigner, this is likely due to a missing crypto provider in the environment. In react native this can probably be fixed by installing the package 'react-native-get-random-values'.");
+        throw e;
+      }
     }
 
     const seq = this.nextMessageSignSeq;
