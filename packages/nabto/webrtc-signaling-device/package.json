@@ -37,5 +37,10 @@
     "typescript-eslint": "^8.32.1",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^2.1.5"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nabto/nabto-webrtc-sdk-js"
+  },
+  "homepage": "https://nabto.com"
 }
