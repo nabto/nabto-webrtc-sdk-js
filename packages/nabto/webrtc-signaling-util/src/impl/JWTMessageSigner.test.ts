@@ -23,7 +23,7 @@ test('Test sign twice fails', async () => {
   const msg = {
     "foo": "bar"
   }
-  const signed1 = await signer1.signMessage(msg)
+  await signer1.signMessage(msg)
   await expect(signer1.signMessage(msg)).rejects.toThrow(
     "Cannot sign the message with sequence number > 1, as we have not yet received a valid message from the remote peer."
   );
