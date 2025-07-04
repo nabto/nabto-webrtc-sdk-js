@@ -24,7 +24,7 @@ export type TestDeviceOptions = Static<typeof TestDeviceOptionsSchema>
 type wsCloseCallback = (errorCode: number, message: string) => void
 type wsSendMessageCallback = (message: string) => void
 
-class DeviceTestInstance {
+class DeviceTestInstance implements TestInstance {
   channelId: string = crypto.randomUUID();
   productId: string = crypto.randomUUID();
   deviceId: string = crypto.randomUUID();
@@ -37,6 +37,7 @@ class DeviceTestInstance {
 
   wsSender?: wsSendMessageCallback
   wsClose?: wsCloseCallback
+  requireAccessToken: boolean = true;
   constructor(public options: TestDeviceOptions) {
   }
   deviceConnected(wsSender: wsSendMessageCallback, wsClose: wsCloseCallback) {

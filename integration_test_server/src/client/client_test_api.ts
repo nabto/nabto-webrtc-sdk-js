@@ -9,7 +9,8 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
       productId: testClient.productId,
       deviceId: testClient.deviceId,
       testId: testClient.testId,
-      endpointUrl: testClient.endpointUrl
+      endpointUrl: testClient.endpointUrl,
+      accessToken: testClient.accessToken
     }
   }, {
     body: TestClientOptionsSchema,
@@ -19,7 +20,8 @@ export const clientTestApi = new Elysia({ prefix: "/test/client" })
           productId: t.String(),
           deviceId: t.String(),
           endpointUrl: t.String(),
-          testId: t.String()
+          testId: t.String(),
+          accessToken: t.String()
         }, { description: "success" }
       ),
       400: t.String({ description: "failure" })
