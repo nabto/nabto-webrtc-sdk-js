@@ -5,6 +5,9 @@ export type PostV1ClientConnectData = {
         deviceId: string;
         productId: string;
     };
+    headers?: {
+        authorization?: string;
+    };
     path?: never;
     query?: never;
     url: '/v1/client/connect';
@@ -99,7 +102,15 @@ export type PostTestClientData = {
     body: {
         failHttp?: boolean;
         failWs?: boolean;
+        /**
+         * specify the endpoint url the server returns in the test create response and the websocket url. Format http://<ip>:<port>
+         */
+        endpointUrl?: string;
         extraClientConnectResponseData?: boolean;
+        /**
+         * Set to true to force the client to use an access token when connecting
+         */
+        requireAccessToken?: boolean;
     };
     path?: never;
     query?: never;
@@ -124,6 +135,7 @@ export type PostTestClientResponses = {
         deviceId: string;
         endpointUrl: string;
         testId: string;
+        accessToken: string;
     };
 };
 
@@ -306,6 +318,40 @@ export type PostTestClientByTestIdWaitForDeviceMessagesResponses = {
 
 export type PostTestClientByTestIdWaitForDeviceMessagesResponse = PostTestClientByTestIdWaitForDeviceMessagesResponses[keyof PostTestClientByTestIdWaitForDeviceMessagesResponses];
 
+export type PostTestClientByTestIdWaitForDeviceErrorData = {
+    body: {
+        timeout: number;
+    };
+    path: {
+        testId: string;
+    };
+    query?: never;
+    url: '/test/client/{testId}/wait-for-device-error';
+};
+
+export type PostTestClientByTestIdWaitForDeviceErrorErrors = {
+    /**
+     * failure
+     */
+    404: string;
+};
+
+export type PostTestClientByTestIdWaitForDeviceErrorError = PostTestClientByTestIdWaitForDeviceErrorErrors[keyof PostTestClientByTestIdWaitForDeviceErrorErrors];
+
+export type PostTestClientByTestIdWaitForDeviceErrorResponses = {
+    /**
+     * success
+     */
+    200: {
+        error?: {
+            code: string;
+            message?: string;
+        };
+    };
+};
+
+export type PostTestClientByTestIdWaitForDeviceErrorResponse = PostTestClientByTestIdWaitForDeviceErrorResponses[keyof PostTestClientByTestIdWaitForDeviceErrorResponses];
+
 export type PostTestClientByTestIdSendDeviceMessagesData = {
     body: {
         messages: Array<unknown>;
@@ -399,6 +445,68 @@ export type PostTestClientByTestIdSendNewMessageTypeResponses = {
 };
 
 export type PostTestClientByTestIdSendNewMessageTypeResponse = PostTestClientByTestIdSendNewMessageTypeResponses[keyof PostTestClientByTestIdSendNewMessageTypeResponses];
+
+export type PostTestClientByTestIdSendNewFieldInKnownMessageTypeData = {
+    body: {
+        [key: string]: unknown;
+    };
+    path: {
+        testId: string;
+    };
+    query?: never;
+    url: '/test/client/{testId}/send-new-field-in-known-message-type';
+};
+
+export type PostTestClientByTestIdSendNewFieldInKnownMessageTypeErrors = {
+    /**
+     * failure
+     */
+    404: string;
+};
+
+export type PostTestClientByTestIdSendNewFieldInKnownMessageTypeError = PostTestClientByTestIdSendNewFieldInKnownMessageTypeErrors[keyof PostTestClientByTestIdSendNewFieldInKnownMessageTypeErrors];
+
+export type PostTestClientByTestIdSendNewFieldInKnownMessageTypeResponses = {
+    /**
+     * success
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type PostTestClientByTestIdSendNewFieldInKnownMessageTypeResponse = PostTestClientByTestIdSendNewFieldInKnownMessageTypeResponses[keyof PostTestClientByTestIdSendNewFieldInKnownMessageTypeResponses];
+
+export type PostTestClientByTestIdGetActiveWebsocketsData = {
+    body: {
+        [key: string]: never;
+    };
+    path: {
+        testId: string;
+    };
+    query?: never;
+    url: '/test/client/{testId}/get-active-websockets';
+};
+
+export type PostTestClientByTestIdGetActiveWebsocketsErrors = {
+    /**
+     * failure
+     */
+    404: string;
+};
+
+export type PostTestClientByTestIdGetActiveWebsocketsError = PostTestClientByTestIdGetActiveWebsocketsErrors[keyof PostTestClientByTestIdGetActiveWebsocketsErrors];
+
+export type PostTestClientByTestIdGetActiveWebsocketsResponses = {
+    /**
+     * success
+     */
+    200: {
+        activeWebSockets: number;
+    };
+};
+
+export type PostTestClientByTestIdGetActiveWebsocketsResponse = PostTestClientByTestIdGetActiveWebsocketsResponses[keyof PostTestClientByTestIdGetActiveWebsocketsResponses];
 
 export type DeleteTestClientByTestIdData = {
     body?: never;
@@ -811,6 +919,60 @@ export type PostTestDeviceByTestIdClientsByClientIdWaitForErrorResponses = {
 };
 
 export type PostTestDeviceByTestIdClientsByClientIdWaitForErrorResponse = PostTestDeviceByTestIdClientsByClientIdWaitForErrorResponses[keyof PostTestDeviceByTestIdClientsByClientIdWaitForErrorResponses];
+
+export type PostV1IceServersData = {
+    body: {
+        deviceId: string;
+        productId: string;
+    };
+    headers?: {
+        authorization?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/ice-servers';
+};
+
+export type PostV1IceServersErrors = {
+    /**
+     * failure
+     */
+    400: {
+        message?: string;
+    };
+    /**
+     * failure
+     */
+    401: {
+        message?: string;
+    };
+    /**
+     * failure
+     */
+    403: {
+        message?: string;
+    };
+    /**
+     * failure
+     */
+    404: {
+        message?: string;
+    };
+};
+
+export type PostV1IceServersError = PostV1IceServersErrors[keyof PostV1IceServersErrors];
+
+export type PostV1IceServersResponses = {
+    200: {
+        iceServers: Array<{
+            username?: string;
+            credential?: string;
+            urls: Array<string>;
+        }>;
+    };
+};
+
+export type PostV1IceServersResponse = PostV1IceServersResponses[keyof PostV1IceServersResponses];
 
 export type ClientOptions = {
     baseUrl: 'http://127.0.0.1:13745' | (string & {});
