@@ -167,7 +167,6 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       this.signalingUrl = await this.httpConnectRequest();
       this.ws.connect(this.signalingUrl)
     } catch (e) {
-      this.connectionState = SignalingConnectionState.FAILED;
       this.emitError(e);
     }
   }

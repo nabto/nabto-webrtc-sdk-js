@@ -1,6 +1,7 @@
 import { TestClients, testClientsPlugin } from "./TestClientInstance";
 import { Elysia, t } from 'elysia'
 import { RoutingUnionScheme } from "../WebsocketProtocolDataTypes";
+import bearer from "@elysiajs/bearer";
 
 const errorType = t.Object({
   message: t.Optional(t.String())
@@ -8,7 +9,8 @@ const errorType = t.Object({
 
 export const clientHttp = new Elysia()
   .use(testClientsPlugin)
-  .post("/v1/client/connect", async ({ testClients, error, body: { productId, deviceId } }) => {
+  .use(bearer())
+  .post("/v1/client/connect", async ({ testClients, error, body: { productId, deviceId }, bearer }) => {
     const test = testClients.getClientByProductId(productId);
     if (!test) {
       return error(404, { message: "No Such Test" });
@@ -22,11 +24,22 @@ export const clientHttp = new Elysia()
       console.log("adding extra data")
       extraData = {"extra_field_in_the_response": "for testing"}
     }
+    if (test.requireAccessToken) {
+      if (!bearer) {
+        return error(400, { message: "Bad request missing access token" });
+      }
+      if (bearer != test.accessToken) {
+        return error(401, { message: "Access Denied" });
+      }
+    }
     return { signalingUrl: test.endpointUrl.replace("http://", "ws://") + `/client-ws/${test.testId}`, deviceOnline: test.isDeviceConnected(), channelId: test.testId, ...extraData }
   }, {
     body: t.Object({
       deviceId: t.String(),
       productId: t.String(),
+    }),
+    headers: t.Object({
+      authorization: t.Optional(t.String())
     }),
     response: {
       200: t.Object({
@@ -36,6 +49,7 @@ export const clientHttp = new Elysia()
         extra_field_in_the_response: t.Optional(t.String())
       }, { description: "success"}),
       400: errorType,
+      401: errorType,
       404: errorType,
     }
   })
