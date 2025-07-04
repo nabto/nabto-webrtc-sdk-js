@@ -76,6 +76,7 @@ export class ClientTestInstance {
     await postTestClientByTestIdSendNewMessageType({ path: { testId: this.testId }, body: {} })
   }
   async waitForObservedStates(client: SignalingClient, states: Array<SignalingConnectionState>): Promise<boolean> {
+    console.log(this.observedConnectionStates)
     return new Promise((resolve, _reject) => {
       if (JSON.stringify(this.observedConnectionStates) === JSON.stringify(states)) {
         resolve(true);

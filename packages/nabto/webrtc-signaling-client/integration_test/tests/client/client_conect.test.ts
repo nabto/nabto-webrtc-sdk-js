@@ -236,3 +236,39 @@ describe("Signaling channel states", async () => {
     }
   })
 })
+
+describe("Client Connectivity Test 13, require an access token", async () => {
+  let testInstance: ClientTestInstance;
+  let client: SignalingClient;
+  beforeEach(async () => {
+    testInstance = await ClientTestInstance.create({requireAccessToken: true});
+    client = testInstance.createSignalingClient();
+  })
+
+  afterEach(async () => {
+    await testInstance.destroyTest();
+  })
+  test("Client connectivity test 13", async () => {
+    client.start();
+    await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
+  });
+})
+
+describe("Client Connectivity Test 14, fail if the access token is invalid", async () => {
+  let testInstance: ClientTestInstance;
+  let client: SignalingClient;
+  beforeEach(async () => {
+    testInstance = await ClientTestInstance.create({ requireAccessToken: true });
+    testInstance.accessToken = "invalid";
+    client = testInstance.createSignalingClient();
+  })
+
+  afterEach(async () => {
+    await testInstance.destroyTest();
+  })
+  test("Client Connectivity Test 14", async () => {
+    client.start();
+    await expect(testInstance.waitForErrorRejectWithError(client)).rejects.toThrow("Access Denied");
+    await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.FAILED]);
+  });
+})
