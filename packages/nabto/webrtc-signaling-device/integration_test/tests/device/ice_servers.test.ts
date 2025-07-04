@@ -1,6 +1,4 @@
-import { test, afterEach, beforeEach, describe, expect } from 'vitest'
-
-import { SignalingConnectionState } from '../../../src'
+import { test, afterEach, describe, expect } from 'vitest'
 import { DeviceTestInstance } from '../../src/DeviceTestInstance'
 
 describe("Test of ice servers functionality", async () => {

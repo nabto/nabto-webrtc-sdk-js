@@ -1,7 +1,6 @@
-import { test, afterEach, beforeEach, describe, expect } from 'vitest'
+import { test, afterEach, describe, expect } from 'vitest'
 
 import { ClientTestInstance } from '../../src/ClientTestInstance'
-import { SignalingConnectionState } from '../../../src'
 
 describe("Test of ice servers functionality", async () => {
   let testInstance: ClientTestInstance
