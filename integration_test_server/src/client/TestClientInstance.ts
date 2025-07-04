@@ -16,7 +16,8 @@ export const TestClientOptionsSchema = t.Object({
   failHttp: t.Optional(t.Boolean()),
   failWs: t.Optional(t.Boolean()),
   endpointUrl: t.Optional(t.String({description: "specify the endpoint url the server returns in the test create response and the websocket url. Format http://<ip>:<port>"})),
-  extraClientConnectResponseData: t.Optional(t.Boolean())
+  extraClientConnectResponseData: t.Optional(t.Boolean()),
+  requireAccessToken: t.Optional(t.Boolean({description: "Set to true to force the client to use an access token when connecting"})),
 });
 
 export type TestClientOptions = Static<typeof TestClientOptionsSchema>
@@ -24,10 +25,11 @@ export type TestClientOptions = Static<typeof TestClientOptionsSchema>
 type wsCloseCallback = (errorCode: number, message: string) => void
 type wsSendMessageCallback = (message: string) => void
 
-class TestClientInstance {
+class TestClientInstance implements TestInstance{
   channelId: string = crypto.randomUUID();
   productId: string = crypto.randomUUID();
   deviceId: string = crypto.randomUUID();
+  accessToken: string = crypto.randomUUID();
   testId: string = this.productId;
   endpointUrl: string = "http://127.0.0.1:13745";
 
@@ -38,11 +40,13 @@ class TestClientInstance {
   wsSender?: wsSendMessageCallback
   wsClose?: wsCloseCallback
   activeWebSockets: number = 0;
+  requireAccessToken: boolean;
   constructor(public options: TestClientOptions) {
     this.device = new SimulatedDevice(this.channelId, (msg: Routing) => { this.sendMessage(msg) });
     if (options.endpointUrl) {
       this.endpointUrl = options.endpointUrl;
     }
+    this.requireAccessToken = options.requireAccessToken ?? false;
   }
   clientConnected(wsSender: wsSendMessageCallback, wsClose: wsCloseCallback) {
     this.wsSender = wsSender;

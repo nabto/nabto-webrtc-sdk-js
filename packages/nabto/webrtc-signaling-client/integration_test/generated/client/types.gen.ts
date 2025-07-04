@@ -128,6 +128,7 @@ export type PostTestClientResponses = {
         deviceId: string;
         endpointUrl: string;
         testId: string;
+        accessToken: string;
     };
 };
 
@@ -309,6 +310,40 @@ export type PostTestClientByTestIdWaitForDeviceMessagesResponses = {
 };
 
 export type PostTestClientByTestIdWaitForDeviceMessagesResponse = PostTestClientByTestIdWaitForDeviceMessagesResponses[keyof PostTestClientByTestIdWaitForDeviceMessagesResponses];
+
+export type PostTestClientByTestIdWaitForDeviceErrorData = {
+    body: {
+        timeout: number;
+    };
+    path: {
+        testId: string;
+    };
+    query?: never;
+    url: '/test/client/{testId}/wait-for-device-error';
+};
+
+export type PostTestClientByTestIdWaitForDeviceErrorErrors = {
+    /**
+     * failure
+     */
+    404: string;
+};
+
+export type PostTestClientByTestIdWaitForDeviceErrorError = PostTestClientByTestIdWaitForDeviceErrorErrors[keyof PostTestClientByTestIdWaitForDeviceErrorErrors];
+
+export type PostTestClientByTestIdWaitForDeviceErrorResponses = {
+    /**
+     * success
+     */
+    200: {
+        error?: {
+            code: string;
+            message?: string;
+        };
+    };
+};
+
+export type PostTestClientByTestIdWaitForDeviceErrorResponse = PostTestClientByTestIdWaitForDeviceErrorResponses[keyof PostTestClientByTestIdWaitForDeviceErrorResponses];
 
 export type PostTestClientByTestIdSendDeviceMessagesData = {
     body: {
@@ -877,6 +912,113 @@ export type PostTestDeviceByTestIdClientsByClientIdWaitForErrorResponses = {
 };
 
 export type PostTestDeviceByTestIdClientsByClientIdWaitForErrorResponse = PostTestDeviceByTestIdClientsByClientIdWaitForErrorResponses[keyof PostTestDeviceByTestIdClientsByClientIdWaitForErrorResponses];
+
+export type PostV1IceServersData = {
+    body: {
+        deviceId: string;
+        productId: string;
+    };
+    headers?: {
+        authorization?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/ice-servers';
+};
+
+export type PostV1IceServersErrors = {
+    /**
+     * failure
+     */
+    400: {
+        message?: string;
+    };
+    /**
+     * failure
+     */
+    401: {
+        message?: string;
+    };
+    /**
+     * failure
+     */
+    403: {
+        message?: string;
+    };
+    /**
+     * failure
+     */
+    404: {
+        message?: string;
+    };
+};
+
+export type PostV1IceServersError = PostV1IceServersErrors[keyof PostV1IceServersErrors];
+
+export type PostV1IceServersResponses = {
+    200: {
+        iceServers: Array<{
+            username: string;
+            credential: string;
+            urls: Array<string>;
+        }>;
+    };
+};
+
+export type PostV1IceServersResponse = PostV1IceServersResponses[keyof PostV1IceServersResponses];
+
+export type PostTestIceServersData = {
+    body: {
+        [key: string]: unknown;
+    };
+    path?: never;
+    query?: never;
+    url: '/test/ice-servers/';
+};
+
+export type PostTestIceServersErrors = {
+    /**
+     * failure
+     */
+    400: string;
+};
+
+export type PostTestIceServersError = PostTestIceServersErrors[keyof PostTestIceServersErrors];
+
+export type PostTestIceServersResponses = {
+    /**
+     * success
+     */
+    200: {
+        productId: string;
+        deviceId: string;
+        endpointUrl: string;
+        testId: string;
+        accessToken: string;
+    };
+};
+
+export type PostTestIceServersResponse = PostTestIceServersResponses[keyof PostTestIceServersResponses];
+
+export type DeleteTestIceServersByTestIdData = {
+    body?: never;
+    path: {
+        testId: string;
+    };
+    query?: never;
+    url: '/test/ice-servers/{testId}';
+};
+
+export type DeleteTestIceServersByTestIdResponses = {
+    /**
+     * success
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type DeleteTestIceServersByTestIdResponse = DeleteTestIceServersByTestIdResponses[keyof DeleteTestIceServersByTestIdResponses];
 
 export type ClientOptions = {
     baseUrl: 'http://127.0.0.1:13745' | (string & {});

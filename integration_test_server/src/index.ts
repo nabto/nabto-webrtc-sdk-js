@@ -5,6 +5,7 @@ import { TestClients, testClientsPlugin } from './client/TestClientInstance'
 import { clientHttp, clientWs } from "./client/client_api";
 import { deviceHttp, deviceWs } from "./device/device_api";
 import { deviceTestApi } from "./device/device_test_api";
+import { iceServersHttp } from "./ice-servers/ice_servers_api";
 
 const app = new Elysia()
   .use(testClientsPlugin)
@@ -27,6 +28,7 @@ const app = new Elysia()
   .use(deviceWs)
   .use(clientTestApi)
   .use(deviceTestApi)
+  .use(iceServersHttp)
 
 const server = app.listen(13745)
 

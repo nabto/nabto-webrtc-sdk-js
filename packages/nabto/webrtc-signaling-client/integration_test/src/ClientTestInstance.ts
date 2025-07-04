@@ -6,17 +6,18 @@ export interface ClientTestOptions {
   failHttp?: boolean
   failWs?: boolean
   extraClientConnectResponseData?: boolean
+  requireAccessToken?: boolean
 }
 
 export class ClientTestInstance {
   observedConnectionStates: Array<SignalingConnectionState> = []
-  constructor(public productId: string, public deviceId: string, public endpointUrl: string, public testId: string) {
+  constructor(private options : ClientTestOptions, public productId: string, public deviceId: string, public endpointUrl: string, public testId: string, public accessToken: string) {
 
   }
   static async create(options: ClientTestOptions): Promise<ClientTestInstance> {
     const f = await postTestClient({ body: options });
     if (f.data) {
-      return new ClientTestInstance(f.data.productId, f.data.deviceId, f.data.endpointUrl, f.data.testId);
+      return new ClientTestInstance(options, f.data.productId, f.data.deviceId, f.data.endpointUrl, f.data.testId, f.data.accessToken);
     } else {
       throw new Error("Missing response data")
     }
@@ -24,13 +25,12 @@ export class ClientTestInstance {
   async destroyTest(): Promise<void> {
     await deleteTestClientByTestId({ path: { testId: this.testId } })
   }
-  createSignalingClient(requireOnline?: boolean): SignalingClient {
-    const signalingClient = createSignalingClient({ productId: this.productId, deviceId: this.deviceId, endpointUrl: this.endpointUrl, requireOnline: requireOnline })
+  createSignalingClient(requireOnline: boolean = false): SignalingClient {
+    const signalingClient = createSignalingClient({ productId: this.productId, deviceId: this.deviceId, endpointUrl: this.endpointUrl, requireOnline: requireOnline, accessToken: this.options.requireAccessToken? this.accessToken : undefined });
     signalingClient.on("connectionstatechange", () => {
       this.observedConnectionStates.push(signalingClient.connectionState);
     })
     return signalingClient;
-
   }
 
   async connectDevice(): Promise<void> {
