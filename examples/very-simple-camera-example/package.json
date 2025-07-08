@@ -1,0 +1,19 @@
+{
+  "name": "simplest-example",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@nabto/webrtc-signaling-device": "^0.0.2",
+    "@nabto/webrtc-signaling-util": "^0.0.2",
+    "dayjs": "^1.11.13",
+    "lodash": "^4.17.21",
+    "vite": "^7.0.3"
+  }
+}
