@@ -1,5 +1,5 @@
-import { createSignalingDevice, SignalingErrorCodes } from '@nabto/webrtc-signaling-device'
-import { createClientMessageTransport, ClientMessageTransportSecurityMode, PerfectNegotiation, DeviceTokenGenerator, createDeviceMessageTransport, DeviceMessageTransportSecurityMode } from '@nabto/webrtc-signaling-util'
+import { createSignalingDevice } from '@nabto/webrtc-signaling-device'
+import { PerfectNegotiation, DeviceTokenGenerator, createDeviceMessageTransport, DeviceMessageTransportSecurityMode, SignalingEventHandler } from '@nabto/webrtc-signaling-util'
 
 const productId = "...";
 const deviceId = "...";
@@ -15,6 +15,7 @@ class RTCConnectionHandler {
         this.messageTransport.on("setupdone", async (iceServers) => {
             const pc = new RTCPeerConnection({ iceServers: iceServers });
             new PerfectNegotiation(pc, this.messageTransport);
+            new SignalingEventHandler(pc, signalingDevice);
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
             stream.getTracks().forEach((track) => {
                 pc.addTrack(track);

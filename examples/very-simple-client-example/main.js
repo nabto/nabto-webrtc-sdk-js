@@ -1,5 +1,5 @@
 import {createSignalingClient } from '@nabto/webrtc-signaling-client'
-import { createClientMessageTransport, ClientMessageTransportSecurityMode, PerfectNegotiation } from '@nabto/webrtc-signaling-util'
+import { createClientMessageTransport, ClientMessageTransportSecurityMode, PerfectNegotiation, SignalingEventHandler } from '@nabto/webrtc-signaling-util'
 
 const productId = "...";
 const deviceId = "...";
@@ -11,6 +11,7 @@ function connect()  {
     messageTransport.on("setupdone", async (iceServers) => {
         const pc = new RTCPeerConnection({iceServers: iceServers});
         new PerfectNegotiation(pc, messageTransport);
+        new SignalingEventHandler(pc, signalingClient);
         pc.addEventListener("track", (event) => {
             const videoElement = document.getElementById("videoview");
             videoElement.srcObject = event.streams[0];
