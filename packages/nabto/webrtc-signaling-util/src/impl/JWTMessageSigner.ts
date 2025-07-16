@@ -88,7 +88,7 @@ export class JWTMessageSigner implements MessageSigner {
       signerNonce: this.myNonce,
       verifierNonce: this.remoteNonce ? this.remoteNonce : undefined
     };
-    const signed = rs.KJUR.jws.JWS.sign("HS256", JSON.stringify(header), JSON.stringify(payload), this.sharedSecret);
+    const signed = rs.KJUR.jws.JWS.sign("HS256", JSON.stringify(header), JSON.stringify(payload), { "utf8": this.sharedSecret });
     return  { "type": ProtocolSigningMessageTypes.JWT, jwt: signed };
   }
 
@@ -104,7 +104,7 @@ export class JWTMessageSigner implements MessageSigner {
     }
     const jwtMessage = signingMessage;
     const token = jwtMessage.jwt;
-    const verified = rs.KJUR.jws.JWS.verifyJWT(token, this.sharedSecret, { alg: ["HS256"] })
+    const verified = rs.KJUR.jws.JWS.verifyJWT(token, { "utf8": this.sharedSecret }, { alg: ["HS256"] })
     if (!verified) {
       throw new SignalingError(SignalingErrorCodes.VERIFICATION_ERROR, "The JWT token could not be verified. A possible reason can be a mismatch in the used shared secrets.");
     }
