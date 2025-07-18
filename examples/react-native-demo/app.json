@@ -23,7 +23,7 @@
         "LSApplicationCategoryType": "public.utility",
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "This app optionally needs access to the camera to scan QR codes with connection details. You can also enter the details manually instead.",
-        "NSMicrophoneUsageDescription": "This app optionally needs access to the microphone to enable upstream audio in the live stream if the receive supports it. You don't need to allow microphone access just to view a live stream.",
+        "NSMicrophoneUsageDescription": "This app optionally needs access to the microphone to enable upstream audio in the live stream if the receiver supports it. You don't need to allow microphone access just to view a live stream.",
       },
       "buildNumber": "2"
     },
