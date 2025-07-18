@@ -2,7 +2,7 @@
   "expo": {
     "name": "Nabto WebRTC",
     "slug": "nabto-webrtc",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -13,15 +13,19 @@
       "signalingEndpoint": "https://eu.webrtc.nabto.net"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bitcode": false,
       "bundleIdentifier": "com.nabto.signaling.application",
       "associatedDomains": [
         "applinks:applinks.nabto.com"
       ],
       "infoPlist": {
-        "LSApplicationCategoryType": "public.utility"
-      }
+        "LSApplicationCategoryType": "public.utility",
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "This app optionally needs access to the camera to scan QR codes with connection details. You can also enter the details manually instead.",
+        "NSMicrophoneUsageDescription": "This app optionally needs access to the microphone to enable upstream audio in the live stream if the receive supports it. You don't need to allow microphone access just to view a live stream.",
+      },
+      "buildNumber": "2"
     },
     "android": {
       "intentFilters": [

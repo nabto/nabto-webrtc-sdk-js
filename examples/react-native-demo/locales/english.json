@@ -25,8 +25,8 @@
         "headerTitle": "Scan",
         "scanLabel": "Position QR code above",
         "scanError": "Invalid QR code",
-        "permissionsInfo": "To use scanning functionality, please allow this app to use your camera.",
-        "grantPermission": "Grant permission"
+        "permissionsInfo": "To use QR code scanning functionality, please allow this app to use your camera. By pressing the button below, you will request system access to use the camera to scan a QR code. You can also view a Nabto WebRTC feed without scanning a QR code and just entering the information by hand in the Live Stream tab",
+        "grantPermission": "Continue using camera for QR scanning"
     },
 
     "connected": "Connected",
