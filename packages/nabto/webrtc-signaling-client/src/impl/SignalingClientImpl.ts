@@ -1,4 +1,4 @@
-import { SignalingClient, SignalingClientOptions } from '../SignalingClient'
+import { DeviceOfflineError, SignalingClient, SignalingClientOptions } from '../SignalingClient'
 import { SignalingError, SignalingChannel, SignalingChannelState, SignalingConnectionState, SignalingChannelEventHandlers, WebSocketConnectionImpl, SignalingServiceImpl, SignalingConnectionStateChangesEventHandlers, HttpError, SignalingChannelImpl, WebSocketCloseReason, JSONValue } from '@nabto/webrtc-signaling-common';
 import { ClientsApi } from './backend/apis/ClientsApi';
 import { instanceOfHttpError } from './backend';
@@ -140,7 +140,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       }
       if (this.options.requireOnline === true) {
         if (this.signalingChannel.channelState !== SignalingChannelState.CONNECTED) {
-          throw new Error("The requested device is not online, try again later.");
+          throw new DeviceOfflineError();
         }
       }
       return response.signalingUrl;
