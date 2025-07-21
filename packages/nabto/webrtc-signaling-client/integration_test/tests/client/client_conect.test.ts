@@ -1,9 +1,14 @@
 import { test, afterEach, beforeEach, describe, expect } from 'vitest'
 
 import { ClientTestInstance } from '../../src/ClientTestInstance'
-import { SignalingChannelState, SignalingClient, SignalingErrorCodes } from '../../../src'
+import {
+  DeviceOfflineError,
+  SignalingChannelState,
+  SignalingClient,
+  SignalingErrorCodes,
+  SignalingConnectionState,
+} from "../../../src";
 import { SignalingError } from '@nabto/webrtc-signaling-common'
-import { SignalingConnectionState } from '../../../src'
 
 describe("Test of connection to the signaling service", async () => {
   let testInstance: ClientTestInstance
@@ -171,7 +176,8 @@ describe("Test connection to a device which is offline but is required to be onl
   })
   test('Device is offline', async () => {
     client.start();
-    await expect(testInstance.waitForErrorRejectWithError(client)).rejects.toThrowError('The requested device is not online')
+
+    await expect(testInstance.waitForErrorRejectWithError(client)).rejects.toThrowError(DeviceOfflineError)
   })
 })
 
