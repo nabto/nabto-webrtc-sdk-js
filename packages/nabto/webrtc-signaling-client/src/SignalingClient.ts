@@ -1,6 +1,12 @@
 import { SignalingConnectionState, SignalingChannelState, JSONValue, SignalingError } from "@nabto/webrtc-signaling-common";
 import { SignalingClientImpl } from "./impl/SignalingClientImpl"
 
+export class DeviceOfflineError extends Error {
+  constructor() {
+    super("The requested device is not online, try again later.")
+  }
+}
+
 /**
  * Options for creating a SignalingClient.
  */
