@@ -226,7 +226,7 @@ export default function Tab() {
       if (localSearchParams.deviceId && localSearchParams.productId && localSearchParams.sharedSecret) {
         setDeviceId(localSearchParams.deviceId);
         setProductId(localSearchParams.productId);
-        setSharedSecret(localSearchParams.sharedSecret);  
+        setSharedSecret(localSearchParams.sharedSecret);
         console.log("scancounter useffect called onconnectpressed")
         onConnectPressed(localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret);
       }
@@ -267,12 +267,12 @@ export default function Tab() {
         height: 250
       }}>
         <RTCView
-          objectFit="cover"
+          objectFit="contain"
           streamURL={mediaStream?.toURL()}
           style={{
             flex: 1
           }}>
-          </RTCView>
+        </RTCView>
 
           {
             progressState === "connecting" ? <VideoSpinner/> :
