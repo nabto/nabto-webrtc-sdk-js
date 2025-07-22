@@ -2,7 +2,19 @@ require File.join(File.dirname(`node --print "require.resolve('expo/package.json
 require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
 
 require 'json'
-podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
+
+def load_podfile_properties
+  props = {}
+  props_path = File.join(__dir__, 'Podfile.properties.json')
+  local_path = File.join(__dir__, 'Podfile.properties.local.json')
+
+  props.merge!(JSON.parse(File.read(props_path))) if File.exist?(props_path)
+  props.merge!(JSON.parse(File.read(local_path))) if File.exist?(local_path)
+
+  props
+end
+
+podfile_properties = load_podfile_properties
 
 ENV['RCT_NEW_ARCH_ENABLED'] = podfile_properties['newArchEnabled'] == 'true' ? '1' : '0'
 ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
