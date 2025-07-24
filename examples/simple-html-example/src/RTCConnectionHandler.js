@@ -8,14 +8,15 @@ class RTCConnectionHandler {
    * @param {(string | Error | unknown) => void} options.logger - The handler to call when logging a state change or error
    * @param {(Error) => void} options.onerror - The handler to call when a fatal error occurs
    */
-  constructor({ productId, deviceId, sharedSecret, ontrack, logger, onerror }) {
+  constructor({ productId, deviceId, sharedSecret, ontrack, onsignalingstatechange, onpeerconnectionstatechange, onerror }) {
     this.signalingClient = SDK.createSignalingClient({
       productId: productId,
       deviceId: deviceId,
       requireOnline: true
     });
     this.ontrack = ontrack;
-    this.logger = logger;
+    this.onsignalingstatechange = onsignalingstatechange;
+    this.onpeerconnectionstatechange = onpeerconnectionstatechange;
     this.onerror = onerror;
     this.messageTransport = SDK.createClientMessageTransport(this.signalingClient, {
       securityMode: SDK.ClientMessageTransportSecurityMode.SHARED_SECRET,
@@ -29,10 +30,11 @@ class RTCConnectionHandler {
       this.onerror(error)
     })
     this.signalingClient.on("error", (error) => {
-      this.onerror(error)
+      this.onerror(error);
     })
     this.signalingClient.on("connectionstatechange", () => {
-      this.logger(`New SignalingClient connection state: ${this.signalingClient.connectionState}`)
+      console.log("XXX Signaling connection state changed to: " + this.signalingClient.connectionState);
+      this.onsignalingstatechange(this.signalingClient.connectionState)
     })
     this.signalingClient.start();
   }
@@ -58,7 +60,8 @@ class RTCConnectionHandler {
       this.ontrack(event)
     }
     this.pc.onconnectionstatechange = () => {
-      this.logger(`New RTCPeerConnection state: ${this.pc.connectionState}`)
+      console.log("XXX Peer connection state changed to: " + this.pc.connectionState);
+      this.onpeerconnectionstatechange(this.pc.connectionState)
     }
   }
 }
