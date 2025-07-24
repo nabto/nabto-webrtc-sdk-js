@@ -24,33 +24,49 @@
 
     <div class="video-container">
         <video id="remote-video" autoplay muted controls width="480" height="360"></video>
-        <br/>
-        <button id="connect-btn" onclick="connect()">Connect</button>
-        <button id="disconnect-btn" disabled="true" onclick="disconnect()">Disconnect</button>
+        <br />
+        <button id="connect-disconnect-btn" onclick="handleConnectDisconnect()">Connect</button>
     </div>
+
+    <div class="webrtc-status-message" id="webrtc-status">
+        <p>
+            <span id="webrtc-status-value">Not connected</span>
+        </p>
+    </div>
+
     <div class="logs-container">
         <pre id="logs"></pre>
     </div>
 </body>
 <script>
     let rtcConnectionHandler = undefined;
+    let errorOccurred = false;
+    let isConnected = false;
+
+    function updateButton() {
+        const btn = document.getElementById("connect-disconnect-btn");
+        btn.innerText = isConnected ? "Disconnect" : "Connect";
+    }
+
     function disconnect() {
-        document.getElementById("disconnect-btn").disabled = true;
-        rtcConnectionHandler.close();
-        rtcConnectionHandler = undefined;
+        if (rtcConnectionHandler) {
+            rtcConnectionHandler.close();
+            rtcConnectionHandler = undefined;
+        }
         const videoElement = document.getElementById("remote-video");
         videoElement.srcObject = null;
-        document.getElementById("connect-btn").disabled = false;
+        isConnected = false;
+        updateButton();
     }
 
     async function connect() {
-        document.getElementById("connect-btn").disabled = true;
+        errorOccurred = false;
         rtcConnectionHandler = new RTCConnectionHandler({
             productId: localStorage.getItem("productId"),
             deviceId: localStorage.getItem("deviceId"),
             sharedSecret: localStorage.getItem("sharedSecret"),
             /**
-             * @param {RTCTrackEent} track
+             * @param {RTCTrackEvent} track
              */
             ontrack: (track) => {
                 const videoElement = document.getElementById("remote-video");
@@ -59,29 +75,82 @@
                 }
                 videoElement.srcObject.addTrack(track.track);
             },
+
             /**
              * @param {string} state
              */
-            logger: (entry) => {
-                appendLog(entry)
+            onsignalingstatechange: (state) => {
+                // no ui updates for signaling state (only a single label)
+                appendLog("Signaling state: " + state);
             },
+
+            /**
+             * @param {string} state
+             */
+            onpeerconnectionstatechange: (state) => {
+                if (!errorOccurred) {
+                    // errors are more important than state changes
+                    updateStatusMessage(state)
+                }
+                appendLog("PeerConnection state: " + state);
+                if (state === "connected") {
+                    isConnected = true;
+                    updateButton();
+                } else if (state === "disconnected" || state === "closed" || state === "failed") {
+                    isConnected = false;
+                    updateButton();
+                }
+            },
+
             /**
              * @param {Error} error
              */
             onerror: (error) => {
+                errorOccurred = true;
+                updateStatusMessage(error);
                 appendLog(error);
                 disconnect();
             }
         });
-        document.getElementById("disconnect-btn").disabled = false;
+    }
+
+    function handleConnectDisconnect() {
+        if (isConnected) {
+            disconnect();
+        } else {
+            connect();
+        }
+    }
+
+    function updateStatusMessage(input) {
+        const statusElement = document.getElementById("webrtc-status-value");
+        let message;
+        if (input && input.hasOwnProperty("errorMessage") && input.hasOwnProperty("errorCode")) {
+            message = `${input.errorMessage} (${input.errorCode})`;
+        } else if (input instanceof Error) {
+            message = input.message;
+        } else if (typeof (input) === "string") {
+            message = input;
+        } else {
+            message = JSON.stringify(input)
+        }
+        if (/with id.* does not exist/.test(message)) {
+            message = "Invalid product/device id";
+        }
+        message = message.charAt(0).toUpperCase() + message.slice(1);
+        statusElement.innerText = message;
     }
 
     function appendLog(entry) {
         const logsElement = document.getElementById("logs");
+        if (!logsElement) {
+            console.log(entry);
+            return;
+        }
         let logLine;
         if (entry instanceof Error) {
             logLine = entry.message;
-        } else if (typeof(entry) === "string") {
+        } else if (typeof (entry) === "string") {
             logLine = entry;
         } else {
             logLine = JSON.stringify(entry)
@@ -102,7 +171,10 @@
         })
     }
 
-    window.onload = loadSettings;
+    window.onload = function () {
+        loadSettings();
+        updateButton();
+    };
 </script>
 
 </html>
