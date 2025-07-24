@@ -227,9 +227,6 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
       if (!parsed.success) {
         console.error(`Cannot parse ${JSON.stringify(json)} as a known routing message`);
       } else {
-        const routingUnion = parsed.data;
-
-        //console.debug(`${this.name} Received a websocket message ${routingUnion.type}`, routingUnion);
         this.handleParsedMessage(parsed.data)
       }
     } catch {
