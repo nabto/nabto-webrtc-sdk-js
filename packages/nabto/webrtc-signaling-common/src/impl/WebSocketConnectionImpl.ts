@@ -85,12 +85,12 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
       this.emitSync("open");
     });
     ws.on("close", (ev: WebSocket.CloseEvent) => {
-      console.log(`Websocket close code: ${ev.code} reason: ${ev.reason}`);
+      console.debug(`Websocket close code: ${ev.code} reason: ${ev.reason}`);
       this.closeWebsocketInternal();
       this.emitSync("close", {code: ev.code, reason: ev.reason});
     });
     ws.on("error", (ev: WebSocket.Event) => {
-      console.log(`Websocket error: ${ev.type}`);
+      console.error(`Websocket error: ${ev.type}`);
       this.closeWebsocketInternal();
       this.emitSync("error", new Error(ev.type));
     })
@@ -161,7 +161,7 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
       // succeeded.
       return;
     }
-    console.debug(`${this.name} Sending a websocket message ${JSON.stringify(msg)}`);
+    //console.debug(`${this.name} Sending a message of type (${msg.type}) on the websocket connection.`, msg);
     const json = JSON.stringify(msg);
     this.ws?.send(json);
   }
@@ -204,7 +204,7 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
     } else if (msg.type === RoutingMessageType.ERROR) {
       this.emitSync("channelerror", msg.channelId,msg.error.code, msg.error.message)
     } else {
-      console.debug(`Not handling unknown message ${msg}`)
+      console.debug(`Not handling unknown message`, msg);
     }
   }
 
@@ -216,7 +216,6 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
   }
 
   handleMessage(msg: WebSocket.MessageEvent) {
-    console.debug(`${this.name} Received a websocket message ${msg.data}`);
     if (typeof (msg.data) !== "string") {
       console.error("Expected websocket data to be of type string. Discarding unknown message");
       return;
@@ -231,7 +230,7 @@ export class WebSocketConnectionImpl extends TypedEventEmitter<WebSocketConnecti
         this.handleParsedMessage(parsed.data)
       }
     } catch {
-      console.debug(`Cannot parse as json: ${msg.data}`)
+      console.error(`Cannot parse as json: ${msg.data}`)
     }
   }
   handlePing() {
