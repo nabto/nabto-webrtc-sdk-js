@@ -20,6 +20,8 @@ interface DeviceMessageTransportImplEventHandlers {
   setupdone: (iceServers?: RTCIceServer[]) => Promise<void>;
 }
 
+const logModule = "Device Message Transport";
+
 export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageTransportImplEventHandlers> implements MessageTransport {
 
   messageEncoder: DefaultMessageEncoder = new DefaultMessageEncoder();
@@ -51,19 +53,20 @@ export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageT
    * get a Signaling message and forward it, if it is a WebrtcSignalingMessage
    */
   async handleSignalingMessage(message: SignalingMessage) {
-    console.log("signalingMessageHandler", message)
     if (this.state == State.SETUP) {
       if (message.type === SignalingMessageType.SETUP_REQUEST) {
+        console.debug(`${logModule}: Received a (SETUP_REQUEST) message.`, message);
         // This blocks the recv logic but only on this specific signaling channel
         await this.handleDeviceSetupRequest();
       } else {
         throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, `Wrong message type, expected a ${SignalingMessageType.SETUP_REQUEST} but got ${message.type}`);
       }
     } else {
+      console.debug(`${logModule}: Received a message of type (${message.type}) and forwards it to the application.`, message);
       if (message.type === WebrtcSignalingMessageType.CANDIDATE || message.type === WebrtcSignalingMessageType.DESCRIPTION) {
         const consumers = await this.emit("webrtcsignalingmessage", message);
         if (consumers === 0) {
-          console.error(`No webrtcsignaling event listeners registered for the message: ${JSON.stringify(message)}`)
+          console.error(`No webrtcsignaling event listeners registered for the message: ${JSON.stringify(message)}`);
         }
       }
     }
@@ -87,7 +90,6 @@ export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageT
         await this.setupMessageSigner(message);
         this.state = State.SETUP;
       }
-      console.log("signalingChannelMessageHandler", message)
       if (!this.messageSigner) {
         throw new Error("This should never happen. As the message signer is setup in the FIRST_MESSAGE state.")
       }
@@ -126,7 +128,7 @@ export class DeviceMessageTransportImpl extends TypedEventEmitter<DeviceMessageT
     }
     const encoded = this.messageEncoder.encodeMessage(message);
     const signed = await this.messageSigner.signMessage(encoded);
-    console.log(`sending signaling message ${JSON.stringify(message)}, encoded: ${JSON.stringify(encoded)}, signed: ${JSON.stringify(signed)}`)
+    console.debug(`${logModule}: Sending a message of type (${message.type}) to the remote peer.`, message);
     return this.channel.sendMessage(signed);
   }
 

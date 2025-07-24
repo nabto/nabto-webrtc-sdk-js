@@ -19,6 +19,8 @@ interface ClientMessageTransportImplEventHandlers {
   setupdone: (iceServers?: RTCIceServer[]) => Promise<void>;
 }
 
+const logModule = "Client Message Transport";
+
 export class ClientMessageTransportImpl extends TypedEventEmitter<ClientMessageTransportImplEventHandlers> implements MessageTransport {
 
   messageEncoder: DefaultMessageEncoder = new DefaultMessageEncoder();
@@ -55,31 +57,31 @@ export class ClientMessageTransportImpl extends TypedEventEmitter<ClientMessageT
    * get a Signaling message and forward it, if it is a WebrtcSignalingMessage
    */
   async handleSignalingMessage(message: SignalingMessage) {
-    console.log("signalingMessageHandler", message)
     if (this.state == State.SETUP) {
       if (message.type === SignalingMessageType.SETUP_RESPONSE) {
+        console.debug(`${logModule}: Received a message of type (SETUP_RESPONSE) and invokes the setupdone event.`, message)
         this.emitSetupDone(message.iceServers);
       } else {
         throw new SignalingError(SignalingErrorCodes.DECODE_ERROR, `Wrong message type, expected a ${SignalingMessageType.SETUP_RESPONSE} but got ${message.type}`);
       }
     } else {
       if (message.type === WebrtcSignalingMessageType.CANDIDATE || message.type === WebrtcSignalingMessageType.DESCRIPTION) {
-        const consumers = await this.emit("webrtcsignalingmessage", message);
-        if (consumers === 0) {
-          console.error(`No webrtcsignaling event listeners registered for the message: ${JSON.stringify(message)}`)
-        }
+        console.debug(`${logModule}: Received a WebRTCSignalingMessage of type (${message.type}) and forwards it to the application.`, message);
+        this.emitWebRTCSignalingMessage(message);
+      } else {
+        console.error(`Could not handle a signaling message of type (${message.type}). The message is dropped.`);
       }
     }
   }
 
   signalingChannelMessageHandler = async (message: JSONValue) => {
     try {
-      console.log("signalingChannelMessageHandler", message)
       const verified = await this.messageSigner.verifyMessage(message);
       const decoded = this.messageEncoder.decodeMessage(verified);
 
       await this.handleSignalingMessage(decoded);
     } catch (e) {
+      console.error(`Could not handle message ${JSON.stringify(message)}`)
       await this.emitError(e)
     }
   }
@@ -97,6 +99,13 @@ export class ClientMessageTransportImpl extends TypedEventEmitter<ClientMessageT
     }
   }
 
+  async emitWebRTCSignalingMessage(message: WebrtcSignalingMessage) {
+    const consumers = await this.emit("webrtcsignalingmessage", message);
+    if (consumers === 0) {
+      console.error(`No webrtcsignaling event listeners registered for the message: ${JSON.stringify(message)}`)
+    }
+  }
+
   async sendWebrtcSignalingMessage(message: WebrtcSignalingMessage): Promise < void> {
     return this.sendSignalingMessage(message);
   }
@@ -104,7 +113,7 @@ export class ClientMessageTransportImpl extends TypedEventEmitter<ClientMessageT
   private async sendSignalingMessage(message: SignalingMessage): Promise<void> {
     const encoded = this.messageEncoder.encodeMessage(message);
     const signed = await this.messageSigner.signMessage(encoded);
-    console.log(`sending signaling message ${JSON.stringify(message)}, encoded: ${JSON.stringify(encoded)}, signed: ${JSON.stringify(signed)}`)
+    console.debug(`${logModule}: Sending a signaling message of type (${message.type}) to the remote peer.`, message)
     return this.signalingChannel.sendMessage(signed);
   }
 

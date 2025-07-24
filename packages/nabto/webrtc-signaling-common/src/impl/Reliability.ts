@@ -160,7 +160,7 @@ export class Reliability {
    * @param seq
    */
   private sendAck(seq: number) {
-    console.info(`Sending ACK with seq ${seq}`)
+    //console.info(`Sending ACK with seq ${seq}`)
     const ack : ReliabilityAck = { type: ReliabilityMessageTypes.ACK, seq: seq }
     this.sendRoutingMessage(ack);
   }
