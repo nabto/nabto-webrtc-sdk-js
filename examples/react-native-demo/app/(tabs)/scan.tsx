@@ -1,4 +1,5 @@
 import KeyboardAwareScreen from "@/components/KeyboardAwareScreen";
+import { useIsFocused } from "@react-navigation/native";
 import { Canvas, DiffRect, Paragraph, rect, rrect, Skia, TextAlign } from "@shopify/react-native-skia";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import Constants from "expo-constants";
@@ -125,6 +126,7 @@ export default function Tab() {
     const [viewWidth, setViewWidth] = useState(0);
     const [viewHeight, setViewHeight] = useState(0);
     const [failed, setFailed] = useState(false);
+    const isFocused = useIsFocused();
     const lock = useRef(false);
     const dim = 280;
 
@@ -133,6 +135,9 @@ export default function Tab() {
         setViewHeight(height);
         setViewWidth(width);
     }
+
+    // Unmount camera view when not focused
+    if (!isFocused) { return <View/> }
 
     // Camera permission still loading
     if (!permission) return <View/>
