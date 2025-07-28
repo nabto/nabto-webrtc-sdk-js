@@ -33,7 +33,7 @@ class RTCConnectionHandler {
       this.onerror(error);
     })
     this.signalingClient.on("connectionstatechange", () => {
-      console.log("XXX Signaling connection state changed to: " + this.signalingClient.connectionState);
+      console.log("Signaling connection state changed to: " + this.signalingClient.connectionState);
       this.onsignalingstatechange(this.signalingClient.connectionState)
     })
     this.signalingClient.start();
@@ -60,7 +60,7 @@ class RTCConnectionHandler {
       this.ontrack(event)
     }
     this.pc.onconnectionstatechange = () => {
-      console.log("XXX Peer connection state changed to: " + this.pc.connectionState);
+      console.log("Peer connection state changed to: " + this.pc.connectionState);
       this.onpeerconnectionstatechange(this.pc.connectionState)
     }
   }

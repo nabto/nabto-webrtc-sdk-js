@@ -1,180 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nabto WebRTC Example</title>
 </head>
-
 <body>
-    <!-- include the bundling of the external dependencies. -->
-    <script src="../dist/sdk_exports.js"></script>
-    <!-- include the application specific javascript code -->
-    <script src="RTCConnectionHandler.js"></script>
-
     <h1>Nabto WebRTC Example</h1>
     <p>Open the console to view logs.</p>
+
     <label for="productId">Product ID</label>
-    <input type="text" id="productId" placeholder="Product ID" onchange="saveSetting('productId')"><br>
+    <input type="text" id="productId" placeholder="Product ID"><br>
+
     <label for="deviceId">Device ID</label>
-    <input type="text" id="deviceId" placeholder="Device ID" onchange="saveSetting('deviceId')"><br>
+    <input type="text" id="deviceId" placeholder="Device ID"><br>
+
     <label for="sharedSecret">Shared Secret</label>
-    <input type="text" id="sharedSecret" placeholder="Shared Secret" onchange="saveSetting('sharedSecret')"><br>
+    <input type="text" id="sharedSecret" placeholder="Shared Secret"><br>
 
     <div class="video-container">
-        <video id="remote-video" autoplay muted controls width="480" height="360"></video>
-        <br />
-        <button id="connect-disconnect-btn" onclick="handleConnectDisconnect()">Connect</button>
+        <video id="remote-video" autoplay muted controls width="480" height="360"></video><br>
+        <button id="connect-disconnect-btn">Connect</button>
     </div>
 
     <div class="webrtc-status-message" id="webrtc-status">
-        <p>
-            <span id="webrtc-status-value">Not connected</span>
-        </p>
+        <p><b>Signaling channel to camera:</b> <span id="webrtc-status-value-signaling">Not connected</span></p>
+        <p><b>WebRTC peer connection:</b> <span id="webrtc-status-value-pc">Not connected</span></p>
     </div>
 
     <div class="logs-container">
         <pre id="logs"></pre>
     </div>
-</body>
-<script>
-    let rtcConnectionHandler = undefined;
-    let errorOccurred = false;
-    let isConnected = false;
 
-    function updateButton() {
-        const btn = document.getElementById("connect-disconnect-btn");
-        btn.innerText = isConnected ? "Disconnect" : "Connect";
-    }
-
-    function disconnect() {
-        if (rtcConnectionHandler) {
-            rtcConnectionHandler.close();
-            rtcConnectionHandler = undefined;
-        }
-        const videoElement = document.getElementById("remote-video");
-        videoElement.srcObject = null;
-        isConnected = false;
-        updateButton();
-    }
-
-    async function connect() {
-        errorOccurred = false;
-        rtcConnectionHandler = new RTCConnectionHandler({
+    <script src="../dist/sdk_exports.js"></script>
+    <script src="RTCConnectionHandler.js"></script>
+    <script>
+        const settings = {
             productId: localStorage.getItem("productId"),
             deviceId: localStorage.getItem("deviceId"),
             sharedSecret: localStorage.getItem("sharedSecret"),
-            /**
-             * @param {RTCTrackEvent} track
-             */
-            ontrack: (track) => {
-                const videoElement = document.getElementById("remote-video");
-                if (videoElement.srcObject === null) {
-                    videoElement.srcObject = new MediaStream();
-                }
-                videoElement.srcObject.addTrack(track.track);
-            },
+        };
 
-            /**
-             * @param {string} state
-             */
-            onsignalingstatechange: (state) => {
-                // no ui updates for signaling state (only a single label)
-                appendLog("Signaling state: " + state);
-            },
+        document.getElementById("productId").value = settings.productId;
+        document.getElementById("deviceId").value = settings.deviceId;
+        document.getElementById("sharedSecret").value = settings.sharedSecret;
 
-            /**
-             * @param {string} state
-             */
-            onpeerconnectionstatechange: (state) => {
-                if (!errorOccurred) {
-                    // errors are more important than state changes
-                    updateStatusMessage(state)
-                }
-                appendLog("PeerConnection state: " + state);
-                if (state === "connected") {
-                    isConnected = true;
-                    updateButton();
-                } else if (state === "disconnected" || state === "closed" || state === "failed") {
-                    isConnected = false;
-                    updateButton();
-                }
-            },
-
-            /**
-             * @param {Error} error
-             */
-            onerror: (error) => {
-                errorOccurred = true;
-                updateStatusMessage(error);
-                appendLog(error);
-                disconnect();
-            }
-        });
-    }
-
-    function handleConnectDisconnect() {
-        if (isConnected) {
-            disconnect();
-        } else {
-            connect();
-        }
-    }
-
-    function updateStatusMessage(input) {
-        const statusElement = document.getElementById("webrtc-status-value");
-        let message;
-        if (input && input.hasOwnProperty("errorMessage") && input.hasOwnProperty("errorCode")) {
-            message = `${input.errorMessage} (${input.errorCode})`;
-        } else if (input instanceof Error) {
-            message = input.message;
-        } else if (typeof (input) === "string") {
-            message = input;
-        } else {
-            message = JSON.stringify(input)
-        }
-        if (/with id.* does not exist/.test(message)) {
-            message = "Invalid product/device id";
-        }
-        message = message.charAt(0).toUpperCase() + message.slice(1);
-        statusElement.innerText = message;
-    }
-
-    function appendLog(entry) {
-        const logsElement = document.getElementById("logs");
-        if (!logsElement) {
-            console.log(entry);
-            return;
-        }
-        let logLine;
-        if (entry instanceof Error) {
-            logLine = entry.message;
-        } else if (typeof (entry) === "string") {
-            logLine = entry;
-        } else {
-            logLine = JSON.stringify(entry)
-        }
-        logsElement.innerText = logsElement.innerText + logLine + "\n";
-    }
-
-    function saveSetting(name) {
-        const value = document.getElementById(name).value;
-        localStorage.setItem(name, value);
-    }
-
-    function loadSettings() {
-        const settings = ["productId", "deviceId", "sharedSecret"]
-        settings.forEach((item) => {
-            const value = localStorage.getItem(item) || "default"
-            document.getElementById(item).value = value;
-        })
-    }
-
-    window.onload = function () {
-        loadSettings();
-        updateButton();
-    };
-</script>
-
+        ["productId","deviceId","sharedSecret"].forEach(name =>
+            document.getElementById(name).addEventListener("change", e =>
+                localStorage.setItem(name, e.target.value)
+            )
+        );
+    </script>
+    <script src="demo-controller.js"></script>
+    <script>
+        demoController.init(settings);
+    </script>
+</body>
 </html>

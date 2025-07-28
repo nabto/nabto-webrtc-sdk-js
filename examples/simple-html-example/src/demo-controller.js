@@ -3,6 +3,7 @@ window.demoController = (function(){
     let errorOccurred = false;
     let config = {};
     let started = false;
+    let notConnectedMsg = "Not connected";
 
     function init(settings) {
         config = settings;
@@ -24,8 +25,11 @@ window.demoController = (function(){
         }
         document.getElementById("remote-video").srcObject = null;
         started = false;
-        updateSignalingStatus("Not connected");
-        updatePeerConnectionStatus("Not connected");
+        if (!errorOccurred) {
+            updateSignalingStatus(notConnectedMsg);
+        }
+        errorOccurred = false;
+        updatePeerConnectionStatus(notConnectedMsg);
         updateButton();
     }
 
@@ -49,13 +53,16 @@ window.demoController = (function(){
                 appendLog("Signaling state: " + state);
             },
             onpeerconnectionstatechange: state => {
-                updatePeerConnectionStatus(state);
+                if (!errorOccurred) {
+                  updatePeerConnectionStatus(state);
+                }
                 appendLog("PeerConnection state: " + state);
                 updateButton();
             },
             onerror: error => {
                 errorOccurred = true;
                 updateSignalingStatus(error);
+                updatePeerConnectionStatus(notConnectedMsg)
                 appendLog(error);
                 disconnect();
             }
