@@ -4,9 +4,10 @@ window.demoController = (function(){
     let config = {};
     let started = false;
     let notConnectedMsg = "Not connected";
+    let configCallback;
 
-    function init(settings) {
-        config = settings;
+    function init(callback) {
+        configCallback = callback;
         updateButton();
         document
             .getElementById("connect-disconnect-btn")
@@ -37,6 +38,14 @@ window.demoController = (function(){
         errorOccurred = false;
         started = true;
         updateButton();
+
+        if (configCallback) {
+            config = await configCallback();
+        } else {
+            console.error()
+            return;
+        }
+
         rtcConnectionHandler = new RTCConnectionHandler({
             productId: config.productId,
             deviceId: config.deviceId,
@@ -99,6 +108,7 @@ window.demoController = (function(){
         const el = document.getElementById("webrtc-status-value-signaling");
         el.innerText = formatStatusMessage(input);
     }
+
     function appendLog(entry) {
         const logs = document.getElementById("logs");
         const line = entry instanceof Error

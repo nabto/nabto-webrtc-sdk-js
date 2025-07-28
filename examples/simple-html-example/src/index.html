@@ -41,9 +41,9 @@
             sharedSecret: localStorage.getItem("sharedSecret"),
         };
 
-        document.getElementById("productId").value = settings.productId;
-        document.getElementById("deviceId").value = settings.deviceId;
-        document.getElementById("sharedSecret").value = settings.sharedSecret;
+        document.getElementById("productId").value = settings.productId || 'wp-39wu7tex';
+        document.getElementById("deviceId").value = settings.deviceId || 'wd-3xtqp3hy4xxy3av3';
+        document.getElementById("sharedSecret").value = settings.sharedSecret || '59470b3f8e331d9975da366d8dc0dcf743ef6a1154a4f779932740b4d14be3ab';
 
         ["productId","deviceId","sharedSecret"].forEach(name =>
             document.getElementById(name).addEventListener("change", e =>
@@ -53,7 +53,13 @@
     </script>
     <script src="demo-controller.js"></script>
     <script>
-        demoController.init(settings);
+        demoController.init(() => {
+            return {
+                productId: document.getElementById("productId").value,
+                deviceId: document.getElementById("deviceId").value,
+                sharedSecret: document.getElementById("sharedSecret").value
+            };
+        });
     </script>
 </body>
 </html>
