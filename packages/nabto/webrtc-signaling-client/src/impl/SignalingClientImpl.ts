@@ -25,8 +25,8 @@ const CHECK_ALIVE_TIMEOUT = 1000;
 const RECONNECT_COUNTER_RESET_TIMEOUT = 10000;
 
 export interface SignalingClientEventHandlers
-  extends SignalingChannelEventHandlers,
-    SignalingConnectionStateChangesEventHandlers {
+  extends SignalingChannelEventHandlers, SignalingConnectionStateChangesEventHandlers
+{
   connectionreconnect: () => void;
   error: (error: unknown) => void;
 }

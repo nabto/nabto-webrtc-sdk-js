@@ -295,7 +295,7 @@ describe("Client Connectivity Test 15, catchable PRODUCT_ID_NOT_FOUND", async ()
   })
   test("Client Connectivity Test 14", async () => {
     client.start();
-    let error = await testInstance.waitForErrorResolveWithError(client);
+    const error = await testInstance.waitForErrorResolveWithError(client);
     expect(error).toBeInstanceOf(ProductIdNotFoundError)
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.FAILED]);
   });
@@ -315,7 +315,7 @@ describe("Client Connectivity Test 16, catchable DEVICE_ID_NOT_FOUND", async () 
   })
   test("Client Connectivity Test 14", async () => {
     client.start();
-    let error = await testInstance.waitForErrorResolveWithError(client);
+    const error = await testInstance.waitForErrorResolveWithError(client);
     expect(error).toBeInstanceOf(DeviceIdNotFoundError)
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.FAILED]);
   });
