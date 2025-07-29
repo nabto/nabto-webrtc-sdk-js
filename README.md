@@ -75,6 +75,12 @@ npx @hey-api/openapi-ts -i http://127.0.0.1:13745/swagger/json -o integration_te
 
 3. run the tests `npm run test:i`
 
+## Regenerate Http API's from swagger:
+
+If the Nabto WebRTC Signaling service openapi definition is available at http://127.0.0.1:3000/documentation/json the openapi generator should be run as follows.
+
+
+npx @openapitools/openapi-generator-cli@2.21.4 generate -i http://127.0.0.1:3000/documentation/json -g typescript-fetch -o packages/nabto/webrtc-signaling-client/src/impl/backend
 
 ## Publishing guide.
 

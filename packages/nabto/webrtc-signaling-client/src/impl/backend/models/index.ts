@@ -1,11 +1,9 @@
 /* tslint:disable */
 /* eslint-disable */
-export * from './GetV1Stats200Response';
 export * from './HttpError';
-export * from './IceServers';
-export * from './PostV1ClientConnect200Response';
-export * from './PostV1ClientConnectRequest';
-export * from './PostV1DeviceConnect200Response';
-export * from './PostV1IceServers200Response';
-export * from './PostV1IceServers200ResponseIceServersInner';
-export * from './PostV1IceServersRequest';
+export * from './V1ClientConnectPost200Response';
+export * from './V1ClientConnectPostRequest';
+export * from './V1DeviceConnectPost200Response';
+export * from './V1DeviceConnectPostRequest';
+export * from './V1IceServersPost200Response';
+export * from './V1IceServersPost200ResponseIceServersInner';

@@ -1,6 +1,6 @@
 import { DeviceOfflineError, SignalingClient, SignalingClientOptions } from '../SignalingClient'
 import { SignalingError, SignalingChannel, SignalingChannelState, SignalingConnectionState, SignalingChannelEventHandlers, WebSocketConnectionImpl, SignalingServiceImpl, SignalingConnectionStateChangesEventHandlers, HttpError, SignalingChannelImpl, WebSocketCloseReason, JSONValue } from '@nabto/webrtc-signaling-common';
-import { ClientsApi } from './backend/apis/ClientsApi';
+import { DefaultApi } from './backend/apis/DefaultApi';
 import { instanceOfHttpError } from './backend';
 import { Configuration, ResponseError } from './backend/runtime';
 import { IceServersImpl } from './IceServersImpl'
@@ -20,7 +20,7 @@ export interface SignalingClientEventHandlers extends SignalingChannelEventHandl
 export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventHandlers> implements SignalingClient, SignalingServiceImpl, SignalingChannel {
 
   iceApi: IceServersImpl
-  clientsApi: ClientsApi
+  clientsApi: DefaultApi
 
   channelId: string | undefined = undefined
   ws: WebSocketConnectionImpl
@@ -43,7 +43,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       endpointUrl = `https://${options.productId}.webrtc.nabto.net`;
     }
     this.iceApi = new IceServersImpl(endpointUrl, options.productId, options.deviceId)
-    this.clientsApi = new ClientsApi(new Configuration({ basePath: endpointUrl }))
+    this.clientsApi = new DefaultApi(new Configuration({ basePath: endpointUrl }))
 
     this.signalingChannel = new SignalingChannelImpl(this, "not_connected")
 
@@ -125,9 +125,9 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
   async httpConnectRequest(): Promise<string> {
     const authorization: string | undefined = this.options.accessToken ? `Bearer ${this.options.accessToken}` : undefined
     try {
-      const response = await this.clientsApi.postV1ClientConnect({
+      const response = await this.clientsApi.v1ClientConnectPost({
         authorization: authorization,
-        postV1ClientConnectRequest: {
+        v1ClientConnectPostRequest: {
           productId: this.options.productId,
           deviceId: this.options.deviceId
         }

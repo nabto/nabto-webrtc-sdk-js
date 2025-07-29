@@ -1,21 +1,21 @@
-import { ICEApi } from './backend/apis/ICEApi';
+import { DefaultApi } from './backend/apis/DefaultApi';
 import { instanceOfHttpError } from './backend/models/HttpError';
 import { Configuration, ResponseError } from './backend/runtime';
 import { HttpError } from '@nabto/webrtc-signaling-common'
 
 export class IceServersImpl {
-  iceApi: ICEApi
+  iceApi: DefaultApi
 
   constructor(basePath: string, private productId: string, private deviceId: string) {
-    this.iceApi = new ICEApi(new Configuration({ basePath: basePath }))
+    this.iceApi = new DefaultApi(new Configuration({ basePath: basePath }))
   }
 
   async requestIceServers(accessToken?: string): Promise<Array<RTCIceServer>> {
     const authorization = accessToken?`Bearer ${accessToken}`:undefined
     try {
-      const response = await this.iceApi.postV1IceServers({
+      const response = await this.iceApi.v1IceServersPost({
         authorization: authorization,
-        postV1IceServersRequest: {
+        v1DeviceConnectPostRequest: {
           productId: this.productId,
           deviceId: this.deviceId
         }
