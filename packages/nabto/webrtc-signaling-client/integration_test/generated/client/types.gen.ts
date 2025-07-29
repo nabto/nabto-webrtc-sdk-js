@@ -5,6 +5,9 @@ export type PostV1ClientConnectData = {
         deviceId: string;
         productId: string;
     };
+    headers?: {
+        authorization?: string;
+    };
     path?: never;
     query?: never;
     url: '/v1/client/connect';
@@ -16,12 +19,21 @@ export type PostV1ClientConnectErrors = {
      */
     400: {
         message?: string;
+        code?: string;
+    };
+    /**
+     * failure
+     */
+    401: {
+        message?: string;
+        code?: string;
     };
     /**
      * failure
      */
     404: {
         message?: string;
+        code?: string;
     };
 };
 
@@ -104,6 +116,18 @@ export type PostTestClientData = {
          */
         endpointUrl?: string;
         extraClientConnectResponseData?: boolean;
+        /**
+         * Set to true to force the client to use an access token when connecting
+         */
+        requireAccessToken?: boolean;
+        /**
+         * set to true to force the client api to return a PRODUCT_ID_NOT_FOUND error
+         */
+        productIdNotFound?: boolean;
+        /**
+         * set to true to force the client api to return a DEVICE_ID_NOT_FOUND error
+         */
+        deviceIdNotFound?: boolean;
     };
     path?: never;
     query?: never;
@@ -410,7 +434,7 @@ export type PostTestClientByTestIdSendDeviceErrorResponse = PostTestClientByTest
 
 export type PostTestClientByTestIdSendNewMessageTypeData = {
     body: {
-        [key: string]: unknown;
+        [key: string]: never;
     };
     path: {
         testId: string;
@@ -472,7 +496,7 @@ export type PostTestClientByTestIdSendNewFieldInKnownMessageTypeResponse = PostT
 
 export type PostTestClientByTestIdGetActiveWebsocketsData = {
     body: {
-        [key: string]: unknown;
+        [key: string]: never;
     };
     path: {
         testId: string;
@@ -958,67 +982,14 @@ export type PostV1IceServersError = PostV1IceServersErrors[keyof PostV1IceServer
 export type PostV1IceServersResponses = {
     200: {
         iceServers: Array<{
-            username: string;
-            credential: string;
+            username?: string;
+            credential?: string;
             urls: Array<string>;
         }>;
     };
 };
 
 export type PostV1IceServersResponse = PostV1IceServersResponses[keyof PostV1IceServersResponses];
-
-export type PostTestIceServersData = {
-    body: {
-        [key: string]: unknown;
-    };
-    path?: never;
-    query?: never;
-    url: '/test/ice-servers/';
-};
-
-export type PostTestIceServersErrors = {
-    /**
-     * failure
-     */
-    400: string;
-};
-
-export type PostTestIceServersError = PostTestIceServersErrors[keyof PostTestIceServersErrors];
-
-export type PostTestIceServersResponses = {
-    /**
-     * success
-     */
-    200: {
-        productId: string;
-        deviceId: string;
-        endpointUrl: string;
-        testId: string;
-        accessToken: string;
-    };
-};
-
-export type PostTestIceServersResponse = PostTestIceServersResponses[keyof PostTestIceServersResponses];
-
-export type DeleteTestIceServersByTestIdData = {
-    body?: never;
-    path: {
-        testId: string;
-    };
-    query?: never;
-    url: '/test/ice-servers/{testId}';
-};
-
-export type DeleteTestIceServersByTestIdResponses = {
-    /**
-     * success
-     */
-    200: {
-        [key: string]: unknown;
-    };
-};
-
-export type DeleteTestIceServersByTestIdResponse = DeleteTestIceServersByTestIdResponses[keyof DeleteTestIceServersByTestIdResponses];
 
 export type ClientOptions = {
     baseUrl: 'http://127.0.0.1:13745' | (string & {});

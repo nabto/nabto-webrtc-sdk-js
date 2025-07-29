@@ -1,0 +1,14 @@
+.openapi-generator-ignore
+apis/APIApi.ts
+apis/DefaultApi.ts
+apis/index.ts
+index.ts
+models/HttpError.ts
+models/V1ClientConnectPost200Response.ts
+models/V1ClientConnectPostRequest.ts
+models/V1DeviceConnectPost200Response.ts
+models/V1DeviceConnectPostRequest.ts
+models/V1IceServersPost200Response.ts
+models/V1IceServersPost200ResponseIceServersInner.ts
+models/index.ts
+runtime.ts
