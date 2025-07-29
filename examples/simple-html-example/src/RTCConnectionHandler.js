@@ -12,7 +12,8 @@ class RTCConnectionHandler {
     this.signalingClient = SDK.createSignalingClient({
       productId: productId,
       deviceId: deviceId,
-      requireOnline: true
+      requireOnline: true,
+      //endpointUrl: `https://${productId}.webrtc.dev.nabto.net`,
     });
     this.ontrack = ontrack;
     this.onsignalingstatechange = onsignalingstatechange;

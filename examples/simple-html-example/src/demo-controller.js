@@ -84,17 +84,24 @@ window.demoController = (function(){
 
     function formatStatusMessage(input) {
         let msg;
-        if (input && input.errorMessage && input.errorCode) {
-            msg = `${input.errorMessage} (${input.errorCode})`;
+        if (input instanceof SDK.ProductIdNotFoundError) {
+            msg = "The product id does not exists";
+        } else if (input instanceof SDK.DeviceIdNotFoundError) {
+            msg = "The device id does not exists";
+        } else if (input instanceof SDK.DeviceOfflineError) {
+            msg = "The device is not online, try again later"
+        } else if (input instanceof SDK.SignalingError) {
+            if (input.errorMessage) {
+                msg = `${input.errorMessage} (${input.errorCode})`;
+            } else {
+                msg = `Signaling error (${input.errorCode})`;
+            }
         } else if (input instanceof Error) {
             msg = input.message;
         } else if (typeof input === "string") {
             msg = input;
         } else {
             msg = JSON.stringify(input);
-        }
-        if (/with id.* does not exist/.test(msg)) {
-            msg = "Invalid product/device id";
         }
         return msg.charAt(0).toUpperCase() + msg.slice(1).toLowerCase();
     }
