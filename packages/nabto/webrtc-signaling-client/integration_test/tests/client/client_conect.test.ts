@@ -300,3 +300,23 @@ describe("Client Connectivity Test 15, catchable PRODUCT_ID_NOT_FOUND", async ()
     await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.FAILED]);
   });
 })
+
+describe("Client Connectivity Test 16, catchable DEVICE_ID_NOT_FOUND", async () => {
+  let testInstance: ClientTestInstance;
+  let client: SignalingClient;
+  beforeEach(async () => {
+    testInstance = await ClientTestInstance.create({ requireAccessToken: true, deviceIdNotFound: true });
+    testInstance.accessToken = "invalid";
+    client = testInstance.createSignalingClient();
+  })
+
+  afterEach(async () => {
+    await testInstance.destroyTest();
+  })
+  test("Client Connectivity Test 14", async () => {
+    client.start();
+    let error = await testInstance.waitForErrorResolveWithError(client);
+    expect(error).toBeInstanceOf(DeviceIdNotFoundError)
+    await testInstance.waitForObservedStates(client, [SignalingConnectionState.CONNECTING, SignalingConnectionState.FAILED]);
+  });
+})
