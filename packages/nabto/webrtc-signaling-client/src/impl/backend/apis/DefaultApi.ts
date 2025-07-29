@@ -42,17 +42,9 @@ export interface V1ClientConnectPostOperationRequest {
     authorization?: string;
 }
 
-export interface V1ClientsSignalingGetRequest {
-    : string;
-}
-
 export interface V1DeviceConnectPostOperationRequest {
     authorization: string;
     v1DeviceConnectPostRequest: V1DeviceConnectPostRequest;
-}
-
-export interface V1DevicesSignalingGetRequest {
-    : string;
 }
 
 export interface V1IceServersPostRequest {
@@ -108,40 +100,6 @@ export class DefaultApi extends runtime.BaseAPI {
 
     /**
      */
-    async v1ClientsSignalingGetRaw(requestParameters: V1ClientsSignalingGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters[''] == null) {
-            throw new runtime.RequiredError(
-                '',
-                'Required parameter "" was null or undefined when calling v1ClientsSignalingGet().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-
-        let urlPath = `/v1/clients/signaling/{*}`;
-        urlPath = urlPath.replace(`{${"*"}}`, encodeURIComponent(String(requestParameters[''])));
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     */
-    async v1ClientsSignalingGet(requestParameters: V1ClientsSignalingGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.v1ClientsSignalingGetRaw(requestParameters, initOverrides);
-    }
-
-    /**
-     */
     async v1DeviceConnectPostRaw(requestParameters: V1DeviceConnectPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<V1DeviceConnectPost200Response>> {
         if (requestParameters['authorization'] == null) {
             throw new runtime.RequiredError(
@@ -186,40 +144,6 @@ export class DefaultApi extends runtime.BaseAPI {
     async v1DeviceConnectPost(requestParameters: V1DeviceConnectPostOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<V1DeviceConnectPost200Response> {
         const response = await this.v1DeviceConnectPostRaw(requestParameters, initOverrides);
         return await response.value();
-    }
-
-    /**
-     */
-    async v1DevicesSignalingGetRaw(requestParameters: V1DevicesSignalingGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters[''] == null) {
-            throw new runtime.RequiredError(
-                '',
-                'Required parameter "" was null or undefined when calling v1DevicesSignalingGet().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-
-        let urlPath = `/v1/devices/signaling/{*}`;
-        urlPath = urlPath.replace(`{${"*"}}`, encodeURIComponent(String(requestParameters[''])));
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     */
-    async v1DevicesSignalingGet(requestParameters: V1DevicesSignalingGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.v1DevicesSignalingGetRaw(requestParameters, initOverrides);
     }
 
     /**

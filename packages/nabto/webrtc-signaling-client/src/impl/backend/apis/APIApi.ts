@@ -48,32 +48,4 @@ export class APIApi extends runtime.BaseAPI {
         await this.rootGetRaw(initOverrides);
     }
 
-    /**
-     * Get stats from the API
-     */
-    async v1StatsGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-
-        let urlPath = `/v1/stats`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     * Get stats from the API
-     */
-    async v1StatsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.v1StatsGetRaw(initOverrides);
-    }
-
 }
