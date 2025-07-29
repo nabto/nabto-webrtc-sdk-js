@@ -70,7 +70,7 @@ The integration tests are tested against an integration test server.
 2. (Optional the openapi stub is committed to git.) generate openapi type definitions
 
 ```
-npx @hey-api/openapi-ts -i http://127.0.0.1:13745/swagger/json -o integration_test/generated/client -c @hey-api/client-fetch
+npx @hey-api/openapi-ts -i http://127.0.0.1:13745/swagger/json -o packages/nabto/webrtc-signaling-client/integration_test/generated/client -c @hey-api/client-fetch
 ```
 
 3. run the tests `npm run test:i`

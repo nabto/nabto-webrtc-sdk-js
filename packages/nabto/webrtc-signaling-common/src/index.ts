@@ -3,7 +3,7 @@ export { SignalingErrorCodes, SignalingError} from './SignalingError'
 export { SignalingChannelState } from './SignalingChannelState'
 export { SignalingConnectionState } from './SignalingConnectionState'
 export type { SignalingConnectionStateChanges, SignalingConnectionStateChangesEventHandlers } from './SignalingConnectionState'
-export { HttpError } from './HttpError'
+export { HttpError, ProductIdNotFoundError, DeviceIdNotFoundError } from './HttpError'
 export type { JSONValue } from './JSONValue'
 export { JSONValueSchema } from './JSONValue'
 

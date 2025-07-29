@@ -4,7 +4,8 @@ import { RoutingUnionScheme } from "../WebsocketProtocolDataTypes";
 import bearer from "@elysiajs/bearer";
 
 const errorType = t.Object({
-  message: t.Optional(t.String())
+  message: t.Optional(t.String()),
+  code: t.Optional(t.String())
 }, {description: "failure"});
 
 export const clientHttp = new Elysia()
@@ -19,6 +20,14 @@ export const clientHttp = new Elysia()
     if (test.options.failHttp === true) {
       return error(400, { message: "Bad request" });
     }
+
+    if (test.options.productIdNotFound === true) {
+      return error(404, { message: "the requested product id does not exist", code: "PRODUCT_ID_NOT_FOUND"})
+    }
+    if (test.options.deviceIdNotFound === true) {
+      return error(404, { message: "the requested device id does not exist", code: "DEVICE_ID_NOT_FOUND"})
+    }
+
     let extraData = {}
     if (test.options.extraClientConnectResponseData === true) {
       console.log("adding extra data")

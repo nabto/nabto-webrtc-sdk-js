@@ -17,7 +17,9 @@ export const TestClientOptionsSchema = t.Object({
   failWs: t.Optional(t.Boolean()),
   endpointUrl: t.Optional(t.String({description: "specify the endpoint url the server returns in the test create response and the websocket url. Format http://<ip>:<port>"})),
   extraClientConnectResponseData: t.Optional(t.Boolean()),
-  requireAccessToken: t.Optional(t.Boolean({description: "Set to true to force the client to use an access token when connecting"})),
+  requireAccessToken: t.Optional(t.Boolean({ description: "Set to true to force the client to use an access token when connecting" })),
+  productIdNotFound: t.Optional(t.Boolean({ description: "set to true to force the client api to return a PRODUCT_ID_NOT_FOUND error" })),
+  deviceIdNotFound: t.Optional(t.Boolean({ description: "set to true to force the client api to return a DEVICE_ID_NOT_FOUND error"})),
 });
 
 export type TestClientOptions = Static<typeof TestClientOptionsSchema>

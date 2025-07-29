@@ -1,38 +1,53 @@
-import { DeviceOfflineError, SignalingClient, SignalingClientOptions } from '../SignalingClient'
-import { SignalingError, SignalingChannel, SignalingChannelState, SignalingConnectionState, SignalingChannelEventHandlers, WebSocketConnectionImpl, SignalingServiceImpl, SignalingConnectionStateChangesEventHandlers, HttpError, SignalingChannelImpl, WebSocketCloseReason, JSONValue } from '@nabto/webrtc-signaling-common';
-import { DefaultApi } from './backend/apis/DefaultApi';
-import { instanceOfHttpError } from './backend';
-import { Configuration, ResponseError } from './backend/runtime';
-import { IceServersImpl } from './IceServersImpl'
-import { TypedEventEmitter } from '@nabto/webrtc-signaling-common'
-
+import {
+  DeviceOfflineError,
+  SignalingClient,
+  SignalingClientOptions,
+} from "../SignalingClient";
+import {
+  SignalingError,
+  SignalingChannel,
+  SignalingChannelState,
+  SignalingConnectionState,
+  SignalingChannelEventHandlers,
+  WebSocketConnectionImpl,
+  SignalingServiceImpl,
+  SignalingConnectionStateChangesEventHandlers,
+  SignalingChannelImpl,
+  WebSocketCloseReason,
+  JSONValue,
+} from "@nabto/webrtc-signaling-common";
+import { TypedEventEmitter } from "@nabto/webrtc-signaling-common";
+import { HttpApiImpl } from "./HttpApiImpl";
 
 const CHECK_ALIVE_TIMEOUT = 1000;
 // minimum time betwenn a open and close event on a websocket such that the
 // websocket connection counts as have been connected.
 const RECONNECT_COUNTER_RESET_TIMEOUT = 10000;
 
-export interface SignalingClientEventHandlers extends SignalingChannelEventHandlers, SignalingConnectionStateChangesEventHandlers  {
-  connectionreconnect: () => void
-  error: (error: unknown) => void
+export interface SignalingClientEventHandlers
+  extends SignalingChannelEventHandlers,
+    SignalingConnectionStateChangesEventHandlers {
+  connectionreconnect: () => void;
+  error: (error: unknown) => void;
 }
 
-export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventHandlers> implements SignalingClient, SignalingServiceImpl, SignalingChannel {
+export class SignalingClientImpl
+  extends TypedEventEmitter<SignalingClientEventHandlers>
+  implements SignalingClient, SignalingServiceImpl, SignalingChannel
+{
+  httpApi: HttpApiImpl;
 
-  iceApi: IceServersImpl
-  clientsApi: DefaultApi
-
-  channelId: string | undefined = undefined
-  ws: WebSocketConnectionImpl
+  channelId: string | undefined = undefined;
+  ws: WebSocketConnectionImpl;
 
   // number of times we have reconnected without obtaining a valid connection to
   // the signaling service.
   reconnectCounterTimeoutId?: ReturnType<typeof setTimeout>;
-  reconnectCounter: number = 0
+  reconnectCounter: number = 0;
 
-  openedWebSockets: number = 0
+  openedWebSockets: number = 0;
 
-  signalingUrl: string = ""
+  signalingUrl: string = "";
 
   signalingChannel: SignalingChannelImpl;
 
@@ -42,23 +57,31 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     if (!endpointUrl) {
       endpointUrl = `https://${options.productId}.webrtc.nabto.net`;
     }
-    this.iceApi = new IceServersImpl(endpointUrl, options.productId, options.deviceId)
-    this.clientsApi = new DefaultApi(new Configuration({ basePath: endpointUrl }))
+    this.httpApi = new HttpApiImpl(
+      endpointUrl,
+      options.productId,
+      options.deviceId,
+      options.accessToken
+    );
 
-    this.signalingChannel = new SignalingChannelImpl(this, "not_connected")
+    this.signalingChannel = new SignalingChannelImpl(this, "not_connected");
 
     this.signalingChannel.on("channelstatechange", () => {
       this.emitSync("channelstatechange");
-    })
+    });
     this.signalingChannel.on("error", (error: unknown) => {
       this.emitSignalingChannelError(error);
-    })
+    });
     this.signalingChannel.on("message", async (message: JSONValue) => {
       const consumers = await this.emit("message", message);
       if (consumers === 0) {
-        console.error(`Got a signaling message but there was no consumers registered for the message, so the message is lost. Message: ${JSON.stringify(message)}`)
+        console.error(
+          `Got a signaling message but there was no consumers registered for the message, so the message is lost. Message: ${JSON.stringify(
+            message
+          )}`
+        );
       }
-    })
+    });
 
     this.ws = new WebSocketConnectionImpl("client");
     this.setupWs(this.ws);
@@ -74,7 +97,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.close();
   }
 
-  connectionState_: SignalingConnectionState = SignalingConnectionState.NEW
+  connectionState_: SignalingConnectionState = SignalingConnectionState.NEW;
 
   get connectionState(): SignalingConnectionState {
     return this.connectionState_;
@@ -87,16 +110,19 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
 
   start(): void {
     if (this.connectionState !== SignalingConnectionState.NEW) {
-      throw new Error("Connect can only be called once.")
+      throw new Error("Connect can only be called once.");
     }
-    this.firstConnect()
+    this.firstConnect();
   }
 
   async requestIceServers(): Promise<Array<RTCIceServer>> {
-    return this.iceApi.requestIceServers(this.options.accessToken);
+    return this.httpApi.requestIceServers();
   }
 
-  async serviceSendError(channelId: string, error: SignalingError): Promise<void> {
+  async serviceSendError(
+    channelId: string,
+    error: SignalingError
+  ): Promise<void> {
     if (this.connectionState !== SignalingConnectionState.CONNECTED) {
       // If the connection is not connected, we cannot send an error.
       return;
@@ -104,7 +130,7 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.ws.sendError(channelId, error);
   }
   checkAlive(): void {
-    this.ws.checkAlive(CHECK_ALIVE_TIMEOUT)
+    this.ws.checkAlive(CHECK_ALIVE_TIMEOUT);
   }
 
   close(): void {
@@ -119,64 +145,40 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
     this.removeAllListeners();
   }
 
-  /**
-   * WebSocket connection management
-   */
-  async httpConnectRequest(): Promise<string> {
-    const authorization: string | undefined = this.options.accessToken ? `Bearer ${this.options.accessToken}` : undefined
+  async firstConnect(): Promise<void> {
     try {
-      const response = await this.clientsApi.v1ClientConnectPost({
-        authorization: authorization,
-        v1ClientConnectPostRequest: {
-          productId: this.options.productId,
-          deviceId: this.options.deviceId
-        }
-      })
+      this.connectionState = SignalingConnectionState.CONNECTING;
+      const response = await this.httpApi.httpConnectRequest();
       this.channelId = response.channelId;
-
       this.signalingChannel.channelId = this.channelId;
       if (response.deviceOnline !== undefined) {
-        this.signalingChannel.channelState = response.deviceOnline ? SignalingChannelState.CONNECTED : SignalingChannelState.DISCONNECTED;
+        this.signalingChannel.channelState = response.deviceOnline
+          ? SignalingChannelState.CONNECTED
+          : SignalingChannelState.DISCONNECTED;
       }
       if (this.options.requireOnline === true) {
-        if (this.signalingChannel.channelState !== SignalingChannelState.CONNECTED) {
+        if (
+          this.signalingChannel.channelState !== SignalingChannelState.CONNECTED
+        ) {
           throw new DeviceOfflineError();
         }
       }
-      return response.signalingUrl;
-    } catch (e) {
-      if (e instanceof ResponseError) {
-        let message = e.message;
-        try {
-          const response = await e.response.json()
-          if (instanceOfHttpError(response)) {
-            message = response.message;
-          }
-        } catch
-        /* eslint-disable no-empty */ { }
-        throw new HttpError(e.response.status, message);
-      }
-      // fallback to throw the original error.
-      throw e;
-    }
-  }
-
-  async firstConnect(): Promise<void> {
-    try {
-      this.connectionState = SignalingConnectionState.CONNECTING
-      this.signalingUrl = await this.httpConnectRequest();
-      this.ws.connect(this.signalingUrl)
+      this.signalingUrl = response.signalingUrl;
+      this.ws.connect(this.signalingUrl);
     } catch (e) {
       this.emitError(e);
     }
   }
 
   async reconnect(): Promise<void> {
-    if (this.connectionState === SignalingConnectionState.FAILED || this.connectionState === SignalingConnectionState.CLOSED) {
+    if (
+      this.connectionState === SignalingConnectionState.FAILED ||
+      this.connectionState === SignalingConnectionState.CLOSED
+    ) {
       return;
     }
     try {
-      this.connectionState = SignalingConnectionState.CONNECTING
+      this.connectionState = SignalingConnectionState.CONNECTING;
       this.ws.connect(this.signalingUrl);
     } catch {
       this.waitReconnect();
@@ -184,31 +186,41 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
   }
 
   setupWs(ws: WebSocketConnectionImpl) {
-    ws.on("close", (reason: WebSocketCloseReason) => this.handleWsClosed(reason));
+    ws.on("close", (reason: WebSocketCloseReason) =>
+      this.handleWsClosed(reason)
+    );
     ws.on("error", (reason: Error) => this.handleWsClosed(reason));
-    ws.on("message", (_channelId, msg, _authorized) => this.signalingChannel.handleRoutingMessage(msg));
-    ws.on("peerconnected",(_channelId) => {
-      this.signalingChannel.handlePeerConnected()
-    })
+    ws.on("message", (_channelId, msg, _authorized) =>
+      this.signalingChannel.handleRoutingMessage(msg)
+    );
+    ws.on("peerconnected", (_channelId) => {
+      this.signalingChannel.handlePeerConnected();
+    });
     ws.on("peeroffline", (_channelId) => {
-      console.log("peer offline")
+      console.log("peer offline");
       this.signalingChannel.handlePeerOffline();
-    })
+    });
     ws.on("open", () => this.handleWsOpened());
 
     ws.on("channelerror", (_channelId, errorCode, errorMessage) => {
       const e = new SignalingError(errorCode, errorMessage);
-      this.signalingChannel.handleError(e)
-    })
+      this.signalingChannel.handleError(e);
+    });
     this.ws.on("pingtimeout", () => {
-      if (this.connectionState === SignalingConnectionState.CONNECTED || this.connectionState === SignalingConnectionState.CONNECTING) {
+      if (
+        this.connectionState === SignalingConnectionState.CONNECTED ||
+        this.connectionState === SignalingConnectionState.CONNECTING
+      ) {
         this.ws.closeCurrentWebSocket();
       }
     });
   }
 
   handleWsOpened() {
-    if (this.connectionState === SignalingConnectionState.FAILED || this.connectionState === SignalingConnectionState.CLOSED) {
+    if (
+      this.connectionState === SignalingConnectionState.FAILED ||
+      this.connectionState === SignalingConnectionState.CLOSED
+    ) {
       return;
     }
     this.connectionState = SignalingConnectionState.CONNECTED;
@@ -223,7 +235,10 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
   }
 
   handleWsClosed(error: Error | WebSocketCloseReason) {
-    if (this.connectionState !== SignalingConnectionState.CONNECTED && this.connectionState !== SignalingConnectionState.CONNECTING) {
+    if (
+      this.connectionState !== SignalingConnectionState.CONNECTED &&
+      this.connectionState !== SignalingConnectionState.CONNECTING
+    ) {
       return;
     }
     this.clearReconnectCounterTimeout();
@@ -234,7 +249,11 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       if (error instanceof Error) {
         this.emitError(error);
       } else {
-        this.emitError(new Error(`The websocket was closed before it got opened, code: ${error.code}, reason: ${error.reason}`));
+        this.emitError(
+          new Error(
+            `The websocket was closed before it got opened, code: ${error.code}, reason: ${error.reason}`
+          )
+        );
       }
     } else {
       this.waitReconnect();
@@ -243,7 +262,9 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
 
   private setReconnectCounterTimeout() {
     this.clearReconnectCounterTimeout();
-    this.reconnectCounterTimeoutId = setTimeout(() => { this.reconnectCounter = 0; }, RECONNECT_COUNTER_RESET_TIMEOUT);
+    this.reconnectCounterTimeoutId = setTimeout(() => {
+      this.reconnectCounter = 0;
+    }, RECONNECT_COUNTER_RESET_TIMEOUT);
   }
 
   private clearReconnectCounterTimeout() {
@@ -254,7 +275,10 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
   }
 
   private waitReconnect() {
-    if (this.connectionState !== SignalingConnectionState.CONNECTING && this.connectionState !== SignalingConnectionState.CONNECTED) {
+    if (
+      this.connectionState !== SignalingConnectionState.CONNECTING &&
+      this.connectionState !== SignalingConnectionState.CONNECTED
+    ) {
       return;
     }
     this.connectionState = SignalingConnectionState.WAIT_RETRY;
@@ -267,15 +291,17 @@ export class SignalingClientImpl extends TypedEventEmitter<SignalingClientEventH
       return;
     }
 
-    const reconnectWait = 1000 * (2 ** this.reconnectCounter)
+    const reconnectWait = 1000 * 2 ** this.reconnectCounter;
     const jitterWaitMilliseconds = Math.random() * reconnectWait;
 
-    console.debug(`Switching to WAIT_RETRY state, waiting ${jitterWaitMilliseconds}ms before reconnecting. Reconnect counter: ${this.reconnectCounter}`);
+    console.debug(
+      `Switching to WAIT_RETRY state, waiting ${jitterWaitMilliseconds}ms before reconnecting. Reconnect counter: ${this.reconnectCounter}`
+    );
 
     this.reconnectCounter++;
     setTimeout(() => {
       this.reconnect();
-    }, jitterWaitMilliseconds)
+    }, jitterWaitMilliseconds);
   }
 
   private emitError(e: unknown) {

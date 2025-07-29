@@ -6,7 +6,13 @@ export interface ClientTestOptions {
   failHttp?: boolean
   failWs?: boolean
   extraClientConnectResponseData?: boolean
-  requireAccessToken?: boolean
+  requireAccessToken?: boolean,
+  productIdNotFound?: boolean,
+  deviceIdNotFound?: boolean
+}
+
+export interface OverrideCreateSignalingClientOptions {
+  requireOnline?: boolean;
 }
 
 export class ClientTestInstance {
@@ -25,8 +31,8 @@ export class ClientTestInstance {
   async destroyTest(): Promise<void> {
     await deleteTestClientByTestId({ path: { testId: this.testId } })
   }
-  createSignalingClient(requireOnline: boolean = false): SignalingClient {
-    const signalingClient = createSignalingClient({ productId: this.productId, deviceId: this.deviceId, endpointUrl: this.endpointUrl, requireOnline: requireOnline, accessToken: this.options.requireAccessToken? this.accessToken : undefined });
+  createSignalingClient(options: OverrideCreateSignalingClientOptions = {}): SignalingClient {
+    const signalingClient = createSignalingClient({ productId: this.productId, deviceId: this.deviceId, endpointUrl: this.endpointUrl, requireOnline: options.requireOnline?options.requireOnline:false, accessToken: this.options.requireAccessToken? this.accessToken : undefined });
     signalingClient.on("connectionstatechange", () => {
       this.observedConnectionStates.push(signalingClient.connectionState);
     })
