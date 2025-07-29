@@ -1,108 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nabto WebRTC Example</title>
 </head>
-
 <body>
-    <!-- include the bundling of the external dependencies. -->
-    <script src="../dist/sdk_exports.js"></script>
-    <!-- include the application specific javascript code -->
-    <script src="RTCConnectionHandler.js"></script>
-
     <h1>Nabto WebRTC Example</h1>
     <p>Open the console to view logs.</p>
+
     <label for="productId">Product ID</label>
-    <input type="text" id="productId" placeholder="Product ID" onchange="saveSetting('productId')"><br>
+    <input type="text" id="productId" placeholder="Product ID"><br>
+
     <label for="deviceId">Device ID</label>
-    <input type="text" id="deviceId" placeholder="Device ID" onchange="saveSetting('deviceId')"><br>
+    <input type="text" id="deviceId" placeholder="Device ID"><br>
+
     <label for="sharedSecret">Shared Secret</label>
-    <input type="text" id="sharedSecret" placeholder="Shared Secret" onchange="saveSetting('sharedSecret')"><br>
+    <input type="text" id="sharedSecret" placeholder="Shared Secret"><br>
 
     <div class="video-container">
-        <video id="remote-video" autoplay muted controls width="480" height="360"></video>
-        <br/>
-        <button id="connect-btn" onclick="connect()">Connect</button>
-        <button id="disconnect-btn" disabled="true" onclick="disconnect()">Disconnect</button>
+        <video id="remote-video" autoplay muted controls width="480" height="360"></video><br>
+        <button id="connect-disconnect-btn">Connect</button>
     </div>
+
+    <div class="webrtc-status-message" id="webrtc-status">
+        <p><b>Signaling channel to camera:</b> <span id="webrtc-status-value-signaling">Not connected</span></p>
+        <p><b>WebRTC peer connection:</b> <span id="webrtc-status-value-pc">Not connected</span></p>
+    </div>
+
     <div class="logs-container">
         <pre id="logs"></pre>
     </div>
-</body>
-<script>
-    let rtcConnectionHandler = undefined;
-    function disconnect() {
-        document.getElementById("disconnect-btn").disabled = true;
-        rtcConnectionHandler.close();
-        rtcConnectionHandler = undefined;
-        const videoElement = document.getElementById("remote-video");
-        videoElement.srcObject = null;
-        document.getElementById("connect-btn").disabled = false;
-    }
 
-    async function connect() {
-        document.getElementById("connect-btn").disabled = true;
-        rtcConnectionHandler = new RTCConnectionHandler({
+    <script src="../dist/sdk_exports.js"></script>
+    <script src="RTCConnectionHandler.js"></script>
+    <script>
+        const settings = {
             productId: localStorage.getItem("productId"),
             deviceId: localStorage.getItem("deviceId"),
             sharedSecret: localStorage.getItem("sharedSecret"),
-            /**
-             * @param {RTCTrackEent} track
-             */
-            ontrack: (track) => {
-                const videoElement = document.getElementById("remote-video");
-                if (videoElement.srcObject === null) {
-                    videoElement.srcObject = new MediaStream();
-                }
-                videoElement.srcObject.addTrack(track.track);
-            },
-            /**
-             * @param {string} state
-             */
-            logger: (entry) => {
-                appendLog(entry)
-            },
-            /**
-             * @param {Error} error
-             */
-            onerror: (error) => {
-                appendLog(error);
-                disconnect();
-            }
+        };
+
+        document.getElementById("productId").value = settings.productId || 'wp-39wu7tex';
+        document.getElementById("deviceId").value = settings.deviceId || 'wd-3xtqp3hy4xxy3av3';
+        document.getElementById("sharedSecret").value = settings.sharedSecret || '59470b3f8e331d9975da366d8dc0dcf743ef6a1154a4f779932740b4d14be3ab';
+
+        ["productId","deviceId","sharedSecret"].forEach(name =>
+            document.getElementById(name).addEventListener("change", e =>
+                localStorage.setItem(name, e.target.value)
+            )
+        );
+    </script>
+    <script src="demo-controller.js"></script>
+    <script>
+        demoController.init(() => {
+            return {
+                productId: document.getElementById("productId").value,
+                deviceId: document.getElementById("deviceId").value,
+                sharedSecret: document.getElementById("sharedSecret").value
+            };
         });
-        document.getElementById("disconnect-btn").disabled = false;
-    }
-
-    function appendLog(entry) {
-        const logsElement = document.getElementById("logs");
-        let logLine;
-        if (entry instanceof Error) {
-            logLine = entry.message;
-        } else if (typeof(entry) === "string") {
-            logLine = entry;
-        } else {
-            logLine = JSON.stringify(entry)
-        }
-        logsElement.innerText = logsElement.innerText + logLine + "\n";
-    }
-
-    function saveSetting(name) {
-        const value = document.getElementById(name).value;
-        localStorage.setItem(name, value);
-    }
-
-    function loadSettings() {
-        const settings = ["productId", "deviceId", "sharedSecret"]
-        settings.forEach((item) => {
-            const value = localStorage.getItem(item) || "default"
-            document.getElementById(item).value = value;
-        })
-    }
-
-    window.onload = loadSettings;
-</script>
-
+    </script>
+</body>
 </html>
