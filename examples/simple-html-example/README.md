@@ -14,5 +14,6 @@ esbuild command.
 
 How to:
 
-1. Run `pnpm install`, it creates the `dist/sdk_exports.js` file.
+1. In the root folder of the repository run `pnpm install` and `pnpm run build`,
+   it creates the `dist/sdk_exports.js` file.
 2. Open src/index.html in a browser.
