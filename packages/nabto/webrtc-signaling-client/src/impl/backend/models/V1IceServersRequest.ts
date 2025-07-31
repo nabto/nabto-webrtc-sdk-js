@@ -14,39 +14,39 @@
 
 import { mapValues } from '../runtime';
 /**
- * Expected a device ID
+ * Ice Servers Request Body
  * @export
- * @interface V1DeviceConnectPostRequest
+ * @interface V1IceServersRequest
  */
-export interface V1DeviceConnectPostRequest {
+export interface V1IceServersRequest {
     /**
      * 
      * @type {string}
-     * @memberof V1DeviceConnectPostRequest
+     * @memberof V1IceServersRequest
      */
     deviceId: string;
     /**
      * 
      * @type {string}
-     * @memberof V1DeviceConnectPostRequest
+     * @memberof V1IceServersRequest
      */
     productId: string;
 }
 
 /**
- * Check if a given object implements the V1DeviceConnectPostRequest interface.
+ * Check if a given object implements the V1IceServersRequest interface.
  */
-export function instanceOfV1DeviceConnectPostRequest(value: object): value is V1DeviceConnectPostRequest {
+export function instanceOfV1IceServersRequest(value: object): value is V1IceServersRequest {
     if (!('deviceId' in value) || value['deviceId'] === undefined) return false;
     if (!('productId' in value) || value['productId'] === undefined) return false;
     return true;
 }
 
-export function V1DeviceConnectPostRequestFromJSON(json: any): V1DeviceConnectPostRequest {
-    return V1DeviceConnectPostRequestFromJSONTyped(json, false);
+export function V1IceServersRequestFromJSON(json: any): V1IceServersRequest {
+    return V1IceServersRequestFromJSONTyped(json, false);
 }
 
-export function V1DeviceConnectPostRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): V1DeviceConnectPostRequest {
+export function V1IceServersRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): V1IceServersRequest {
     if (json == null) {
         return json;
     }
@@ -57,11 +57,11 @@ export function V1DeviceConnectPostRequestFromJSONTyped(json: any, ignoreDiscrim
     };
 }
 
-export function V1DeviceConnectPostRequestToJSON(json: any): V1DeviceConnectPostRequest {
-    return V1DeviceConnectPostRequestToJSONTyped(json, false);
+export function V1IceServersRequestToJSON(json: any): V1IceServersRequest {
+    return V1IceServersRequestToJSONTyped(json, false);
 }
 
-export function V1DeviceConnectPostRequestToJSONTyped(value?: V1DeviceConnectPostRequest | null, ignoreDiscriminator: boolean = false): any {
+export function V1IceServersRequestToJSONTyped(value?: V1IceServersRequest | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

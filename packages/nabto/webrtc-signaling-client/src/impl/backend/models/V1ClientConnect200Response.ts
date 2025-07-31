@@ -16,44 +16,44 @@ import { mapValues } from '../runtime';
 /**
  * OK
  * @export
- * @interface V1ClientConnectPost200Response
+ * @interface V1ClientConnect200Response
  */
-export interface V1ClientConnectPost200Response {
+export interface V1ClientConnect200Response {
     /**
      * 
      * @type {string}
-     * @memberof V1ClientConnectPost200Response
+     * @memberof V1ClientConnect200Response
      */
     signalingUrl: string;
     /**
      * 
      * @type {boolean}
-     * @memberof V1ClientConnectPost200Response
+     * @memberof V1ClientConnect200Response
      */
     deviceOnline: boolean;
     /**
      * 
      * @type {string}
-     * @memberof V1ClientConnectPost200Response
+     * @memberof V1ClientConnect200Response
      */
     channelId: string;
 }
 
 /**
- * Check if a given object implements the V1ClientConnectPost200Response interface.
+ * Check if a given object implements the V1ClientConnect200Response interface.
  */
-export function instanceOfV1ClientConnectPost200Response(value: object): value is V1ClientConnectPost200Response {
+export function instanceOfV1ClientConnect200Response(value: object): value is V1ClientConnect200Response {
     if (!('signalingUrl' in value) || value['signalingUrl'] === undefined) return false;
     if (!('deviceOnline' in value) || value['deviceOnline'] === undefined) return false;
     if (!('channelId' in value) || value['channelId'] === undefined) return false;
     return true;
 }
 
-export function V1ClientConnectPost200ResponseFromJSON(json: any): V1ClientConnectPost200Response {
-    return V1ClientConnectPost200ResponseFromJSONTyped(json, false);
+export function V1ClientConnect200ResponseFromJSON(json: any): V1ClientConnect200Response {
+    return V1ClientConnect200ResponseFromJSONTyped(json, false);
 }
 
-export function V1ClientConnectPost200ResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): V1ClientConnectPost200Response {
+export function V1ClientConnect200ResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): V1ClientConnect200Response {
     if (json == null) {
         return json;
     }
@@ -65,11 +65,11 @@ export function V1ClientConnectPost200ResponseFromJSONTyped(json: any, ignoreDis
     };
 }
 
-export function V1ClientConnectPost200ResponseToJSON(json: any): V1ClientConnectPost200Response {
-    return V1ClientConnectPost200ResponseToJSONTyped(json, false);
+export function V1ClientConnect200ResponseToJSON(json: any): V1ClientConnect200Response {
+    return V1ClientConnect200ResponseToJSONTyped(json, false);
 }
 
-export function V1ClientConnectPost200ResponseToJSONTyped(value?: V1ClientConnectPost200Response | null, ignoreDiscriminator: boolean = false): any {
+export function V1ClientConnect200ResponseToJSONTyped(value?: V1ClientConnect200Response | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

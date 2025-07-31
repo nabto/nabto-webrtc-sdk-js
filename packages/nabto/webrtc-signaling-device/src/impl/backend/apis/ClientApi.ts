@@ -16,35 +16,35 @@
 import * as runtime from '../runtime';
 import type {
   HttpError,
-  V1IceServers200Response,
-  V1IceServersRequest,
+  V1ClientConnect200Response,
+  V1ClientConnectRequest,
 } from '../models/index';
 import {
     HttpErrorFromJSON,
     HttpErrorToJSON,
-    V1IceServers200ResponseFromJSON,
-    V1IceServers200ResponseToJSON,
-    V1IceServersRequestFromJSON,
-    V1IceServersRequestToJSON,
+    V1ClientConnect200ResponseFromJSON,
+    V1ClientConnect200ResponseToJSON,
+    V1ClientConnectRequestFromJSON,
+    V1ClientConnectRequestToJSON,
 } from '../models/index';
 
-export interface V1IceServersOperationRequest {
-    v1IceServersRequest: V1IceServersRequest;
+export interface V1ClientConnectOperationRequest {
+    v1ClientConnectRequest: V1ClientConnectRequest;
     authorization?: string;
 }
 
 /**
  * 
  */
-export class ICEApi extends runtime.BaseAPI {
+export class ClientApi extends runtime.BaseAPI {
 
     /**
      */
-    async v1IceServersRaw(requestParameters: V1IceServersOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<V1IceServers200Response>> {
-        if (requestParameters['v1IceServersRequest'] == null) {
+    async v1ClientConnectRaw(requestParameters: V1ClientConnectOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<V1ClientConnect200Response>> {
+        if (requestParameters['v1ClientConnectRequest'] == null) {
             throw new runtime.RequiredError(
-                'v1IceServersRequest',
-                'Required parameter "v1IceServersRequest" was null or undefined when calling v1IceServers().'
+                'v1ClientConnectRequest',
+                'Required parameter "v1ClientConnectRequest" was null or undefined when calling v1ClientConnect().'
             );
         }
 
@@ -59,23 +59,23 @@ export class ICEApi extends runtime.BaseAPI {
         }
 
 
-        let urlPath = `/v1/ice-servers`;
+        let urlPath = `/v1/client/connect`;
 
         const response = await this.request({
             path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: V1IceServersRequestToJSON(requestParameters['v1IceServersRequest']),
+            body: V1ClientConnectRequestToJSON(requestParameters['v1ClientConnectRequest']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => V1IceServers200ResponseFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => V1ClientConnect200ResponseFromJSON(jsonValue));
     }
 
     /**
      */
-    async v1IceServers(requestParameters: V1IceServersOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<V1IceServers200Response> {
-        const response = await this.v1IceServersRaw(requestParameters, initOverrides);
+    async v1ClientConnect(requestParameters: V1ClientConnectOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<V1ClientConnect200Response> {
+        const response = await this.v1ClientConnectRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
