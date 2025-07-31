@@ -2,7 +2,7 @@ import { SignalingChannel, SignalingErrorCodes, SignalingError, SignalingChannel
 import { SignalingDevice, SignalingDeviceOptions } from "../SignalingDevice";
 import { Configuration, DeviceApi, ResponseError } from '../impl/backend'
 import { WebSocketConnectionImpl, SignalingChannelImpl, SignalingServiceImpl, SignalingConnectionState } from '@nabto/webrtc-signaling-common'
-import { IceServersImpl } from "./IceServersImpl";
+import { HttpApiImpl } from "./HttpApiImpl";
 
 const CHECK_ALIVE_TIMEOUT = 1000
 // minimum time betwenn a open and close event on a websocket such that the
@@ -15,8 +15,7 @@ type EventMap = {
 };
 
 export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements SignalingDevice, SignalingServiceImpl {
-  iceApi: IceServersImpl
-  deviceApi: DeviceApi
+  httpApi: HttpApiImpl
   signalingChannels: Map<string, SignalingChannelImpl> = new Map()
   ws: WebSocketConnectionImpl
 
@@ -34,8 +33,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     if (!endpointUrl) {
       endpointUrl = `https://${options.productId}.webrtc.nabto.net`;
     }
-    this.iceApi = new IceServersImpl(endpointUrl, options.productId, options.deviceId)
-    this.deviceApi = new DeviceApi(new Configuration({ basePath: endpointUrl }))
+    this.httpApi = new HttpApiImpl(endpointUrl, options.productId, options.deviceId)
 
     this.ws = new WebSocketConnectionImpl("device");
     this.initWebSocket();
@@ -101,19 +99,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
 
   async requestIceServers(): Promise<Array<RTCIceServer>> {
     const token = await this.options.tokenGenerator();
-    return this.iceApi.requestIceServers(token);
-  }
-
-  async doHttpRequest(): Promise<string> {
-    const token = await this.options.tokenGenerator()
-    const response = await this.deviceApi.v1DeviceConnect({
-      authorization: `Bearer ${token}`,
-      v1DeviceConnectRequest: {
-        productId: this.options.productId,
-        deviceId: this.options.deviceId
-      }
-    })
-    return response.signalingUrl;
+    return this.httpApi.requestIceServers(token);
   }
 
   async handleTooManyRequests(retryAfter: string | null) {
@@ -147,7 +133,8 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     }
     try {
       this.connectionState = SignalingConnectionState.CONNECTING
-      const signalingUrl = await this.doHttpRequest();
+      const token = await this.options.tokenGenerator();
+      const signalingUrl = await this.httpApi.deviceConnectRequest(token);
       this.ws.connect(signalingUrl);
     } catch (e) {
       if (e instanceof ResponseError) {
