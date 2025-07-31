@@ -106,6 +106,25 @@ export interface SignalingDevice extends SignalingConnectionStateChanges {
    * @param f the callback function to remove.
    */
   off(target: "connectionreconnect", f: () => void): void;
+
+  /**
+   * Add listener for errors.
+   *
+   * Unlike the Nabto WebRTC Signaling Client, errors are not fatal in the
+   * signaling device. The device is created such that it retries in the case of
+   * an error.
+   *
+   * @param target should be "connectionstatechange".
+   * @param f the callback function to invoke.
+   */
+  on(target: "error", f: (error: unknown) => void): void;
+
+  /**
+   * Remove listener for error events.
+   * @param target should be "connectionstatechange".
+   * @param f the callback function to remove.
+   */
+  off(target: "error", f: (error: unknown) => void): void;
 }
 
 /**
