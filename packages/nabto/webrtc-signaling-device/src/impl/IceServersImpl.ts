@@ -13,9 +13,9 @@ export class IceServersImpl {
   async requestIceServers(accessToken?: string): Promise<Array<RTCIceServer>> {
     const authorization = accessToken?`Bearer ${accessToken}`:undefined
     try {
-      const response = await this.iceApi.postV1IceServers({
+      const response = await this.iceApi.v1IceServers({
         authorization: authorization,
-        postV1IceServersRequest: {
+        v1IceServersRequest: {
           productId: this.productId,
           deviceId: this.deviceId
         }

@@ -1,6 +1,6 @@
 import { SignalingChannel, SignalingErrorCodes, SignalingError, SignalingChannelState, JSONValue, TypedEventEmitter } from "@nabto/webrtc-signaling-common";
 import { SignalingDevice, SignalingDeviceOptions } from "../SignalingDevice";
-import { Configuration, DevicesApi, ResponseError } from '../impl/backend'
+import { Configuration, DeviceApi, ResponseError } from '../impl/backend'
 import { WebSocketConnectionImpl, SignalingChannelImpl, SignalingServiceImpl, SignalingConnectionState } from '@nabto/webrtc-signaling-common'
 import { IceServersImpl } from "./IceServersImpl";
 
@@ -16,7 +16,7 @@ type EventMap = {
 
 export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements SignalingDevice, SignalingServiceImpl {
   iceApi: IceServersImpl
-  devicesApi: DevicesApi
+  deviceApi: DeviceApi
   signalingChannels: Map<string, SignalingChannelImpl> = new Map()
   ws: WebSocketConnectionImpl
 
@@ -35,7 +35,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
       endpointUrl = `https://${options.productId}.webrtc.nabto.net`;
     }
     this.iceApi = new IceServersImpl(endpointUrl, options.productId, options.deviceId)
-    this.devicesApi = new DevicesApi(new Configuration({ basePath: endpointUrl }))
+    this.deviceApi = new DeviceApi(new Configuration({ basePath: endpointUrl }))
 
     this.ws = new WebSocketConnectionImpl("device");
     this.initWebSocket();
@@ -106,9 +106,9 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
 
   async doHttpRequest(): Promise<string> {
     const token = await this.options.tokenGenerator()
-    const response = await this.devicesApi.postV1DeviceConnect({
+    const response = await this.deviceApi.v1DeviceConnect({
       authorization: `Bearer ${token}`,
-      postV1IceServersRequest: {
+      v1DeviceConnectRequest: {
         productId: this.options.productId,
         deviceId: this.options.deviceId
       }

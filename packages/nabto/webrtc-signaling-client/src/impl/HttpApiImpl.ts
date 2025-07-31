@@ -1,4 +1,4 @@
-import { DefaultApi } from './backend/apis/DefaultApi';
+import { ICEApi, ClientApi } from './backend';
 import { instanceOfHttpError } from './backend/models/HttpError';
 import { Configuration, ResponseError } from './backend/runtime';
 import { HttpError, ProductIdNotFoundError, DeviceIdNotFoundError } from '@nabto/webrtc-signaling-common'
@@ -10,7 +10,8 @@ export interface ClientConnectResponse {
 }
 
 export class HttpApiImpl {
-  api: DefaultApi;
+  clientApi: ClientApi;
+  iceApi: ICEApi;
 
   constructor(
     basePath: string,
@@ -18,7 +19,9 @@ export class HttpApiImpl {
     private deviceId: string,
     private accessToken?: string
   ) {
-    this.api = new DefaultApi(new Configuration({ basePath: basePath }));
+
+    this.clientApi = new ClientApi(new Configuration({ basePath: basePath }));
+    this.iceApi = new ICEApi(new Configuration({ basePath: basePath }));
   }
 
   async requestIceServers(): Promise<Array<RTCIceServer>> {
@@ -26,9 +29,9 @@ export class HttpApiImpl {
       ? `Bearer ${this.accessToken}`
       : undefined;
     try {
-      const response = await this.api.v1IceServersPost({
+      const response = await this.iceApi.v1IceServers({
         authorization: authorization,
-        v1DeviceConnectPostRequest: {
+        v1IceServersRequest: {
           productId: this.productId,
           deviceId: this.deviceId,
         },
@@ -53,9 +56,9 @@ export class HttpApiImpl {
       ? `Bearer ${this.accessToken}`
       : undefined;
     try {
-      const response = await this.api.v1ClientConnectPost({
+      const response = await this.clientApi.v1ClientConnect({
         authorization: authorization,
-        v1ClientConnectPostRequest: {
+        v1ClientConnectRequest: {
           productId: this.productId,
           deviceId: this.deviceId,
         },
