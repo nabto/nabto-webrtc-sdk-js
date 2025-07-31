@@ -16,37 +16,37 @@ import { mapValues } from '../runtime';
 /**
  * Expects a device ID and a product ID
  * @export
- * @interface V1ClientConnectPostRequest
+ * @interface V1ClientConnectRequest
  */
-export interface V1ClientConnectPostRequest {
+export interface V1ClientConnectRequest {
     /**
      * Nabto Device ID
      * @type {string}
-     * @memberof V1ClientConnectPostRequest
+     * @memberof V1ClientConnectRequest
      */
     deviceId: string;
     /**
      * Nabto Product ID
      * @type {string}
-     * @memberof V1ClientConnectPostRequest
+     * @memberof V1ClientConnectRequest
      */
     productId: string;
 }
 
 /**
- * Check if a given object implements the V1ClientConnectPostRequest interface.
+ * Check if a given object implements the V1ClientConnectRequest interface.
  */
-export function instanceOfV1ClientConnectPostRequest(value: object): value is V1ClientConnectPostRequest {
+export function instanceOfV1ClientConnectRequest(value: object): value is V1ClientConnectRequest {
     if (!('deviceId' in value) || value['deviceId'] === undefined) return false;
     if (!('productId' in value) || value['productId'] === undefined) return false;
     return true;
 }
 
-export function V1ClientConnectPostRequestFromJSON(json: any): V1ClientConnectPostRequest {
-    return V1ClientConnectPostRequestFromJSONTyped(json, false);
+export function V1ClientConnectRequestFromJSON(json: any): V1ClientConnectRequest {
+    return V1ClientConnectRequestFromJSONTyped(json, false);
 }
 
-export function V1ClientConnectPostRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): V1ClientConnectPostRequest {
+export function V1ClientConnectRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): V1ClientConnectRequest {
     if (json == null) {
         return json;
     }
@@ -57,11 +57,11 @@ export function V1ClientConnectPostRequestFromJSONTyped(json: any, ignoreDiscrim
     };
 }
 
-export function V1ClientConnectPostRequestToJSON(json: any): V1ClientConnectPostRequest {
-    return V1ClientConnectPostRequestToJSONTyped(json, false);
+export function V1ClientConnectRequestToJSON(json: any): V1ClientConnectRequest {
+    return V1ClientConnectRequestToJSONTyped(json, false);
 }
 
-export function V1ClientConnectPostRequestToJSONTyped(value?: V1ClientConnectPostRequest | null, ignoreDiscriminator: boolean = false): any {
+export function V1ClientConnectRequestToJSONTyped(value?: V1ClientConnectRequest | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

@@ -1,4 +1,5 @@
 /* tslint:disable */
 /* eslint-disable */
-export * from './APIApi';
-export * from './DefaultApi';
+export * from './ClientApi';
+export * from './DeviceApi';
+export * from './ICEApi';
