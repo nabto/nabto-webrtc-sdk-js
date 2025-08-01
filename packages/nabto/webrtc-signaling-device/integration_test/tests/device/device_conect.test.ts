@@ -1,9 +1,8 @@
 import { test,  afterEach, beforeEach, describe, expect } from 'vitest'
 
-import { SignalingChannel, SignalingChannelState, SignalingDevice } from '../../../src'
+import { SignalingChannel, SignalingChannelState, SignalingDevice, DeviceIdNotFoundError, ProductIdNotFoundError } from '../../../src'
 import { SignalingConnectionState } from '../../../src'
 import { DeviceTestInstance } from '../../src/DeviceTestInstance'
-import { DeviceIdNotFoundError, ProductIdNotFoundError } from '@nabto/webrtc-signaling-common'
 
 describe("Test device connection to the signaling service", async () => {
   let testInstance: DeviceTestInstance

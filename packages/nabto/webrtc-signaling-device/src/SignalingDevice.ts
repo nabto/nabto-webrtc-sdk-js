@@ -114,14 +114,19 @@ export interface SignalingDevice extends SignalingConnectionStateChanges {
    * signaling device. The device is created such that it retries in the case of
    * an error.
    *
-   * @param target should be "connectionstatechange".
+   * The following known errors can occur:
+   *  * ProductIdNotFound, if the Nabto WebRTC Signaling service does not know the provided productId.
+   *  * DeviceIdNotFound, if the Nabto WebRTC Signaling service does not know the provided deviceId.
+   *  * HttpError, if the Nabto WebRTC Signaling Service responds with a non 2xx error code, which is not handled by a more specific error.
+   *
+   * @param target should be "error".
    * @param f the callback function to invoke.
    */
   on(target: "error", f: (error: unknown) => void): void;
 
   /**
    * Remove listener for error events.
-   * @param target should be "connectionstatechange".
+   * @param target should be "error".
    * @param f the callback function to remove.
    */
   off(target: "error", f: (error: unknown) => void): void;
