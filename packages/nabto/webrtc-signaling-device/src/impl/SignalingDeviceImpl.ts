@@ -1,8 +1,8 @@
-import { SignalingChannel, SignalingErrorCodes, SignalingError, SignalingChannelState, JSONValue, TypedEventEmitter } from "@nabto/webrtc-signaling-common";
+import { SignalingChannel, SignalingErrorCodes, SignalingError, SignalingChannelState, JSONValue, TypedEventEmitter, HttpError, WebSocketCloseReason } from "@nabto/webrtc-signaling-common";
 import { SignalingDevice, SignalingDeviceOptions } from "../SignalingDevice";
 import { Configuration, DeviceApi, ResponseError } from '../impl/backend'
 import { WebSocketConnectionImpl, SignalingChannelImpl, SignalingServiceImpl, SignalingConnectionState } from '@nabto/webrtc-signaling-common'
-import { HttpApiImpl } from "./HttpApiImpl";
+import { HttpApiImpl, TooManyRequestError } from "./HttpApiImpl";
 
 const CHECK_ALIVE_TIMEOUT = 1000
 // minimum time betwenn a open and close event on a websocket such that the
@@ -12,6 +12,7 @@ const RECONNECT_COUNTER_RESET_TIMEOUT = 10000;
 type EventMap = {
   connectionstatechange: () => void; // No payload
   connectionreconnect: () => void; // No payload
+  error: (error: unknown) => void;
 };
 
 export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements SignalingDevice, SignalingServiceImpl {
@@ -102,30 +103,6 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     return this.httpApi.requestIceServers(token);
   }
 
-  async handleTooManyRequests(retryAfter: string | null) {
-    let seconds = 300;
-    if (retryAfter) {
-      const n = Number(retryAfter);
-      if (!Number.isNaN(n)) {
-        seconds = n;
-      } else {
-        try {
-          const d = new Date(retryAfter);
-          const now = new Date()
-          const diff = d.getTime() - now.getTime()
-          seconds = diff/1000;
-        } catch {
-          // ignore that it could not be parsed and fallback to the default delay
-        }
-      }
-    }
-    console.debug(`Too many requests. Waiting ${seconds}s before making next request`);
-    if (seconds < 0) {
-      seconds = 300;
-    }
-    this.waitReconnect(seconds);
-  }
-
   async doConnect() {
     if (this.connectionState !== SignalingConnectionState.NEW && this.connectionState !== SignalingConnectionState.WAIT_RETRY) {
       console.error("doConnect called in an invalid state", this.connectionState);
@@ -137,28 +114,29 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
       const signalingUrl = await this.httpApi.deviceConnectRequest(token);
       this.ws.connect(signalingUrl);
     } catch (e) {
-      if (e instanceof ResponseError) {
-        if (e.response.status === 429) {
-          const retryAfter = e.response.headers.get("Retry-After");
-          this.handleTooManyRequests(retryAfter);
-          return;
-        } else {
-          console.debug(`Connect failed, retries in a moment. Status code ${e.response.status}. Status text ${e.response.statusText} `)
-        }
+      let waitSeconds : number | undefined = undefined
+      if (e instanceof HttpError) {
+        this.emitError(e);
+      }
+      if (e instanceof TooManyRequestError) {
+        waitSeconds = e.retryAfter;
+      } else if (e instanceof HttpError) {
+        console.debug(`Connect failed, retries in a moment. Status code ${e.statusCode}. Status text ${e.message} `)
       } else {
         console.debug(`Connect failed, retries in a moment ${e}`)
       }
-      this.waitReconnect();    }
+      this.waitReconnect(waitSeconds);
+    }
   }
 
   initWebSocket() {
-    this.ws.on("close", () => {
+    this.ws.on("close", (reason: WebSocketCloseReason) => {
       if (this.connectionState === SignalingConnectionState.CONNECTED || this.connectionState === SignalingConnectionState.CONNECTING) {
         this.waitReconnect();
         this.clearReconnectCounterTimeout();
       }
     })
-    this.ws.on("error", () => {
+    this.ws.on("error", (reason: Error) => {
       if (this.connectionState === SignalingConnectionState.CONNECTED || this.connectionState === SignalingConnectionState.CONNECTING) {
         this.waitReconnect()
         this.clearReconnectCounterTimeout();
@@ -260,5 +238,9 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     setTimeout(() => {
       this.doConnect()
     }, jitterWaitMilliseconds)
+  }
+
+  emitError(error: unknown) {
+    this.emitSync("error", error);
   }
 }

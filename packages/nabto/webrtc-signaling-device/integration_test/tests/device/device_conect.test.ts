@@ -3,6 +3,7 @@ import { test,  afterEach, beforeEach, describe, expect } from 'vitest'
 import { SignalingChannel, SignalingChannelState, SignalingDevice } from '../../../src'
 import { SignalingConnectionState } from '../../../src'
 import { DeviceTestInstance } from '../../src/DeviceTestInstance'
+import { DeviceIdNotFoundError, ProductIdNotFoundError } from '@nabto/webrtc-signaling-common'
 
 describe("Test device connection to the signaling service", async () => {
   let testInstance: DeviceTestInstance
@@ -150,5 +151,45 @@ describe("Test clients connect through the signaling service", async () => {
     await createdChannel?.sendMessage("message")
     await offlinePromise
     expect(createdChannel?.channelState).toBe(SignalingChannelState.DISCONNECTED);
+  })
+})
+
+describe("Connect to the signaling service with a wrong product id", async () => {
+  let testInstance: DeviceTestInstance;
+  let device: SignalingDevice;
+  beforeEach(async () => {
+    testInstance = await DeviceTestInstance.create({ productIdNotFound: true });
+    device = testInstance.createSignalingDevice();
+    device.start();
+  })
+
+  afterEach(async () => {
+    await testInstance.destroyTest();
+  })
+  test('Observe product id not found', async () => {
+    await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.WAIT_RETRY]);
+    expect(testInstance.observedErrors.length).to.be.equal(1);
+    const err = testInstance.observedErrors[0];
+    expect(err).toBeInstanceOf(ProductIdNotFoundError)
+  })
+})
+
+describe("Connect to the signaling service with a wrong device id", async () => {
+  let testInstance: DeviceTestInstance;
+  let device: SignalingDevice;
+  beforeEach(async () => {
+    testInstance = await DeviceTestInstance.create({ deviceIdNotFound: true });
+    device = testInstance.createSignalingDevice();
+    device.start();
+  })
+
+  afterEach(async () => {
+    await testInstance.destroyTest();
+  })
+  test('Observe device id not found', async () => {
+    await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.WAIT_RETRY]);
+    expect(testInstance.observedErrors.length).to.be.equal(1);
+    const err = testInstance.observedErrors[0];
+    expect(err).toBeInstanceOf(DeviceIdNotFoundError)
   })
 })
