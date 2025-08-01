@@ -4,7 +4,8 @@ import { RoutingUnionScheme } from "../WebsocketProtocolDataTypes";
 import bearer from "@elysiajs/bearer";
 
 const errorType = t.Object({
-  message: t.Optional(t.String())
+  message: t.Optional(t.String()),
+  code: t.Optional(t.String()),
 }, {description: "failure"});
 
 export const deviceHttp = new Elysia()
@@ -26,6 +27,14 @@ export const deviceHttp = new Elysia()
 
     if (bearer != test.accessToken) {
       return error(403, {message: "Access denied"})
+    }
+
+    if (test.options.productIdNotFound) {
+      return error(404, { message: "product id not found", code: "PRODUCT_ID_NOT_FOUND" });
+    }
+
+    if (test.options.deviceIdNotFound) {
+      return error(404, { message: "device id not found", code: "DEVICE_ID_NOT_FOUND" });
     }
 
     let extraData = {}

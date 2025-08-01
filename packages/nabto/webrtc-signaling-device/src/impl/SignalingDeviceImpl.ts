@@ -1,8 +1,7 @@
-import { SignalingChannel, SignalingErrorCodes, SignalingError, SignalingChannelState, JSONValue, TypedEventEmitter } from "@nabto/webrtc-signaling-common";
+import { SignalingChannel, SignalingErrorCodes, SignalingError, SignalingChannelState, JSONValue, TypedEventEmitter, HttpError, WebSocketCloseReason } from "@nabto/webrtc-signaling-common";
 import { SignalingDevice, SignalingDeviceOptions } from "../SignalingDevice";
-import { Configuration, DeviceApi, ResponseError } from '../impl/backend'
 import { WebSocketConnectionImpl, SignalingChannelImpl, SignalingServiceImpl, SignalingConnectionState } from '@nabto/webrtc-signaling-common'
-import { IceServersImpl } from "./IceServersImpl";
+import { HttpApiImpl, TooManyRequestError } from "./HttpApiImpl";
 
 const CHECK_ALIVE_TIMEOUT = 1000
 // minimum time betwenn a open and close event on a websocket such that the
@@ -12,11 +11,11 @@ const RECONNECT_COUNTER_RESET_TIMEOUT = 10000;
 type EventMap = {
   connectionstatechange: () => void; // No payload
   connectionreconnect: () => void; // No payload
+  error: (error: unknown) => void;
 };
 
 export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements SignalingDevice, SignalingServiceImpl {
-  iceApi: IceServersImpl
-  deviceApi: DeviceApi
+  httpApi: HttpApiImpl
   signalingChannels: Map<string, SignalingChannelImpl> = new Map()
   ws: WebSocketConnectionImpl
 
@@ -34,8 +33,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     if (!endpointUrl) {
       endpointUrl = `https://${options.productId}.webrtc.nabto.net`;
     }
-    this.iceApi = new IceServersImpl(endpointUrl, options.productId, options.deviceId)
-    this.deviceApi = new DeviceApi(new Configuration({ basePath: endpointUrl }))
+    this.httpApi = new HttpApiImpl(endpointUrl, options.productId, options.deviceId)
 
     this.ws = new WebSocketConnectionImpl("device");
     this.initWebSocket();
@@ -101,43 +99,7 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
 
   async requestIceServers(): Promise<Array<RTCIceServer>> {
     const token = await this.options.tokenGenerator();
-    return this.iceApi.requestIceServers(token);
-  }
-
-  async doHttpRequest(): Promise<string> {
-    const token = await this.options.tokenGenerator()
-    const response = await this.deviceApi.v1DeviceConnect({
-      authorization: `Bearer ${token}`,
-      v1DeviceConnectRequest: {
-        productId: this.options.productId,
-        deviceId: this.options.deviceId
-      }
-    })
-    return response.signalingUrl;
-  }
-
-  async handleTooManyRequests(retryAfter: string | null) {
-    let seconds = 300;
-    if (retryAfter) {
-      const n = Number(retryAfter);
-      if (!Number.isNaN(n)) {
-        seconds = n;
-      } else {
-        try {
-          const d = new Date(retryAfter);
-          const now = new Date()
-          const diff = d.getTime() - now.getTime()
-          seconds = diff/1000;
-        } catch {
-          // ignore that it could not be parsed and fallback to the default delay
-        }
-      }
-    }
-    console.debug(`Too many requests. Waiting ${seconds}s before making next request`);
-    if (seconds < 0) {
-      seconds = 300;
-    }
-    this.waitReconnect(seconds);
+    return this.httpApi.requestIceServers(token);
   }
 
   async doConnect() {
@@ -147,31 +109,33 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     }
     try {
       this.connectionState = SignalingConnectionState.CONNECTING
-      const signalingUrl = await this.doHttpRequest();
+      const token = await this.options.tokenGenerator();
+      const signalingUrl = await this.httpApi.deviceConnectRequest(token);
       this.ws.connect(signalingUrl);
     } catch (e) {
-      if (e instanceof ResponseError) {
-        if (e.response.status === 429) {
-          const retryAfter = e.response.headers.get("Retry-After");
-          this.handleTooManyRequests(retryAfter);
-          return;
-        } else {
-          console.debug(`Connect failed, retries in a moment. Status code ${e.response.status}. Status text ${e.response.statusText} `)
-        }
+      let waitSeconds : number | undefined = undefined
+      if (e instanceof HttpError) {
+        this.emitError(e);
+      }
+      if (e instanceof TooManyRequestError) {
+        waitSeconds = e.retryAfter;
+      } else if (e instanceof HttpError) {
+        console.debug(`Connect failed, retries in a moment. Status code ${e.statusCode}. Status text ${e.message} `)
       } else {
         console.debug(`Connect failed, retries in a moment ${e}`)
       }
-      this.waitReconnect();    }
+      this.waitReconnect(waitSeconds);
+    }
   }
 
   initWebSocket() {
-    this.ws.on("close", () => {
+    this.ws.on("close", (_reason: WebSocketCloseReason) => {
       if (this.connectionState === SignalingConnectionState.CONNECTED || this.connectionState === SignalingConnectionState.CONNECTING) {
         this.waitReconnect();
         this.clearReconnectCounterTimeout();
       }
     })
-    this.ws.on("error", () => {
+    this.ws.on("error", (_reason: Error) => {
       if (this.connectionState === SignalingConnectionState.CONNECTED || this.connectionState === SignalingConnectionState.CONNECTING) {
         this.waitReconnect()
         this.clearReconnectCounterTimeout();
@@ -273,5 +237,9 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
     setTimeout(() => {
       this.doConnect()
     }, jitterWaitMilliseconds)
+  }
+
+  emitError(error: unknown) {
+    this.emitSync("error", error);
   }
 }
