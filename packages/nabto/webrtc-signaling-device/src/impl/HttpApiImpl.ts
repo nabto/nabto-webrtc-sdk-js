@@ -68,10 +68,6 @@ export class HttpApiImpl {
       });
       return response.signalingUrl;
     } catch (err: unknown) {
-      if (err instanceof ResponseError) {
-        if (err.response.status === 429) {
-        }
-      }
       await this.handleError(err);
       throw new Error(
         "Newer here since the above handler always throws an exception."
@@ -92,7 +88,7 @@ export class HttpApiImpl {
           const diff = d.getTime() - now.getTime()
           seconds = diff/1000;
         } catch {
-          // ignore that it could not be parsed and fallback to the default delay
+          console.warn(`Could not parse the received retry-after header: ${retryAfter}`);
         }
       }
     }

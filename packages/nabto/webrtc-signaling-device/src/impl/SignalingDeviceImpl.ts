@@ -1,6 +1,5 @@
 import { SignalingChannel, SignalingErrorCodes, SignalingError, SignalingChannelState, JSONValue, TypedEventEmitter, HttpError, WebSocketCloseReason } from "@nabto/webrtc-signaling-common";
 import { SignalingDevice, SignalingDeviceOptions } from "../SignalingDevice";
-import { Configuration, DeviceApi, ResponseError } from '../impl/backend'
 import { WebSocketConnectionImpl, SignalingChannelImpl, SignalingServiceImpl, SignalingConnectionState } from '@nabto/webrtc-signaling-common'
 import { HttpApiImpl, TooManyRequestError } from "./HttpApiImpl";
 
@@ -130,13 +129,13 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
   }
 
   initWebSocket() {
-    this.ws.on("close", (reason: WebSocketCloseReason) => {
+    this.ws.on("close", (_reason: WebSocketCloseReason) => {
       if (this.connectionState === SignalingConnectionState.CONNECTED || this.connectionState === SignalingConnectionState.CONNECTING) {
         this.waitReconnect();
         this.clearReconnectCounterTimeout();
       }
     })
-    this.ws.on("error", (reason: Error) => {
+    this.ws.on("error", (_reason: Error) => {
       if (this.connectionState === SignalingConnectionState.CONNECTED || this.connectionState === SignalingConnectionState.CONNECTING) {
         this.waitReconnect()
         this.clearReconnectCounterTimeout();
