@@ -6,10 +6,13 @@ export interface DeviceTestOptions {
   failHttp?: boolean
   failWs?: boolean
   extraDeviceConnectResponseData?: boolean
+  productIdNotFound?: boolean
+  deviceIdNotFound?: boolean
 }
 
 export class DeviceTestInstance {
   observedConnectionStates: Array<SignalingConnectionState> = []
+  observedErrors: Array<unknown> = []
   constructor(public productId: string, public deviceId: string, public endpointUrl: string, public testId: string, public accessToken: string) {
 
   }
@@ -31,6 +34,9 @@ export class DeviceTestInstance {
     const signalingDevice = createSignalingDevice({ productId: this.productId, deviceId: this.deviceId, endpointUrl: this.endpointUrl, tokenGenerator: async () => { return this.accessToken } })
     signalingDevice.on("connectionstatechange", () => {
       this.observedConnectionStates.push(signalingDevice.connectionState);
+    })
+    signalingDevice.on("error", (error: unknown) => {
+      this.observedErrors.push(error);
     })
 
     return signalingDevice;

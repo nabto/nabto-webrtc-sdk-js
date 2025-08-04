@@ -16,7 +16,9 @@ type Message = Static<typeof messageType>
 export const TestDeviceOptionsSchema = t.Object({
   failHttp: t.Optional(t.Boolean()),
   failWs: t.Optional(t.Boolean()),
-  extraDeviceConnectResponseData: t.Optional(t.Boolean())
+  extraDeviceConnectResponseData: t.Optional(t.Boolean()),
+  productIdNotFound: t.Optional(t.Boolean()),
+  deviceIdNotFound: t.Optional(t.Boolean()),
 });
 
 export type TestDeviceOptions = Static<typeof TestDeviceOptionsSchema>
