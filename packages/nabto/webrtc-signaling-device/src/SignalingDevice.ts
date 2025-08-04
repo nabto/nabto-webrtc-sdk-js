@@ -115,8 +115,8 @@ export interface SignalingDevice extends SignalingConnectionStateChanges {
    * an error.
    *
    * The following known errors can occur:
-   *  * ProductIdNotFound, if the Nabto WebRTC Signaling service does not know the provided productId.
-   *  * DeviceIdNotFound, if the Nabto WebRTC Signaling service does not know the provided deviceId.
+   *  * ProductIdNotFoundError, if the Nabto WebRTC Signaling service does not know the provided productId.
+   *  * DeviceIdNotFoundError, if the Nabto WebRTC Signaling service does not know the provided deviceId.
    *  * HttpError, if the Nabto WebRTC Signaling Service responds with a non 2xx error code, which is not handled by a more specific error.
    *
    * @param target should be "error".
