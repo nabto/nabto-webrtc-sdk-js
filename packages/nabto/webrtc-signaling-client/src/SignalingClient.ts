@@ -175,8 +175,8 @@ export interface SignalingClient {
   /**
    * Add listener for signaling errors.
    *
-   * When this happens the signaling channel is dead and cannot come back to
-   * live, the webrtc connection needs to be teardown.
+   * When this happens the signaling client is dead and cannot come back to
+   * live, the WebRTC connection needs to be teardown.
    *
    * @param target should be "error".
    * @param f the callback function to invoke.
