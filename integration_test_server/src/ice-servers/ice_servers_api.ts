@@ -12,8 +12,8 @@ const iceServersResponse = t.Object({
     username: t.Optional(t.String()),
     credential: t.Optional(t.String()),
     urls: t.Array(t.String())
-  }))
-});
+  }, { description: "Ice-Server" }))
+}, {description: "Ice-Servers"});
 
 export const iceServersHttp = new Elysia()
   .use(bearer())
