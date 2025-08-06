@@ -12,7 +12,7 @@ https://nabto.github.io/nabto-webrtc-sdk-js running in client mode.
 
 ```
 npm install
-npx vite
+npx run vite
 ```
 
 open http://localhost:5173/
