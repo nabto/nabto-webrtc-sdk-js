@@ -30,7 +30,13 @@ export class DeviceTokenGenerator {
    * @returns The resulting JWT
    */
   async generateToken(): Promise<string> {
-    const keyId = await this.getKeyId(this.privateKey);
+    let keyId;
+    try {
+      keyId = await this.getKeyId(this.privateKey);
+    } catch (e) {
+      console.log("Failed to get key ID: ", e);
+      throw new Error("Invalid Private Key provided for token generation");
+    }
     const resource = `urn:nabto:webrtc:${this.productId}:${this.deviceId}`
 
     const key = rs.KEYUTIL.getKeyFromPlainPrivatePKCS8PEM(this.privateKey);
