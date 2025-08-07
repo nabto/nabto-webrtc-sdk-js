@@ -13,7 +13,7 @@ export function useDeviceState(props: DeviceConnectionDisplayProps) {
     // error state
     const [userMediaError, setUserMediaError] = useState<Error>();
     const [createDeviceError, setCreateDeviceError] = useState<Error>();
-    const [deviceConnectError, setDeviceConnectError] = useState<Error>();
+    const [deviceConnectError, setDeviceConnectError] = useState<unknown>();
     const [deviceError, setDeviceError] = useState<Error>();
 
     // media
@@ -43,12 +43,12 @@ export function useDeviceState(props: DeviceConnectionDisplayProps) {
                 video: useVideo && cams.length > 0,
                 audio: useAudio && mics.length > 0
             })
-            .then(setMediaStream)
-            .catch(err => {
-                if (err instanceof Error) {
-                    setUserMediaError(err);
-                }
-            });
+                .then(setMediaStream)
+                .catch(err => {
+                    if (err instanceof Error) {
+                        setUserMediaError(err);
+                    }
+                });
         }
     }, []);
 
@@ -86,6 +86,9 @@ export function useDeviceState(props: DeviceConnectionDisplayProps) {
                 if (error instanceof Error) {
                     setDeviceError(error);
                 }
+            };
+            dev.onConnectError = (error) => {
+                setDeviceConnectError(error);
             };
             setProgressState("connected");
             navigator.mediaDevices.enumerateDevices().then(userMedia => {

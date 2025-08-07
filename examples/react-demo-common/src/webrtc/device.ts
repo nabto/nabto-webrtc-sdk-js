@@ -6,6 +6,7 @@ type MessageCallback = (sender: string, text: string) => void
 type PeerConnectionStatesCallback = (states: { name: string, state: RTCPeerConnectionState }[]) => void
 type OnConnectionStateChangeCallback = (state: SignalingConnectionState) => void
 type onErrorCallback = (origin: string, error: Error) => void
+type onConnectErrorCallback = (error: unknown) => void
 
 export type DeviceSettings = {
     endpointUrl: string;
@@ -21,6 +22,7 @@ export interface Device {
     onSignalingServiceConnectionState: OnConnectionStateChangeCallback | undefined
     onChatMessage: MessageCallback | undefined
     onError: onErrorCallback | undefined
+    onConnectError: onConnectErrorCallback | undefined
 
     updateUserMedia(constraints?: MediaStreamConstraints): Promise<MediaStream>
     broadcastChatMessage(sender: string, text: string): void
@@ -32,6 +34,8 @@ class DeviceImpl implements Device {
     onSignalingServiceConnectionState: OnConnectionStateChangeCallback | undefined;
     onChatMessage: MessageCallback | undefined
     onError: onErrorCallback | undefined;
+    onConnectError: onConnectErrorCallback | undefined;
+
     private idCounter = 0;
 
     private signalingDevice: SignalingDevice
@@ -51,6 +55,9 @@ class DeviceImpl implements Device {
 
         this.signalingDevice.on("connectionstatechange", () => {
             this.onSignalingServiceConnectionState?.(this.signalingDevice.connectionState)
+        })
+        this.signalingDevice.on("error", (error: unknown) => {
+            this.onConnectError?.(error);
         })
 
         if (settings.sharedSecret === "" && !settings.requireCentralAuth) {

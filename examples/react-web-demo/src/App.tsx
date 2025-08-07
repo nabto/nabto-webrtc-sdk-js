@@ -5,10 +5,12 @@ import { useState, useEffect, useCallback } from 'react';
 import Settings, { SettingsValues } from './components/settings';
 import { ClientState, DeviceState, useClientState, useDeviceState } from "@nabto/react-demo-common";
 import { ClientInfoTable } from "./components/clientinfo";
-import { useNotificationState } from "./components/notifications";
+import { Notification, useNotificationState } from "./components/notifications";
 import { NotificationStack } from "./components/notification_stack";
 import { VideoAndChat } from "./components/video";
 import { DeviceInfoTable } from './components/deviceinfo';
+import { ConnectNotifications } from './components/connect_notifications';
+import { DeviceIdNotFoundError, HttpError, ProductIdNotFoundError } from '@nabto/webrtc-signaling-client';
 
 const CustomPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -114,14 +116,45 @@ function DeviceApp({ deviceState }: { deviceState: DeviceState }) {
     }
   }, [pushNotification]);
 
+  const [connectNotification, setConnectNotification] = useState<(Notification | undefined)>(undefined);
+
+  const handleConnectError = useCallback((err: unknown | undefined) => {
+    if (err) {
+      if (err instanceof ProductIdNotFoundError) {
+        setConnectNotification({ msg: err.message, type: "error" });
+      } else if (err instanceof DeviceIdNotFoundError) {
+        setConnectNotification({ msg: err.message, type: "error" });
+      } else if (err instanceof HttpError) {
+        setConnectNotification({ msg: err.message, type: "error" });
+      } else if (err instanceof Error) {
+        setConnectNotification({ msg: err.message, type: "error" });
+      } else {
+        setConnectNotification({ msg: JSON.stringify(err), type: "error" });
+      }
+    } else {
+      setConnectNotification(undefined);
+    }
+  }, [connectNotification])
+
+  const clearConnectNotification = useCallback(() => {
+    setConnectNotification(undefined);
+  }, [connectNotification])
+
   useEffect(() => pushError(createDeviceError), [pushError, createDeviceError]);
-  useEffect(() => pushError(deviceConnectError), [pushError, deviceConnectError]);
+  useEffect(() => handleConnectError(deviceConnectError), [pushError, deviceConnectError]);
   useEffect(() => pushError(userMediaError), [pushError, userMediaError]);
   useEffect(() => pushError(deviceError), [pushError, deviceError]);
+
+  useEffect(() => {
+    if (signalingServiceState == "CONNECTED") {
+      setConnectNotification(undefined);
+    }
+  }, [signalingServiceState, setConnectNotification]);
 
   return (
     <>
       <NotificationStack clearNotification={clearNotification} notifications={notifications}></NotificationStack>
+      <ConnectNotifications clearNotification={clearConnectNotification} notification={connectNotification}></ConnectNotifications>
       <VideoAndChat mediaStream={mediaStream} onSendChat={chatSend} chatMessages={chatMessages} />
       <Collapse unmountOnExit in={progressState == "connecting"}>
         <LinearProgress />
