@@ -121,9 +121,11 @@ function DeviceApp({ deviceState }: { deviceState: DeviceState }) {
   const handleConnectError = useCallback((err: unknown | undefined) => {
     if (err) {
       if (err instanceof ProductIdNotFoundError) {
-        setConnectNotification({ msg: err.message, type: "error" });
+        const msg = err.message + ". See https://docs-branch.dev.nabto.com/developer/webrtc/guides/demos/console.html to learn how to configure a Nabto WebRTC Product"
+        setConnectNotification({ msg: msg, type: "error" });
       } else if (err instanceof DeviceIdNotFoundError) {
-        setConnectNotification({ msg: err.message, type: "error" });
+        const msg = err.message + ". See https://docs-branch.dev.nabto.com/developer/webrtc/guides/demos/console.html to learn how to configure a Nabto WebRTC Device"
+        setConnectNotification({ msg: msg, type: "error" });
       } else if (err instanceof HttpError) {
         setConnectNotification({ msg: err.message, type: "error" });
       } else if (err instanceof Error) {

@@ -114,15 +114,14 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
       this.ws.connect(signalingUrl);
     } catch (e) {
       let waitSeconds : number | undefined = undefined
-      if (e instanceof HttpError) {
-        this.emitError(e);
-      }
+      this.emitError(e);
+
       if (e instanceof TooManyRequestError) {
         waitSeconds = e.retryAfter;
       } else if (e instanceof HttpError) {
         console.debug(`Connect failed, retries in a moment. Status code ${e.statusCode}. Status text ${e.message} `)
       } else {
-        console.debug(`Connect failed, retries in a moment ${e}`)
+        console.debug(`Connect failed, retries in a moment`, e);
       }
       this.waitReconnect(waitSeconds);
     }

@@ -26,7 +26,7 @@ export function ConnectNotifications({ notification, clearNotification }: Connec
         return (
             <>
                 {
-                    <NotificationAlert type="error" onClose={() => clearNotification()}>{notification ? notification.msg : ""}</NotificationAlert>
+                    <NotificationAlert type="error" onClose={() => clearNotification()}>{notification.msg}</NotificationAlert>
                 }
             </>
         )
