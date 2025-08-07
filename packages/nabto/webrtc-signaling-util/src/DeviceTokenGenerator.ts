@@ -34,11 +34,12 @@ export class DeviceTokenGenerator {
     try {
       keyId = await this.getKeyId(this.privateKey);
     } catch (e) {
+      console.log("Failed to get key ID: ", e);
       throw new Error("Invalid Private Key provided for token generation");
     }
     const resource = `urn:nabto:webrtc:${this.productId}:${this.deviceId}`
 
-     const key = rs.KEYUTIL.getKeyFromPlainPrivatePKCS8PEM(this.privateKey);
+    const key = rs.KEYUTIL.getKeyFromPlainPrivatePKCS8PEM(this.privateKey);
     const header = { alg: "ES256", typ: "JWT", kid: keyId };
     /* eslint-disable @typescript-eslint/no-explicit-any */
     const payload: Record<string, any> = {};

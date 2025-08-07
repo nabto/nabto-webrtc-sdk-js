@@ -136,14 +136,14 @@ function DeviceApp({ deviceState }: { deviceState: DeviceState }) {
     } else {
       setConnectNotification(undefined);
     }
-  }, [connectNotification])
+  }, [setConnectNotification])
 
   const clearConnectNotification = useCallback(() => {
     setConnectNotification(undefined);
-  }, [connectNotification])
+  }, [setConnectNotification])
 
   useEffect(() => pushError(createDeviceError), [pushError, createDeviceError]);
-  useEffect(() => handleConnectError(deviceConnectError), [pushError, deviceConnectError]);
+  useEffect(() => handleConnectError(deviceConnectError), [handleConnectError, deviceConnectError]);
   useEffect(() => pushError(userMediaError), [pushError, userMediaError]);
   useEffect(() => pushError(deviceError), [pushError, deviceError]);
 
