@@ -11,6 +11,7 @@ import { VideoAndChat } from "./components/video";
 import { DeviceInfoTable } from './components/deviceinfo';
 import { ConnectNotifications } from './components/connect_notifications';
 import { DeviceIdNotFoundError, HttpError, ProductIdNotFoundError } from '@nabto/webrtc-signaling-client';
+import { parseUrlParams } from './utils/urlParams';
 
 const CustomPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -169,7 +170,8 @@ function DeviceApp({ deviceState }: { deviceState: DeviceState }) {
 }
 
 function App() {
-  const [mode, setMode] = useState<"device" | "client">("client");
+  const urlParams = parseUrlParams();
+  const [mode, setMode] = useState<"device" | "client">(urlParams.mode || "client");
   const [clientDisabled, setClientDisabled] = useState(false);
   const [deviceDisabled, setDeviceDisabled] = useState(false);
 
@@ -215,7 +217,13 @@ function App() {
           </Stack>
         </CustomPaper>
         <CustomPaper>
-          <Settings onModeChanged={setMode} disabled={mode == "client" ? clientDisabled : deviceDisabled} onDisconnectPressed={handleDisconnect} onConnectPressed={handleConnect} />
+          <Settings 
+            onModeChanged={setMode} 
+            disabled={mode == "client" ? clientDisabled : deviceDisabled} 
+            onDisconnectPressed={handleDisconnect} 
+            onConnectPressed={handleConnect}
+            initialValues={urlParams}
+          />
         </CustomPaper>
       </MainContainer>
     </>

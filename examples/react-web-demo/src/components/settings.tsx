@@ -4,6 +4,7 @@ import { FormEvent, MouseEvent, useEffect, useState } from 'react';
 import { Help, StylizedHelp } from './help';
 import { SettingsValues } from '@nabto/react-demo-common';
 import QRCode from 'react-qr-code';
+import { UrlParams } from '../utils/urlParams';
 export { type SettingsValues } from '@nabto/react-demo-common';
 
 const helpProductId = (
@@ -54,6 +55,7 @@ type SettingsProperties = {
     onDisconnectPressed?: () => Promise<void>;
     onModeChanged?: (mode: "client" | "device") => void;
     disabled: boolean;
+    initialValues: UrlParams;
 }
 
 type SettingsErrorState = {
@@ -75,8 +77,9 @@ enum ConnectionMode {
     DEVICE = "device"
 }
 
-function useSingleSetting<T>(key: string, fallback: T) {
+function useSingleSetting<T>(key: string, fallback: T, override?: T) {
     const [setting, setSetting] = useState(() => {
+        if (override) return override;
         const item = localStorage.getItem(key);
         return (item !== null ? JSON.parse(item) : fallback) as T;
     });
@@ -88,9 +91,12 @@ function useSingleSetting<T>(key: string, fallback: T) {
     return [setting, setSetting] as const;
 }
 
-function useSetting<T>(mode: ConnectionMode, key: string, fallback: T) {
-    const [clientSetting, setClientSetting] = useSingleSetting(`${ConnectionMode.CLIENT}-${key}`, fallback);
-    const [deviceSetting, setDeviceSetting] = useSingleSetting(`${ConnectionMode.DEVICE}-${key}`, fallback);
+function useSetting<T>(mode: ConnectionMode, key: string, defaultValue: T, override?: T) {
+    // only override on the chosen mode
+    const clientOverride = mode == ConnectionMode.CLIENT ? override : undefined;
+    const deviceOverride = mode == ConnectionMode.DEVICE ? override : undefined;
+    const [clientSetting, setClientSetting] = useSingleSetting(`${ConnectionMode.CLIENT}-${key}`, defaultValue, clientOverride);
+    const [deviceSetting, setDeviceSetting] = useSingleSetting(`${ConnectionMode.DEVICE}-${key}`, defaultValue, deviceOverride);
 
     if (mode == ConnectionMode.CLIENT) {
         return [clientSetting, setClientSetting] as const;
@@ -144,20 +150,23 @@ function GenerateCodeModal({show, onClose, productId, deviceId, sharedSecret}: G
 
 export default function Settings(props: SettingsProperties) {
     const disabled = props.disabled;
+    const initialValues = props.initialValues;
 
-    const [connectionMode, setConnectionMode] = useState<ConnectionMode>(ConnectionMode.CLIENT);
+    const [connectionMode, setConnectionMode] = useState<ConnectionMode>(
+        initialValues?.mode ? (initialValues.mode as ConnectionMode) : ConnectionMode.CLIENT
+    );
     const [showQrCode, setShowQrCode] = useState(false);
 
-    const [productId, setProductId] = useSetting(connectionMode, "product-id", "");
-    const [deviceId, setDeviceId] = useSetting(connectionMode, "device-id", "");
-    const [sharedSecret, setSharedSecret] = useSetting(connectionMode, "shared-secret", "");
-    const [clientAccessToken, setClientAccessToken] = useSetting(connectionMode, "access-token", "");
-    const [privateKey, setPrivateKey] = useSetting(connectionMode, "private-key", "");
-    const [openVideoStream, setOpenVideoStream] = useSetting(connectionMode, "open-video-stream", true);
-    const [openAudioStream, setOpenAudioStream] = useSetting(connectionMode, "open-audio-stream", false);
-    const [requireCentralAuth, setRequireCentralAuth] = useSetting(connectionMode, "require-central-auth", false);
+    const [productId, setProductId]                   = useSetting(connectionMode, "product-id",           "",    initialValues.productId);
+    const [deviceId, setDeviceId]                     = useSetting(connectionMode, "device-id",            "",    initialValues.deviceId);
+    const [sharedSecret, setSharedSecret]             = useSetting(connectionMode, "shared-secret",        "",    initialValues.sharedSecret);
+    const [clientAccessToken, setClientAccessToken]   = useSetting(connectionMode, "access-token",         "",    initialValues.clientAccessToken);
+    const [privateKey, setPrivateKey]                 = useSetting(connectionMode, "private-key",          "",    initialValues.privateKey);
+    const [openVideoStream, setOpenVideoStream]       = useSetting(connectionMode, "open-video-stream",    true,  initialValues.openVideoStream);
+    const [openAudioStream, setOpenAudioStream]       = useSetting(connectionMode, "open-audio-stream",    false, initialValues.openAudioStream);
+    const [requireCentralAuth, setRequireCentralAuth] = useSetting(connectionMode, "require-central-auth", false, initialValues.requireCentralAuth);
 
-    const [endpoint, setEndpoint] = useSingleSetting("endpoint-url", "");
+    const [endpoint, setEndpoint] = useSingleSetting("endpoint-url", initialValues?.endpoint || "");
 
     const [errs] = useState<SettingsErrorStates>({
         endpoint: { error: false, errorMessage: "" },
