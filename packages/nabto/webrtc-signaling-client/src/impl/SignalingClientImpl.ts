@@ -53,6 +53,8 @@ export class SignalingClientImpl
 
   constructor(private options: SignalingClientOptions) {
     super();
+    options.productId = options.productId.toLowerCase();
+    options.deviceId = options.deviceId.toLowerCase();
     let endpointUrl = options.endpointUrl;
     if (!endpointUrl) {
       endpointUrl = `https://${options.productId}.webrtc.nabto.net`;

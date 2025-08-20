@@ -29,6 +29,8 @@ export class SignalingDeviceImpl extends TypedEventEmitter<EventMap> implements 
 
   constructor(private options: SignalingDeviceOptions) {
     super();
+    options.productId = options.productId.toLowerCase();
+    options.deviceId = options.deviceId.toLowerCase();
     let endpointUrl = options.endpointUrl;
     if (!endpointUrl) {
       endpointUrl = `https://${options.productId}.webrtc.nabto.net`;
