@@ -1,6 +1,6 @@
 import { Close } from "@mui/icons-material";
 import { Alert, IconButton } from "@mui/material";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect } from "react";
 import { Notification, NotificationType } from "./notifications";
 
 type NotificationProps = PropsWithChildren<{
@@ -15,20 +15,31 @@ type NotificationStackProps = {
 
 function NotificationAlert({ children, onClose, type }: NotificationProps) {
     return (
-        <Alert severity={type} action={<IconButton color="inherit" size="small" onClick={onClose}><Close fontSize="inherit" /></IconButton>}>
+        <Alert severity={type} onClose={onClose}>
             {children}
         </Alert>
     )
 }
 
+const maxNotifications = 2;
+
 export function NotificationStack({ notifications, clearNotification }: NotificationStackProps) {
-    return(
-        <>
-        {
-            notifications.map((n, i) => i < 4 ? (
-                <NotificationAlert key={i} type={n.type} onClose={() => clearNotification(i)}>{n.msg}</NotificationAlert>
-            ) : null)
+
+    useEffect(() => {
+        if (notifications.length > maxNotifications) {
+            for (let i = 0; i < notifications.length - maxNotifications; i++) {
+                clearNotification(i);
+            }
         }
+    }, [notifications, clearNotification]);
+
+    return (
+        <>
+            {
+                notifications.map((n, i) => i < maxNotifications ? (
+                    <NotificationAlert key={i} type={n.type} onClose={() => clearNotification(i)}>{n.msg}</NotificationAlert>
+                ) : null)
+            }
         </>
     )
 }
