@@ -1,5 +1,4 @@
-import { Close } from "@mui/icons-material";
-import { Alert, IconButton } from "@mui/material";
+import { Alert } from "@mui/material";
 import { PropsWithChildren, useEffect } from "react";
 import { Notification, NotificationType } from "./notifications";
 
