@@ -11,7 +11,7 @@
   },
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "vitest",
+    "test": "vitest run",
     "lint": "eslint .",
     "test:i": "vitest --config ./vitest.integration.ts",
     "build": "tsup src/index.ts --format cjs,esm --dts"
