@@ -1,15 +1,15 @@
 import ConnectedTvIcon from '@mui/icons-material/ConnectedTv';
-import { Collapse, LinearProgress, CssBaseline, Paper, Stack, Typography } from '@mui/material';
+import { Collapse, LinearProgress, CssBaseline, Paper, Stack, Typography, Link } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useState, useEffect, useCallback } from 'react';
 import Settings, { SettingsValues } from './components/settings';
 import { ClientState, DeviceState, useClientState, useDeviceState } from "@nabto/react-demo-common";
 import { ClientInfoTable } from "./components/clientinfo";
-import { Notification, useNotificationState } from "./components/notifications";
+import { useNotificationState } from "./components/notifications";
 import { NotificationStack } from "./components/notification_stack";
 import { VideoAndChat } from "./components/video";
 import { DeviceInfoTable } from './components/deviceinfo';
-import { ConnectNotifications } from './components/connect_notifications';
+import { ConnectNotification, ConnectNotifications } from './components/connect_notifications';
 import { DeviceIdNotFoundError, HttpError, ProductIdNotFoundError } from '@nabto/webrtc-signaling-client';
 import { parseUrlParams } from './utils/urlParams';
 
@@ -92,6 +92,18 @@ function ClientApp({ clientState }: { clientState: ClientState }) {
   );
 }
 
+function ConnectErrorToNotification(error: unknown) {
+  if (error instanceof ProductIdNotFoundError || error instanceof DeviceIdNotFoundError) {
+    return (<Typography>
+      {error.message}. <Link color="secondary" target="_blank" href="https://docs.nabto.com/developer/webrtc/guides/demos/console.html">Click this link</Link> to learn how to configure a Nabto webRTC Product
+     </Typography>)
+  } else if (error instanceof HttpError || error instanceof Error){
+    return (<Typography>{error.message}</Typography>)
+  } else {
+    return (<Typography>{JSON.stringify(error)}</Typography>)
+  }
+}
+
 function DeviceApp({ deviceState }: { deviceState: DeviceState }) {
   const {
     mediaStream,
@@ -117,23 +129,13 @@ function DeviceApp({ deviceState }: { deviceState: DeviceState }) {
     }
   }, [pushNotification]);
 
-  const [connectNotification, setConnectNotification] = useState<(Notification | undefined)>(undefined);
-
+  const [connectNotification, setConnectNotification] = useState<(ConnectNotification | undefined)>(undefined);
   const handleConnectError = useCallback((err: unknown | undefined) => {
     if (err) {
-      if (err instanceof ProductIdNotFoundError) {
-        const msg = err.message + ". See https://docs-branch.dev.nabto.com/developer/webrtc/guides/demos/console.html to learn how to configure a Nabto WebRTC Product"
-        setConnectNotification({ msg: msg, type: "error" });
-      } else if (err instanceof DeviceIdNotFoundError) {
-        const msg = err.message + ". See https://docs-branch.dev.nabto.com/developer/webrtc/guides/demos/console.html to learn how to configure a Nabto WebRTC Device"
-        setConnectNotification({ msg: msg, type: "error" });
-      } else if (err instanceof HttpError) {
-        setConnectNotification({ msg: err.message, type: "error" });
-      } else if (err instanceof Error) {
-        setConnectNotification({ msg: err.message, type: "error" });
-      } else {
-        setConnectNotification({ msg: JSON.stringify(err), type: "error" });
-      }
+      setConnectNotification({
+        type: "error",
+        element: ConnectErrorToNotification(err)
+      });
     } else {
       setConnectNotification(undefined);
     }
