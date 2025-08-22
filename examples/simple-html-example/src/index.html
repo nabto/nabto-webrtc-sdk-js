@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nabto WebRTC Example</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <h1>Nabto WebRTC Example</h1>
     <p>Open the console to view logs.</p>
@@ -19,9 +21,16 @@
     <input type="text" id="sharedSecret" placeholder="Shared Secret"><br>
 
     <div class="video-container">
-        <video id="remote-video" autoplay muted controls width="480" height="360"></video><br>
-        <button id="connect-disconnect-btn">Connect</button>
+        <video id="remote-video" autoplay muted controls width="480" height="270"></video>
+        <div id="loading-spinner" class="loading-spinner hidden">
+            <div class="spinner"></div>
+        </div>
+        <div id="play-overlay" class="play-overlay">
+            <div class="play-button"></div>
+        </div>
     </div>
+    <br>
+    <button id="connect-disconnect-btn">Connect</button>
 
     <div class="webrtc-status-message" id="webrtc-status">
         <p><b>Signaling channel to camera:</b> <span id="webrtc-status-value-signaling">Not connected</span></p>
@@ -59,6 +68,11 @@
                 deviceId: document.getElementById("deviceId").value,
                 sharedSecret: document.getElementById("sharedSecret").value
             };
+        });
+
+        // Add play overlay click handler
+        document.getElementById("play-overlay").addEventListener("click", () => {
+            demoController.handlePlayOverlayClick();
         });
     </script>
 </body>
