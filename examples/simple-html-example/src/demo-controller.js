@@ -7,6 +7,7 @@ window.demoController = (function(){
     let configCallback;
     let isDisconnecting = false; // Add flag to prevent recursive calls
     let videoIsReady = false; // Track when video is actually ready to play
+    let animationRestarted = false; // Track if animation was restarted for this connection
 
     function init(callback) {
         configCallback = callback;
@@ -54,6 +55,19 @@ window.demoController = (function(){
         // Show spinner when connecting but video is not ready yet
         if (started && !errorOccurred && !videoIsReady) {
             spinner.classList.remove("hidden");
+            // Force Safari to restart animation once per connection
+            if (!animationRestarted) {
+                const spinnerDiv = spinner.querySelector('.spinner');
+                if (spinnerDiv) {
+                    setTimeout(() => {
+                        spinnerDiv.style.animation = 'none';
+                        setTimeout(() => {
+                            spinnerDiv.style.animation = 'spin 1s linear infinite';
+                        }, 10);
+                    }, 10);
+                }
+                animationRestarted = true;
+            }
         } else {
             spinner.classList.add("hidden");
         }
@@ -71,6 +85,7 @@ window.demoController = (function(){
         document.getElementById("remote-video").srcObject = null;
         started = false;
         videoIsReady = false;
+        animationRestarted = false;
         try {
             if (!errorOccurred) {
                 updateSignalingStatus(notConnectedMsg);
@@ -94,6 +109,7 @@ window.demoController = (function(){
         errorOccurred = false;
         started = true;
         videoIsReady = false;
+        animationRestarted = false;
         updateButton();
         updateLoadingSpinner();
         updatePlayOverlay();
