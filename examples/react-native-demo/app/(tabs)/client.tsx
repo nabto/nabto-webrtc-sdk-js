@@ -188,11 +188,11 @@ export default function Tab() {
 
 
     if (deviceId && productId && sharedSecret) {
-      setDeviceId(deviceId);
-      setProductId(productId);
+      setDeviceId(deviceId.toLowerCase());
+      setProductId(productId.toLowerCase());
       setSharedSecret(sharedSecret);
       console.log("tryparseandconnect called onconnectpressed")
-      onConnectPressed(deviceId, productId, sharedSecret);
+      onConnectPressed(deviceId.toLowerCase(), productId.toLowerCase(), sharedSecret);
     }
   }, [onConnectPressed]);
 
@@ -224,11 +224,11 @@ export default function Tab() {
   useCompareEffect(() => {
     if (scanCounter > 0) {
       if (localSearchParams.deviceId && localSearchParams.productId && localSearchParams.sharedSecret) {
-        setDeviceId(localSearchParams.deviceId);
-        setProductId(localSearchParams.productId);
+        setDeviceId(localSearchParams.deviceId.toLowerCase());
+        setProductId(localSearchParams.productId.toLowerCase());
         setSharedSecret(localSearchParams.sharedSecret);
         console.log("scancounter useffect called onconnectpressed")
-        onConnectPressed(localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret);
+        onConnectPressed(localSearchParams.deviceId.toLowerCase(), localSearchParams.productId.toLowerCase(), localSearchParams.sharedSecret);
       }
     }
   }, [scanCounter], [localSearchParams.deviceId, localSearchParams.productId, localSearchParams.sharedSecret, onConnectPressed])
@@ -295,8 +295,8 @@ export default function Tab() {
         <View style={{height: 8}} />
 
         <View style={{ gap: 8 }}>
-          <SettingsInput value={productId} onChangeText={setProductId} label={t("productId")}/>
-          <SettingsInput value={deviceId} onChangeText={setDeviceId} label={t("deviceId")} />
+          <SettingsInput value={productId} onChangeText={(text) => setProductId(text.toLowerCase())} label={t("productId")}/>
+          <SettingsInput value={deviceId} onChangeText={(text) => setDeviceId(text.toLowerCase())} label={t("deviceId")} />
           <SettingsInput value={sharedSecret} onChangeText={setSharedSecret} label={t("sharedSecret")} />
         </View>
 

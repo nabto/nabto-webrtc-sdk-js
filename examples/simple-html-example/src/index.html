@@ -46,9 +46,11 @@
         document.getElementById("sharedSecret").value = settings.sharedSecret || '59470b3f8e331d9975da366d8dc0dcf743ef6a1154a4f779932740b4d14be3ab';
 
         ["productId","deviceId","sharedSecret"].forEach(name =>
-            document.getElementById(name).addEventListener("change", e =>
-                localStorage.setItem(name, e.target.value)
-            )
+            document.getElementById(name).addEventListener("change", e => {
+                const value = (name === "productId" || name === "deviceId") ? e.target.value.toLowerCase() : e.target.value;
+                e.target.value = value;
+                localStorage.setItem(name, value);
+            })
         );
     </script>
     <script src="demo-controller.js"></script>

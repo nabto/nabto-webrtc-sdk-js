@@ -271,7 +271,7 @@ export default function Settings(props: SettingsProperties) {
                                 name="productId"
                                 id="productId"
                                 disabled={disabled}
-                                onChange={(e) => setProductId(e.target.value)}
+                                onChange={(e) => setProductId(e.target.value.toLowerCase())}
                                 value={productId}
                                 error={errs.productId.error}
                                 helperText={errs.productId.errorMessage}
@@ -288,7 +288,7 @@ export default function Settings(props: SettingsProperties) {
                                 name="deviceId"
                                 id="deviceId"
                                 disabled={disabled}
-                                onChange={(e) => setDeviceId(e.target.value)}
+                                onChange={(e) => setDeviceId(e.target.value.toLowerCase())}
                                 value={deviceId}
                                 error={errs.deviceId.error}
                                 helperText={errs.deviceId.errorMessage}
