@@ -32,7 +32,7 @@ function ChatInput(props: { onSend?: (text: string) => void }) {
         display: 'flex', 
         alignItems: 'center', 
         width: '100%',
-        maxWidth: '400px'
+        maxWidth: { xs: '100%', md: '400px' }
       }}
     >
       <InputBase
@@ -70,7 +70,7 @@ export default function ChatBox(props: ChatBoxProps) {
   }, [props.messages]);
 
   return (<>
-    <Stack sx={{ width: '100%', maxWidth: '400px' }}>
+    <Stack sx={{ width: '100%', maxWidth: { xs: '100%', md: '400px' } }}>
       <Paper 
         ref={ref}
         sx={{

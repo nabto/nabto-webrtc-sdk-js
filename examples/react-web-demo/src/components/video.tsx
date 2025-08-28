@@ -28,7 +28,8 @@ export function VideoAndChat({ mediaStream, onSendChat, chatMessages, muted }: V
             sx={{ 
                 height: { xs: 'auto', md: '200px' }, 
                 justifyContent: "space-between",
-                minHeight: { xs: '300px', md: '200px' }
+                minHeight: { xs: '300px', md: '200px' },
+                alignItems: { xs: 'stretch', md: 'flex-start' }
             }}
         >
             <video 
@@ -39,7 +40,6 @@ export function VideoAndChat({ mediaStream, onSendChat, chatMessages, muted }: V
                 style={{ 
                     backgroundColor: "black", 
                     width: '100%', 
-                    maxWidth: '300px',
                     height: '200px',
                     objectFit: 'contain'
                 }} 
