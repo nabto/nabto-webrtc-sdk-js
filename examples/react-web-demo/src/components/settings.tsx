@@ -119,11 +119,12 @@ function GenerateCodeModal({show, onClose, productId, deviceId, sharedSecret}: G
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: 600,
+        width: { xs: '90%', sm: '500px', md: '600px' },
+        maxWidth: '90vw',
         bgcolor: 'background.paper',
         border: '1px solid #000',
         boxShadow: 24,
-        p: 4,
+        p: { xs: 2, sm: 4 },
         justifyContent: "center",
         alignItems: "center"
       };
@@ -220,7 +221,11 @@ export default function Settings(props: SettingsProperties) {
             sharedSecret={sharedSecret ?? ""}/>
 
         <Box component="form" onSubmit={handleSubmit}>
-            <Stack direction="row" gap={2} marginBottom="16px">
+            <Stack 
+                direction={{ xs: "column", sm: "row" }} 
+                gap={2} 
+                marginBottom="16px"
+            >
                 <Button
                     disabled={disabled}
                     type="submit"

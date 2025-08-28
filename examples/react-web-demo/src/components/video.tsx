@@ -22,8 +22,28 @@ export function VideoAndChat({ mediaStream, onSendChat, chatMessages, muted }: V
 
 
     return (
-        <Stack direction="row" gap={2} sx={{ height: '200px', justifyContent: "space-between" }}>
-            <video ref={videoRef} controls={false} muted={muted} autoPlay style={{ backgroundColor: "black", width: '300px', height: '100%' }} />
+        <Stack 
+            direction={{ xs: "column", md: "row" }} 
+            gap={2} 
+            sx={{ 
+                height: { xs: 'auto', md: '200px' }, 
+                justifyContent: "space-between",
+                minHeight: { xs: '300px', md: '200px' }
+            }}
+        >
+            <video 
+                ref={videoRef} 
+                controls={false} 
+                muted={muted} 
+                autoPlay 
+                style={{ 
+                    backgroundColor: "black", 
+                    width: '100%', 
+                    maxWidth: '300px',
+                    height: '200px',
+                    objectFit: 'contain'
+                }} 
+            />
             <ChatBox onSend={onSendChat} messages={chatMessages} />
         </Stack>
     )
