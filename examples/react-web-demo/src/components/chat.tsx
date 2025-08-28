@@ -27,7 +27,13 @@ function ChatInput(props: { onSend?: (text: string) => void }) {
   return (
     <Paper
       component="form"
-      sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: 400 }}
+      sx={{ 
+        p: '2px 4px', 
+        display: 'flex', 
+        alignItems: 'center', 
+        width: '100%',
+        maxWidth: { xs: '100%', md: '400px' }
+      }}
     >
       <InputBase
         sx={{ ml: 1, flex: 1 }}
@@ -64,15 +70,17 @@ export default function ChatBox(props: ChatBoxProps) {
   }, [props.messages]);
 
   return (<>
-    <Stack>
+    <Stack sx={{ width: '100%', maxWidth: { xs: '100%', md: '400px' } }}>
       <Paper 
         ref={ref}
         sx={{
           height: "100%",
-          width: 400,
+          minHeight: "150px",
+          width: '100%',
           overflow: "clip",
           overflowY: "scroll",
-          overflowAnchor: "none"
+          overflowAnchor: "none",
+          p: 1
         }}
         variant="outlined">
           {

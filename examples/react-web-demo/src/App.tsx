@@ -14,11 +14,15 @@ import { DeviceIdNotFoundError, HttpError, ProductIdNotFoundError } from '@nabto
 import { parseUrlParams } from './utils/urlParams';
 
 const CustomPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4),
+  padding: theme.spacing(2),
   gap: theme.spacing(2),
   alignSelf: 'center',
   marginBottom: '12px',
-  [theme.breakpoints.up('sm')]: { width: '800px' }
+  width: '100%',
+  [theme.breakpoints.up('sm')]: { 
+    width: '800px',
+    padding: theme.spacing(4)
+  }
 }));
 
 const MainContainer = styled(Stack)(({ theme }) => ({
@@ -208,8 +212,14 @@ function App() {
         <CustomPaper elevation={3}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Stack alignItems="center" direction="row" gap={2}>
-              <ConnectedTvIcon color="primary" sx={{ fontSize: 48 }} />
-              <Typography component="h1" variant="h4" >Nabto WebRTC Demo</Typography>
+              <ConnectedTvIcon color="primary" sx={{ fontSize: { xs: 32, sm: 48 } }} />
+              <Typography 
+                component="h1" 
+                variant="h4"
+                sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}
+              >
+                Nabto WebRTC Demo
+              </Typography>
             </Stack>
           </Stack>
         </CustomPaper>
