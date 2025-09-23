@@ -9,6 +9,7 @@ export interface UrlParams {
   openVideoStream?: boolean;
   openAudioStream?: boolean;
   requireCentralAuth?: boolean;
+  enableTwoWay?: boolean;
 }
 
 export function parseUrlParams(): UrlParams {

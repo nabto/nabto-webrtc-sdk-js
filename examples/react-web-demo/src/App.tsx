@@ -62,6 +62,7 @@ function ClientApp({ clientState }: { clientState: ClientState }) {
     rtcSignalingState,
 
     // Error states
+    userMediaError,
     createClientError,
     createPeerConnectionError,
     peerConnectionError,
@@ -75,6 +76,7 @@ function ClientApp({ clientState }: { clientState: ClientState }) {
     }
   }, [pushNotification]);
 
+  useEffect(() => pushError(userMediaError), [pushError, userMediaError]);
   useEffect(() => pushError(createClientError), [pushError, createClientError]);
   useEffect(() => pushError(createPeerConnectionError), [pushError, createPeerConnectionError]);
   useEffect(() => pushError(peerConnectionError), [pushError, peerConnectionError]);

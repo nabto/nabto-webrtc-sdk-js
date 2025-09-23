@@ -28,6 +28,7 @@ export interface PeerConnection {
     onRtcConnectionState: ((state: RTCPeerConnectionState) => void) | undefined
     onMediaStream: ((state: MediaStream) => void) | undefined
     onDataChannelMessage: ((sender: string, text: string) => void) | undefined
+    onRtcTrack: ((event: RTCTrackEvent) => void) | undefined
     // Called when the rtc peer connection has been created.
     onRTCPeerConnectionCreated?: () => void
     onError: ((origin: string, err: Error) => void) | undefined
@@ -51,6 +52,7 @@ function generateName(length: number): string {
 class PeerConnectionImpl implements PeerConnection {
     onRtcSignalingState: ((state: RTCSignalingState) => void) | undefined;
     onRtcConnectionState: ((state: RTCPeerConnectionState) => void) | undefined;
+    onRtcTrack: ((event: RTCTrackEvent) => void) | undefined;
     onMediaStream: ((state: MediaStream) => void) | undefined;
     onDataChannelMessage: ((sender: string, text: string) => void) | undefined;
     onError: ((origin: string, err: Error) => void) | undefined;
@@ -143,8 +145,9 @@ class PeerConnectionImpl implements PeerConnection {
     }
 
     private setupPeerConnection(iceServers?: RTCIceServer[]) {
+        this.log.d("Setup Peer Connection");
         this.pc = new RTCPeerConnection({ iceServers });
-        this.pc.ontrack = event => this.onTrack(event);
+        this.pc.ontrack = async event => await this.onTrack(event);
         this.perfectNegotiation = new PerfectNegotiation(this.pc, this.defaultMessageTransport);
         this.signalingEventHandler = new SignalingEventHandler(this.pc, this.signalingClientOrDevice);
         this.pc.onsignalingstatechange = () => this.onRtcSignalingStateChange();
@@ -166,6 +169,7 @@ class PeerConnectionImpl implements PeerConnection {
         if (this.isDevice) {
             this.createDefaultDataChannel(this.pc);
         }
+
         this.onRTCPeerConnectionCreated?.()
     }
 
@@ -186,7 +190,9 @@ class PeerConnectionImpl implements PeerConnection {
     // RTCPeerConnection callbacks
     // ----------------------------------------------
 
-    private onTrack(event: RTCTrackEvent) {
+    private async onTrack(event: RTCTrackEvent) {
+        this.onRtcTrack?.(event);
+
         if (event.streams && event.streams[0]) {
             this.onMediaStream?.(event.streams[0]);
         } else {

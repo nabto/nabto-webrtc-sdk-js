@@ -17,6 +17,7 @@ export function useClientState(props: ConnectionDisplayProps) {
     const [signalingConnectionState, setSignalingConnectionState] = useState<SignalingConnectionState>();
     const [signalingPeerState, setSignalingPeerState] = useState<SignalingChannelState>();
 
+    const [userMediaError, setUserMediaError] = useState<Error>();
     const [signalingError, setSignalingError] = useState<Error>();
     const [createClientError, setCreateClientError] = useState<Error>();
     const [createPeerConnectionError, setCreatePeerConnectionError] = useState<Error>();
@@ -26,7 +27,8 @@ export function useClientState(props: ConnectionDisplayProps) {
     const peerConnection = useRef<PeerConnection>();
 
     // media
-    const [mediaStream, setMediaStream] = useState<MediaStream>();
+    const localMediaStream = useRef<MediaStream>();
+    const [remoteMediaStream, setRemoteMediaStream] = useState<MediaStream>();
 
     // Chat state
     const [chatMessages, setChatMessages] = useState<{ sender: string, text: string }[]>([]);
@@ -44,7 +46,11 @@ export function useClientState(props: ConnectionDisplayProps) {
         signalingClient.current = undefined;
         peerConnection.current = undefined;
 
+        localMediaStream.current?.getTracks().forEach(t => t.stop());
+        localMediaStream.current = undefined;
+
         if (pc) {
+            pc.onRtcTrack = undefined;
             pc.onMediaStream = undefined;
             pc.onDataChannelMessage = undefined;
             pc.close();
@@ -54,11 +60,11 @@ export function useClientState(props: ConnectionDisplayProps) {
             client.close();
         }
 
-        setMediaStream(undefined);
+        setRemoteMediaStream(undefined);
         setProgressState("disconnected");
     }, []);
 
-    const startConnection = useCallback((settings: SettingsValues) => {
+    const startConnection = useCallback(async (settings: SettingsValues) => {
         if (signalingClient.current && progressState != "disconnected")  {
             return;
         }
@@ -73,7 +79,27 @@ export function useClientState(props: ConnectionDisplayProps) {
         setSignalingConnectionState(undefined);
         setSignalingPeerState(undefined);
         setRtcConnectionState(undefined);
-        setMediaStream(undefined);
+        setRemoteMediaStream(undefined);
+        setUserMediaError(undefined);
+
+        if (settings.enableTwoWay)
+        {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const isAudioAvailable = devices.filter(d => d.kind == "audioinput").length > 0;
+                const isVideoAvailable = devices.filter(d => d.kind == "videoinput").length > 0;
+                if (isAudioAvailable || isVideoAvailable) {
+                    localMediaStream.current = await navigator.mediaDevices.getUserMedia({
+                        video: isVideoAvailable,
+                        audio: isAudioAvailable
+                    });
+                }
+            } catch (err) {
+                if (err instanceof Error) {
+                    setUserMediaError(err);
+                }
+            }
+        }
 
         signalingClient.current = createSignalingClient({
             productId: settings.productId,
@@ -103,7 +129,17 @@ export function useClientState(props: ConnectionDisplayProps) {
             setProgressState("connected");
             pc.onRtcConnectionState = setRtcConnectionState;
             pc.onRtcSignalingState = setRtcSignalingState;
-            pc.onMediaStream = setMediaStream;
+
+            if (settings.enableTwoWay)
+            {
+                pc.onRtcSignalingState = (state) => {
+                    if (localMediaStream.current && state == "stable") {
+                        pc.addStream(localMediaStream.current)
+                    }
+                }
+            }
+
+            pc.onMediaStream = setRemoteMediaStream;
             pc.onDataChannelMessage = (sender, text) => setChatMessages(s => [...s, { sender, text }]);
             pc.onError = (_, error) => {
                 setPeerConnectionError(undefined);
@@ -116,7 +152,7 @@ export function useClientState(props: ConnectionDisplayProps) {
     }, [progressState, stopConnection]);
 
     return {
-        mediaStream,
+        mediaStream: remoteMediaStream,
         chatSend,
         chatMessages,
         progressState,
@@ -126,6 +162,7 @@ export function useClientState(props: ConnectionDisplayProps) {
         rtcSignalingState,
         rtcConnectionState,
 
+        userMediaError,
         signalingError,
         createClientError,
         createPeerConnectionError,
