@@ -166,6 +166,7 @@ export default function Settings(props: SettingsProperties) {
     const [openVideoStream, setOpenVideoStream]       = useSetting(connectionMode, "open-video-stream",    true,  initialValues.openVideoStream);
     const [openAudioStream, setOpenAudioStream]       = useSetting(connectionMode, "open-audio-stream",    false, initialValues.openAudioStream);
     const [requireCentralAuth, setRequireCentralAuth] = useSetting(connectionMode, "require-central-auth", false, initialValues.requireCentralAuth);
+    const [enableTwoWay, setEnableTwoWay]             = useSetting(connectionMode, "enable-two-way",       false, initialValues.enableTwoWay);
 
     const [endpoint, setEndpoint] = useSingleSetting("endpoint-url", initialValues?.endpoint || "");
 
@@ -199,7 +200,8 @@ export default function Settings(props: SettingsProperties) {
             endpointUrl: endpoint ? endpoint : `https://${productId}.webrtc.nabto.net`,
             openVideoStream,
             openAudioStream,
-            requireCentralAuth
+            requireCentralAuth,
+            enableTwoWay
         });
     };
 
@@ -316,7 +318,7 @@ export default function Settings(props: SettingsProperties) {
                                 helperText={errs.sharedSecret.errorMessage}
                                 color={errs.sharedSecret.error ? "error" : "primary"} />
                         </FormControl>
-                        {connectionMode == "device" ? (
+                        {connectionMode == ConnectionMode.DEVICE ? (
                             <>
                                 <FormControl>
                                     <Help text={helpPrivateKey} reverse={true}>
@@ -405,6 +407,17 @@ export default function Settings(props: SettingsProperties) {
                                 helperText={errs.endpoint.errorMessage}
                                 color={errs.endpoint.error ? "error" : "primary"} />
                         </FormControl>
+                        {connectionMode == ConnectionMode.CLIENT ?
+                            <FormGroup>
+                                <FormControlLabel
+                                    disabled={disabled}
+                                    name="enableTwoWay"
+                                    id="enableTwoWay"
+                                    defaultChecked={false}
+                                    control={<Checkbox checked={enableTwoWay} onChange={e => setEnableTwoWay(e.target.checked)} color="primary" />}
+                                    label="Enable two-way audio/video" />
+                            </FormGroup>
+                        : null}
                     </Box>
                 </AccordionDetails>
             </Accordion>

@@ -9,6 +9,7 @@ export type SettingsValues = {
     clientAccessToken: string;
     requireCentralAuth: boolean;
     requireOnline?: boolean;
+    enableTwoWay?: boolean;
 };
 
 export type ProgressState = 
