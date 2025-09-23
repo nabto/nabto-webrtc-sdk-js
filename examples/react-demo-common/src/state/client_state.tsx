@@ -129,7 +129,6 @@ export function useClientState(props: ConnectionDisplayProps) {
             setProgressState("connected");
             pc.onRtcConnectionState = setRtcConnectionState;
             pc.onRtcSignalingState = setRtcSignalingState;
-            pc.addStream
 
             if (settings.enableTwoWay)
             {
