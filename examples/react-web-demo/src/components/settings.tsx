@@ -166,6 +166,7 @@ export default function Settings(props: SettingsProperties) {
     const [openVideoStream, setOpenVideoStream]       = useSetting(connectionMode, "open-video-stream",    true,  initialValues.openVideoStream);
     const [openAudioStream, setOpenAudioStream]       = useSetting(connectionMode, "open-audio-stream",    false, initialValues.openAudioStream);
     const [requireCentralAuth, setRequireCentralAuth] = useSetting(connectionMode, "require-central-auth", false, initialValues.requireCentralAuth);
+    const [requireOnline, setRequireOnline]           = useSetting(connectionMode, "require-online",       true,  initialValues.requireDeviceOnline);
     const [enableTwoWay, setEnableTwoWay]             = useSetting(connectionMode, "enable-two-way",       false, initialValues.enableTwoWay);
 
     const [endpoint, setEndpoint] = useSingleSetting("endpoint-url", initialValues?.endpoint || "");
@@ -201,6 +202,7 @@ export default function Settings(props: SettingsProperties) {
             openVideoStream,
             openAudioStream,
             requireCentralAuth,
+            requireOnline,
             enableTwoWay
         });
     };
@@ -382,6 +384,17 @@ export default function Settings(props: SettingsProperties) {
                                         helperText={errs.clientAccessToken.errorMessage}
                                         color={errs.clientAccessToken.error ? "error" : "primary"} />
                                 </FormControl>
+
+                                <FormGroup>
+                                    <Stack direction="column">
+                                        <FormControlLabel
+                                            disabled={disabled}
+                                            name="requireDeviceOnline"
+                                            id="requireDeviceOnline"
+                                            control={<Checkbox checked={requireOnline} onChange={e => setRequireOnline(e.target.checked)} color="primary" />}
+                                            label="Fail if device is offline" />
+                                    </Stack>
+                                </FormGroup>
                             </>
                         )
                         }

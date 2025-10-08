@@ -9,6 +9,7 @@ export interface UrlParams {
   openVideoStream?: boolean;
   openAudioStream?: boolean;
   requireCentralAuth?: boolean;
+  requireDeviceOnline?: boolean;
   enableTwoWay?: boolean;
 }
 
