@@ -22,6 +22,7 @@ const app = new Elysia()
     console.log(error, code)
     console.log(`${request.method} ${request.url} ${set.status}`);
   })
+  .get("/", () => "OK")
   .use(clientHttp)
   .use(clientWs)
   .use(deviceHttp)
