@@ -3,7 +3,9 @@ import { test, afterEach, beforeEach, describe, expect } from 'vitest'
 import { DeviceTestInstance } from '../../src/DeviceTestInstance'
 import { SignalingChannel, SignalingConnectionState, SignalingDevice } from '../../../src'
 
-describe("Test that messages are sent reliably.", async () => {
+// Reliability Tests
+
+describe("Reliability Tests", async () => {
   let testInstance: DeviceTestInstance
   let device: SignalingDevice
   let clientId: string
@@ -27,7 +29,8 @@ describe("Test that messages are sent reliably.", async () => {
     await testInstance.destroyTest();
   })
 
-  test("observe the client receives all sent messages", async () => {
+  test("Reliability Test 1: Successfully sending messages", async () => {
+    // Test that messages can be sent by a peer.
     const messages = ["1", "2", "3"]
     for (const msg of messages) {
       await signalingChannel.sendMessage(msg);
@@ -36,7 +39,8 @@ describe("Test that messages are sent reliably.", async () => {
     expect(receivedMessages).toStrictEqual(messages)
   })
 
-  test("observe that the device receives all sent messages", async () => {
+  test("Reliability Test 2: Successfully receiving messages", async () => {
+    // Test that messages can be received by a peer.
     const messages = ["1", "2", "3"]
 
     const receivedMessages = new Array<unknown>();
@@ -55,7 +59,9 @@ describe("Test that messages are sent reliably.", async () => {
     await promise;
   })
 
-  test("observe the client receives all sent messages, if the device reconnects", async () => {
+  test("Reliability Test 3: Resend messages when a peer becomes online", async () => {
+    // Test that messages which are sent to a peer which is DISCONNECTED,
+    // become retransmitted when the peer becomes online.
     const messages = ["1", "2", "3"]
     for (const msg of messages) {
       await signalingChannel.sendMessage(msg);
@@ -65,7 +71,7 @@ describe("Test that messages are sent reliably.", async () => {
 
     await testInstance.disconnectDevice();
 
-    const messages2 = ["1", "2", "3"]
+    const messages2 = ["4", "5", "6"]
     for (const msg of messages2) {
       await signalingChannel.sendMessage(msg);
     }
@@ -74,3 +80,21 @@ describe("Test that messages are sent reliably.", async () => {
     expect(receivedMessages2).toStrictEqual(expectedMessages)
   })
 })
+
+// Note: The following reliability tests require additional test infrastructure support:
+//
+// Reliability Test 4: Resend messages which are lost on a stale websocket connection
+//   - Requires: checkAlive() method on SignalingChannel or SignalingDevice
+//   - Requires: Ability to make websocket drop messages without disconnecting
+//
+// Reliability Test 5: Discard duplicates from the remote peer
+//   - Requires: checkAlive() method to trigger reconnects
+//   - Requires: Fine-grained control over message acknowledgments
+//   - Requires: Ability to observe duplicate detection
+//
+// Reliability Test 6: Test that a peer resend unacked messages when a PEER_ONLINE event is received
+//   - Requires: Ability to control connection state visibility (prevent PEER_OFFLINE messages)
+//   - Requires: checkAlive() or similar mechanism to trigger reconnection
+//   - Requires: PEER_ONLINE event observation
+//
+// These tests are not currently implemented but are documented in the specification.

@@ -4,7 +4,9 @@ import { SignalingChannel, SignalingChannelState, SignalingDevice, DeviceIdNotFo
 import { SignalingConnectionState } from '../../../src'
 import { DeviceTestInstance } from '../../src/DeviceTestInstance'
 
-describe("Test device connection to the signaling service", async () => {
+// Device Connectivity Tests
+
+describe("Device Connectivity Tests", async () => {
   let testInstance: DeviceTestInstance
   beforeEach(async () => {
     testInstance = await DeviceTestInstance.create({});
@@ -14,20 +16,33 @@ describe("Test device connection to the signaling service", async () => {
     await testInstance.destroyTest();
   })
 
-  test('ok', async () => {
+  test('Device Connectivity Test 1: Ok connection', async () => {
+    // This tests that the device can connect to the signaling service.
     const device = testInstance.createSignalingDevice();
     device.start();
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
   })
-  test('close changes state to closed', async () => {
+
+  test('Device Connectivity Test 2: Close the connection', async () => {
+    // This tests that close on a device closes the connection to the signaling service.
     const device = testInstance.createSignalingDevice();
     device.start();
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED])
     await device.close()
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED, SignalingConnectionState.CLOSED])
   })
+
+  test('Device Connectivity Test 5: Device reconnects', async () => {
+    // Test that the device reconnects if a WebSocket connection is terminated by the server.
+    const device = testInstance.createSignalingDevice();
+    device.start();
+    await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
+    await testInstance.disconnectDevice();
+    await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED, SignalingConnectionState.WAIT_RETRY, SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
+  })
 })
-describe("Test device connection to the signaling service which returns an http error", async () => {
+
+describe("Device Connectivity Test 3: Initial HTTP Error", async () => {
   let testInstance: DeviceTestInstance
   beforeEach(async () => {
     testInstance = await DeviceTestInstance.create({ failHttp: true });
@@ -36,14 +51,17 @@ describe("Test device connection to the signaling service which returns an http 
   afterEach(async () => {
     await testInstance.destroyTest();
   })
-  test('http fail', async () => {
+
+  test('Device Connectivity Test 3: Initial HTTP Error', async () => {
+    // This tests that the device retries connections to the signaling service if the initial HTTP request fails.
+    // The connect does not fail but keeps retrying in the background.
     const device = testInstance.createSignalingDevice();
     device.start();
-    // The connect does not fail but keeps retrying in the background.
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.WAIT_RETRY])
   })
 })
-describe("Test device connection to the signaling service which returns an ws error", async () => {
+
+describe("Device Connectivity Test 4: Initial WebSocket Error", async () => {
   let testInstance: DeviceTestInstance
   beforeEach(async () => {
     testInstance = await DeviceTestInstance.create({ failWs: true });
@@ -53,32 +71,17 @@ describe("Test device connection to the signaling service which returns an ws er
     await testInstance.destroyTest();
   })
 
-  test('ws fail', async () => {
+  test('Device Connectivity Test 4: Initial WebSocket connect error', async () => {
+    // This tests that the device retries to connect to the signaling service if the initial websocket connection fails.
     const device = testInstance.createSignalingDevice();
     device.start();
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.WAIT_RETRY])
   })
 })
 
-describe("Test device connection to the signaling", async () => {
-  let testInstance: DeviceTestInstance
-  beforeEach(async () => {
-    testInstance = await DeviceTestInstance.create({});
-  })
+// Device Client Tests
 
-  afterEach(async () => {
-    await testInstance.destroyTest();
-  })
-  test('The device reconnects if the connection is terminated by the server', async () => {
-    const device = testInstance.createSignalingDevice();
-    device.start();
-    await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
-    await testInstance.disconnectDevice();
-    await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED, SignalingConnectionState.WAIT_RETRY, SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
-  })
-})
-
-describe("Test clients connect through the signaling service", async () => {
+describe("Device Client Tests", async () => {
   let testInstance: DeviceTestInstance;
   let device: SignalingDevice;
   beforeEach(async () => {
@@ -90,11 +93,14 @@ describe("Test clients connect through the signaling service", async () => {
   afterEach(async () => {
     await testInstance.destroyTest();
   })
-  test('Connect a client', async () => {
+
+  test('Device Client Test 1: Success - client can connect to a device', async () => {
+    // Test that a client can connect to a device.
     await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
     const clientId = await testInstance.createClient();
     const clientConnectedPromise = new Promise<boolean>((resolve, _reject) => {
-      device.onNewSignalingChannel = async (_channel: SignalingChannel, _authorized: boolean) => {
+      device.onNewSignalingChannel = async (channel: SignalingChannel, _authorized: boolean) => {
+        expect(channel.channelState).toBe(SignalingChannelState.CONNECTED);
         resolve(true)
       }
     });
@@ -103,10 +109,41 @@ describe("Test clients connect through the signaling service", async () => {
     await clientConnectedPromise
   })
 
-  test('Connect multiple clients', async () => {
+  test('Device Client Test 2: Client disconnect', async () => {
+    // Test that a channel state switches to DISCONNECTED if a client is disconnected and a message is sent to it.
+    await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
+    const clientId = await testInstance.createClient();
+    let createdChannel : SignalingChannel | undefined;
+    const clientConnectedPromise = new Promise<boolean>((resolve, _reject) => {
+      device.onNewSignalingChannel = async (channel: SignalingChannel, _authorized: boolean) => {
+        createdChannel = channel;
+        resolve(true)
+      }
+    });
+    await testInstance.connectClient(clientId);
+    await testInstance.clientSendMessages(clientId, ["test_message"])
+    await clientConnectedPromise
+    expect(createdChannel).not.toBeNull()
+    expect(createdChannel?.channelState).toBe(SignalingChannelState.CONNECTED);
+
+    const offlinePromise = new Promise<boolean>((resolve, _reject) => {
+      createdChannel?.on("channelstatechange", () => {
+        if (createdChannel?.channelState === SignalingChannelState.DISCONNECTED) {
+          resolve(true)
+        }
+      })
+    })
+    await testInstance.disconnectClient(clientId);
+    await createdChannel?.sendMessage("message")
+    await offlinePromise
+    expect(createdChannel?.channelState).toBe(SignalingChannelState.DISCONNECTED);
+  })
+
+  test('Device Client Test 3: Connect multiple clients', async () => {
+    // Test that a device can handle multiple clients.
+    await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
 
     const numberOfClients = 10;
-
     const channels = new Array<SignalingChannel>()
     const clientsConnectedPromise = new Promise<boolean>((resolve, _reject) => {
       device.onNewSignalingChannel = async (channel: SignalingChannel, _authorized: boolean) => {
@@ -123,9 +160,12 @@ describe("Test clients connect through the signaling service", async () => {
       await testInstance.clientSendMessages(clientId, ["message"]);
     }
     await clientsConnectedPromise;
+    expect(channels.length).toBe(numberOfClients);
   })
 
-  test('Client is disconnected after being connected', async () => {
+  test('Device Client Test 4: Channel close', async () => {
+    // Test that a channel can be closed.
+    await testInstance.waitForObservedStates(device, [SignalingConnectionState.CONNECTING, SignalingConnectionState.CONNECTED]);
     const clientId = await testInstance.createClient();
     let createdChannel : SignalingChannel | undefined;
     const clientConnectedPromise = new Promise<boolean>((resolve, _reject) => {
@@ -139,17 +179,18 @@ describe("Test clients connect through the signaling service", async () => {
     await clientConnectedPromise
     expect(createdChannel).not.toBeNull()
     expect(createdChannel?.channelState).toBe(SignalingChannelState.CONNECTED);
-    const offlinePromise = new Promise<boolean>((resolve, _reject) => {
+
+    const closedPromise = new Promise<boolean>((resolve, _reject) => {
       createdChannel?.on("channelstatechange", () => {
-        if (createdChannel?.channelState === SignalingChannelState.DISCONNECTED) {
+        if (createdChannel?.channelState === SignalingChannelState.CLOSED) {
           resolve(true)
         }
       })
     })
-    await testInstance.disconnectClient(clientId);
-    await createdChannel?.sendMessage("message")
-    await offlinePromise
-    expect(createdChannel?.channelState).toBe(SignalingChannelState.DISCONNECTED);
+    await createdChannel?.close()
+    await closedPromise
+    expect(createdChannel?.channelState).toBe(SignalingChannelState.CLOSED);
+    // Note: Observing that the client gets a CHANNEL_CLOSED error would require client-side test infrastructure
   })
 })
 
