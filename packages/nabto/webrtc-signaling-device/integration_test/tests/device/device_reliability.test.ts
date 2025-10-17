@@ -184,17 +184,11 @@ describe("Reliability Tests", async () => {
     // 4. acks from the local peer is lost.
     // (This happens automatically because dropDeviceMessages is active)
 
-    // Give some time for messages to be processed before reconnecting
-    await new Promise(resolve => setTimeout(resolve, 100));
-
     // 5. call checkAlive to reconnect the peer.
     device.checkAlive();
 
     // 6. the local peer receives duplicated messages. (cannot be validated with the current api)
     // After reconnection, the remote peer will resend messages1 because it didn't receive acks
-
-    // Wait a bit for the reconnection and duplicate message handling
-    await new Promise(resolve => setTimeout(resolve, 500));
 
     // 7. send an extra message from the remote peer.
     const extraMessage = ["4"];
@@ -205,17 +199,32 @@ describe("Reliability Tests", async () => {
     const receivedMessages = await messageReceiver.waitForMessages(expectedMessages, 5000);
     expect(receivedMessages).toStrictEqual(expectedMessages);
   });
-})
 
-//
-// Reliability Test 5: Discard duplicates from the remote peer
-//   - Requires: checkAlive() method to trigger reconnects
-//   - Requires: Fine-grained control over message acknowledgments
-//   - Requires: Ability to observe duplicate detection
-//
-// Reliability Test 6: Test that a peer resend unacked messages when a PEER_ONLINE event is received
-//   - Requires: Ability to control connection state visibility (prevent PEER_OFFLINE messages)
-//   - Requires: checkAlive() or similar mechanism to trigger reconnection
-//   - Requires: PEER_ONLINE event observation
-//
-// These tests are not currently implemented but are documented in the specification.
+  test("Reliability Test 6: Test that a peer resend unacked messages when a PEER_ONLINE event is received", async () => {
+    // 1. Create a channel to a peer which is connected.
+    // Already done in beforeEach - signalingChannel is created and connected
+
+    // 2. Make the remote peer connection state, such that the client is not receiving PEER_OFFLINE messages.
+    // Drop client messages so acknowledgments won't be sent back to the device
+    await testInstance.dropClientMessages(clientId);
+
+    // 3. Send messages to the remote peer.
+    const messages = ["1", "2", "3"];
+    for (const msg of messages) {
+      await signalingChannel.sendMessage(msg);
+    }
+
+    // 4. Reconnect the remote peer.
+    // Disconnect and reconnect the client to trigger a PEER_ONLINE event
+    await testInstance.disconnectClient(clientId);
+    await testInstance.connectClient(clientId);
+
+    // Send a message to establish the connection
+    await testInstance.clientSendMessages(clientId, ["reconnect"]);
+
+    // 5. Observe the remote peer receives the messages.
+    // The device should resend the unacknowledged messages when the client comes back online
+    const receivedMessages = await testInstance.clientWaitForMessagesIsReceived(clientId, messages, 4000);
+    expect(receivedMessages).toStrictEqual(messages);
+  });
+})
