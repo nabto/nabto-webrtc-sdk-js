@@ -40,11 +40,9 @@ class MessageReceiver {
         return;
       }
 
-      let timeoutId: NodeJS.Timeout | undefined;
-
       const checkMessages = async () => {
         if (JSON.stringify(this.receivedMessages) === JSON.stringify(expectedMessages)) {
-          if (timeoutId) clearTimeout(timeoutId);
+          clearTimeout(timeoutId);
           this.channel.off("message", checkMessages);
           resolve([...this.receivedMessages]);
         }
@@ -52,7 +50,7 @@ class MessageReceiver {
 
       this.channel.on("message", checkMessages);
 
-      timeoutId = setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         this.channel.off("message", checkMessages);
         reject(new Error(`Timeout waiting for messages. Expected: ${JSON.stringify(expectedMessages)}, Received: ${JSON.stringify(this.receivedMessages)}`));
       }, timeout);

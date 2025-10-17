@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, test, expect } from "vitest";
 import { DeviceTestInstance } from "../../src/DeviceTestInstance";
 import { SignalingConnectionState } from "@nabto/webrtc-signaling-common";
-import { SignalingChannel, SignalingChannelState } from "../../../src";
+import { SignalingChannel, SignalingChannelState, SignalingDevice } from "../../../src";
 
 // Device Connectivity Tests - Protocol Extensibility
 
@@ -25,7 +25,7 @@ describe("Device Connectivity Test 6: HTTP Protocol extensibility", async () => 
 
 describe("Device Connectivity Test 7: WSS Protocol type extensibility", async () => {
   let testInstance: DeviceTestInstance
-  let device: any
+  let device: SignalingDevice
   beforeEach(async () => {
     testInstance = await DeviceTestInstance.create({});
   })
