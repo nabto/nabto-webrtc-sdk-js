@@ -116,6 +116,6 @@ describe("Device Client Tests", async () => {
     await createdChannel?.close()
     await closedPromise
     expect(createdChannel?.channelState).toBe(SignalingChannelState.CLOSED);
-    // Note: Observing that the client gets a CHANNEL_CLOSED error would require client-side test infrastructure
+    // TBD: Observe the channel is closed in the integration test server.
   })
 })
