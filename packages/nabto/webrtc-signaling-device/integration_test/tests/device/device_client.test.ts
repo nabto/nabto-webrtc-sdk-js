@@ -5,7 +5,7 @@ import { SignalingConnectionState } from '../../../src'
 import { DeviceTestInstance } from '../../src/DeviceTestInstance'
 
 // Device Client Tests
-// Reference: ~/sandbox/documentation/webrtc/tests/device_client_tests.md
+// Reference: device_client_tests.md
 
 describe("Device Client Tests", async () => {
   let testInstance: DeviceTestInstance;
