@@ -1,6 +1,8 @@
 packages:
- - "packages/types/*"
- - "packages/nabto/*"
- - "examples/react-demo-common"
- - "examples/react-web-demo"
- - "examples/simple-html-example"
+  - packages/types/*
+  - packages/nabto/*
+  - examples/react-demo-common
+  - examples/react-web-demo
+  - examples/react-native-demo
+  - examples/simple-html-example
+nodeLinker: hoisted
