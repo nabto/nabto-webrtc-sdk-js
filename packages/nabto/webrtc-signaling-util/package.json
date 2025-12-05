@@ -6,6 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "vitest",
+    "test-run": "vitest run",
+    "test:i": "vitest --config ./vitest.integration.ts",
     "lint": "eslint .",
     "build": "tsup"
   },
@@ -45,6 +47,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.26.0",
+    "@roamhq/wrtc": "^0.9.1",
     "@stylistic/eslint-plugin": "^2.10.1",
     "eslint": "^9.26.0",
     "globals": "^15.15.0",
