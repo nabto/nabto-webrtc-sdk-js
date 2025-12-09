@@ -55,24 +55,17 @@ describe('JSON-RPC with Mock DataChannels', () => {
   test('Client can list services using mock channels', async () => {
     const [clientChannel, deviceChannel] = MockDataChannel.createPair();
 
-    // Set up device handler
-    const handler: HttpRequestHandler = {
-      onRequest: vi.fn(),
-      onListServices: vi.fn().mockResolvedValue({
-        services: [
-          { name: 'mock-service', description: 'Mock service for testing' }
-        ]
-      })
-    };
-
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, handler);
+    // Configure services on the device (no handler, so default will be used)
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+      { name: 'mock-service', baseUrl: 'http://localhost:8080', description: 'Mock service for testing' }
+    ]);
     const clientJsonRpc = createClientJsonRpc(clientChannel as any);
 
     const result = await clientJsonRpc.listServices();
 
-    expect(handler.onListServices).toHaveBeenCalled();
     expect(result.services).toHaveLength(1);
     expect(result.services[0].name).toBe('mock-service');
+    expect(result.services[0].description).toBe('Mock service for testing');
   });
 
   test('Client can make HTTP request using mock channels', async () => {
@@ -83,11 +76,12 @@ describe('JSON-RPC with Mock DataChannels', () => {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
         body: btoa(JSON.stringify({ success: true }))
-      }),
-      onListServices: vi.fn()
+      })
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, handler);
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+      { name: 'test', baseUrl: 'http://localhost:8080' }
+    ], handler);
     const clientJsonRpc = createClientJsonRpc(clientChannel as any);
 
     const response = await clientJsonRpc.request({
@@ -112,11 +106,12 @@ describe('JSON-RPC with Mock DataChannels', () => {
         status: 200,
         headers: {},
         body: ''
-      }),
-      onListServices: vi.fn()
+      })
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, handler);
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+      { name: 'api', baseUrl: 'http://localhost:8080' }
+    ], handler);
     const clientJsonRpc = createClientJsonRpc(clientChannel as any);
 
     const params: HttpRequestParams = {
@@ -139,11 +134,12 @@ describe('JSON-RPC with Mock DataChannels', () => {
       onRequest: vi.fn().mockRejectedValue(Object.assign(
         new Error('Service not found'),
         { code: -32002 }
-      )),
-      onListServices: vi.fn()
+      ))
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, handler);
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+      { name: 'unknown', baseUrl: 'http://localhost:8080' }
+    ], handler);
     const clientJsonRpc = createClientJsonRpc(clientChannel as any);
 
     await expect(clientJsonRpc.request({
@@ -159,11 +155,10 @@ describe('JSON-RPC with Mock DataChannels', () => {
     const handler: HttpRequestHandler = {
       onRequest: vi.fn()
         .mockResolvedValueOnce({ status: 200, headers: {}, body: btoa('response1') })
-        .mockResolvedValueOnce({ status: 201, headers: {}, body: btoa('response2') }),
-      onListServices: vi.fn().mockResolvedValue({ services: [] })
+        .mockResolvedValueOnce({ status: 201, headers: {}, body: btoa('response2') })
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, handler);
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [], handler);
     const clientJsonRpc = createClientJsonRpc(clientChannel as any);
 
     const [list, req1, req2] = await Promise.all([
@@ -185,11 +180,12 @@ describe('JSON-RPC with Mock DataChannels', () => {
       onRequest: vi.fn().mockImplementation(() =>
         new Promise(resolve => setTimeout(() => resolve({ status: 200, headers: {} }), 1000))
       ),
-      onListServices: vi.fn(),
       onCancel: vi.fn()
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, handler);
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+      { name: 'test', baseUrl: 'http://localhost:8080' }
+    ], handler);
     const clientJsonRpc = createClientJsonRpc(clientChannel as any);
 
     const requestPromise = clientJsonRpc.request({
@@ -217,11 +213,12 @@ describe('JSON-RPC with Mock DataChannels', () => {
     const handler: HttpRequestHandler = {
       onRequest: vi.fn().mockImplementation(() =>
         new Promise(resolve => setTimeout(() => resolve({ status: 200, headers: {} }), 1000))
-      ),
-      onListServices: vi.fn()
+      )
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, handler);
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+      { name: 'test', baseUrl: 'http://localhost:8080' }
+    ], handler);
     const clientJsonRpc = createClientJsonRpc(clientChannel as any);
 
     const requestPromise = clientJsonRpc.request({
@@ -240,11 +237,12 @@ describe('JSON-RPC with Mock DataChannels', () => {
     const [clientChannel, deviceChannel] = MockDataChannel.createPair();
 
     const handler: HttpRequestHandler = {
-      onRequest: vi.fn().mockResolvedValue({ status: 200, headers: {} }),
-      onListServices: vi.fn().mockResolvedValue({ services: [] })
+      onRequest: vi.fn().mockResolvedValue({ status: 200, headers: {} })
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, handler);
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+      { name: 'test', baseUrl: 'http://localhost:8080' }
+    ], handler);
     const clientJsonRpc = createClientJsonRpc(clientChannel as any);
 
     await clientJsonRpc.listServices();

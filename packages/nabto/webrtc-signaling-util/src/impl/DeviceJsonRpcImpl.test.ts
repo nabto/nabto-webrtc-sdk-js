@@ -1,6 +1,6 @@
 import { test, expect, vi } from 'vitest';
 import { DeviceJsonRpcImpl, HttpRequestHandler } from "./DeviceJsonRpcImpl";
-import type { HttpRequestParams, HttpResponse, ListServicesResult } from '../JsonRpcTypes';
+import type { HttpRequestParams, HttpResponse } from '../JsonRpcTypes';
 
 class MockRTCDataChannel extends EventTarget {
   label: string;
@@ -32,30 +32,22 @@ function simulateMessage(channel: MockRTCDataChannel, data: string) {
 test('DeviceJsonRpc accepts datachannel', () => {
   const channel = new MockRTCDataChannel('http', 'nabto.http/2');
   const handler: HttpRequestHandler = {
-    onRequest: vi.fn(),
-    onListServices: vi.fn()
+    onRequest: vi.fn()
   };
 
-  const device = new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, handler);
+  const device = new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
 
   expect(device.getDataChannel()).toBe(channel);
 });
 
 test('DeviceJsonRpc handles http.listServices request', async () => {
   const channel = new MockRTCDataChannel('http', 'nabto.http/2');
-  const mockServices: ListServicesResult = {
-    services: [
-      { name: 'service1', description: 'Service 1' },
-      { name: 'service2', description: 'Service 2' }
-    ]
-  };
 
-  const handler: HttpRequestHandler = {
-    onRequest: vi.fn(),
-    onListServices: vi.fn().mockResolvedValue(mockServices)
-  };
-
-  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, handler);
+  // Use service configurations instead of handler
+  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [
+    { name: 'service1', baseUrl: 'http://localhost:8080', description: 'Service 1' },
+    { name: 'service2', baseUrl: 'http://localhost:8081', description: 'Service 2' }
+  ]);
   simulateOpen(channel);
 
   // Simulate request
@@ -68,11 +60,15 @@ test('DeviceJsonRpc handles http.listServices request', async () => {
   // Wait for async handling
   await new Promise(resolve => setTimeout(resolve, 10));
 
-  expect(handler.onListServices).toHaveBeenCalled();
   expect(channel.send).toHaveBeenCalledWith(
     JSON.stringify({
       jsonrpc: '2.0',
-      result: mockServices,
+      result: {
+        services: [
+          { name: 'service1', description: 'Service 1' },
+          { name: 'service2', description: 'Service 2' }
+        ]
+      },
       id: 1
     })
   );
@@ -87,11 +83,10 @@ test('DeviceJsonRpc handles http.request', async () => {
   };
 
   const handler: HttpRequestHandler = {
-    onRequest: vi.fn().mockResolvedValue(mockResponse),
-    onListServices: vi.fn()
+    onRequest: vi.fn().mockResolvedValue(mockResponse)
   };
 
-  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, handler);
+  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
   simulateOpen(channel);
 
   const params: HttpRequestParams = {
@@ -126,11 +121,10 @@ test('DeviceJsonRpc handles http.request', async () => {
 test('DeviceJsonRpc handles unknown method', async () => {
   const channel = new MockRTCDataChannel('http', 'nabto.http/2');
   const handler: HttpRequestHandler = {
-    onRequest: vi.fn(),
-    onListServices: vi.fn()
+    onRequest: vi.fn()
   };
 
-  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, handler);
+  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
   simulateOpen(channel);
 
   // Simulate request with unknown method
@@ -158,11 +152,10 @@ test('DeviceJsonRpc handles unknown method', async () => {
 test('DeviceJsonRpc handles handler errors', async () => {
   const channel = new MockRTCDataChannel('http', 'nabto.http/2');
   const handler: HttpRequestHandler = {
-    onRequest: vi.fn().mockRejectedValue(new Error('Service unavailable')),
-    onListServices: vi.fn()
+    onRequest: vi.fn().mockRejectedValue(new Error('Service unavailable'))
   };
 
-  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, handler);
+  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
   simulateOpen(channel);
 
   // Simulate request
@@ -195,11 +188,10 @@ test('DeviceJsonRpc handles handler errors with custom error code', async () => 
   customError.data = { details: 'Additional info' };
 
   const handler: HttpRequestHandler = {
-    onRequest: vi.fn().mockRejectedValue(customError),
-    onListServices: vi.fn()
+    onRequest: vi.fn().mockRejectedValue(customError)
   };
 
-  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, handler);
+  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
   simulateOpen(channel);
 
   // Simulate request
@@ -230,11 +222,10 @@ test('DeviceJsonRpc handles http.cancel notification', async () => {
   const channel = new MockRTCDataChannel('http', 'nabto.http/2');
   const handler: HttpRequestHandler = {
     onRequest: vi.fn(),
-    onListServices: vi.fn(),
     onCancel: vi.fn()
   };
 
-  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, handler);
+  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
   simulateOpen(channel);
 
   // Simulate cancel notification (no id field)
@@ -255,11 +246,10 @@ test('DeviceJsonRpc handles http.cancel notification', async () => {
 test('DeviceJsonRpc handles invalid JSON', async () => {
   const channel = new MockRTCDataChannel('http', 'nabto.http/2');
   const handler: HttpRequestHandler = {
-    onRequest: vi.fn(),
-    onListServices: vi.fn()
+    onRequest: vi.fn()
   };
 
-  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, handler);
+  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
   simulateOpen(channel);
 
   // Simulate invalid JSON
@@ -283,11 +273,10 @@ test('DeviceJsonRpc handles invalid JSON', async () => {
 test('DeviceJsonRpc close() closes the channel', () => {
   const channel = new MockRTCDataChannel('http', 'nabto.http/2');
   const handler: HttpRequestHandler = {
-    onRequest: vi.fn(),
-    onListServices: vi.fn()
+    onRequest: vi.fn()
   };
 
-  const device = new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, handler);
+  const device = new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
 
   device.close();
 
@@ -297,11 +286,10 @@ test('DeviceJsonRpc close() closes the channel', () => {
 test('DeviceJsonRpc waitForOpen resolves when channel is already open', async () => {
   const channel = new MockRTCDataChannel('http', 'nabto.http/2');
   const handler: HttpRequestHandler = {
-    onRequest: vi.fn(),
-    onListServices: vi.fn()
+    onRequest: vi.fn()
   };
 
-  const device = new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, handler);
+  const device = new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
   simulateOpen(channel);
 
   await expect(device.waitForOpen()).resolves.toBeUndefined();
@@ -310,11 +298,10 @@ test('DeviceJsonRpc waitForOpen resolves when channel is already open', async ()
 test('DeviceJsonRpc waitForOpen waits for channel to open', async () => {
   const channel = new MockRTCDataChannel('http', 'nabto.http/2');
   const handler: HttpRequestHandler = {
-    onRequest: vi.fn(),
-    onListServices: vi.fn()
+    onRequest: vi.fn()
   };
 
-  const device = new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, handler);
+  const device = new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
   const waitPromise = device.waitForOpen();
 
   // Simulate channel opening after a delay

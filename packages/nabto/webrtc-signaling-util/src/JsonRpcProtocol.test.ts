@@ -87,16 +87,6 @@ describe('JSON-RPC HTTP Protocol Tests', () => {
     // Create mock HTTP service
     mockService = new MockHttpService();
 
-    // Create device JSON-RPC handler
-    const handler: HttpRequestHandler = {
-      onRequest: async (params: HttpRequestParams) => {
-        return mockService.handleRequest(params);
-      },
-      onListServices: async () => {
-        return mockService.listServices();
-      }
-    };
-
     // Create data channel on client side
     const clientDataChannel = clientPeer.createDataChannel('http', { protocol: 'nabto.http/2' });
 
@@ -123,8 +113,21 @@ describe('JSON-RPC HTTP Protocol Tests', () => {
     // Wait for device to receive the data channel
     const deviceDataChannel = await deviceDataChannelPromise;
 
-    // Set up device JSON-RPC with the received data channel
-    deviceJsonRpc = createDeviceJsonRpc(deviceDataChannel, handler);
+    // Create device JSON-RPC handler with custom logic
+    const handler: HttpRequestHandler = {
+      onRequest: async (params: HttpRequestParams) => {
+        return mockService.handleRequest(params);
+      }
+    };
+
+    // Set up device JSON-RPC with service configuration and custom handler
+    deviceJsonRpc = createDeviceJsonRpc(deviceDataChannel, [
+      {
+        name: 'test-service',
+        baseUrl: 'http://mock',
+        description: 'Test HTTP service for integration tests'
+      }
+    ], handler);
 
     // Wait for client data channel to open
     await clientJsonRpc.waitForOpen();
