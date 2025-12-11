@@ -61,9 +61,10 @@ export interface HttpRequestHandler {
   /**
    * Called when an http.request is received
    * @param params The request parameters
+   * @param serviceConfig The service configuration for the requested service
    * @returns Promise resolving to the HTTP response
    */
-  onRequest(params: HttpRequestParams): Promise<HttpResponse>;
+  onRequest(params: HttpRequestParams, serviceConfig: HttpServiceConfig): Promise<HttpResponse>;
 
   /**
    * Called when an http.cancel notification is received
@@ -76,20 +77,9 @@ export interface HttpRequestHandler {
  * Default HTTP request handler that uses fetch to make HTTP requests
  * with service configuration support
  */
-function createDefaultHttpRequestHandler(services: HttpServiceConfig[] = []): HttpRequestHandler {
-  // Create a map of service names to configurations
-  const serviceMap = new Map(services.map(s => [s.name, s]));
-
+function createDefaultHttpRequestHandler(): HttpRequestHandler {
   return {
-    async onRequest(params: HttpRequestParams): Promise<HttpResponse> {
-      // Find the service configuration
-      const serviceConfig = serviceMap.get(params.service);
-      if (!serviceConfig) {
-        const error = new Error(`Service not found: ${params.service}`) as Error & { code: number };
-        error.code = -32002; // Custom error code for service not found
-        throw error;
-      }
-
+    async onRequest(params: HttpRequestParams, serviceConfig: HttpServiceConfig): Promise<HttpResponse> {
       // Construct full URL by appending target to base URL
       const url = `${serviceConfig.baseUrl}${params.target}`;
 
@@ -154,6 +144,7 @@ function createDefaultHttpRequestHandler(services: HttpServiceConfig[] = []): Ht
 export class DeviceJsonRpcImpl {
   private handler: HttpRequestHandler;
   private services: HttpServiceConfig[];
+  private serviceMap: Map<string, HttpServiceConfig>;
 
   constructor(
     private dataChannel: RTCDataChannel,
@@ -161,13 +152,10 @@ export class DeviceJsonRpcImpl {
     handler?: HttpRequestHandler
   ) {
     this.services = services;
+    this.serviceMap = new Map(services.map(s => [s.name, s]));
 
     // Use custom handler if provided, otherwise create default handler
-    if (handler) {
-      this.handler = handler;
-    } else {
-      this.handler = createDefaultHttpRequestHandler(services);
-    }
+    this.handler = handler ?? createDefaultHttpRequestHandler();
 
     // Set up event listeners
     this.dataChannel.addEventListener('error', (event) => {
@@ -181,8 +169,9 @@ export class DeviceJsonRpcImpl {
 
   /**
    * Waits for the data channel to be open and ready
+   * Private helper method - responses are automatically queued until channel is open
    */
-  public waitForOpen(): Promise<void> {
+  private waitForOpen(): Promise<void> {
     if (this.dataChannel.readyState === 'open') {
       return Promise.resolve();
     }
@@ -223,6 +212,20 @@ export class DeviceJsonRpcImpl {
     return this.dataChannel;
   }
 
+  /**
+   * Adds a new HTTP service configuration
+   */
+  public addService(service: HttpServiceConfig): void {
+    // Check if service already exists
+    if (this.serviceMap.has(service.name)) {
+      throw new Error(`Service with name '${service.name}' already exists`);
+    }
+
+    // Add the service to the array and map
+    this.services.push(service);
+    this.serviceMap.set(service.name, service);
+  }
+
   private async handleMessage(data: string): Promise<void> {
     try {
       const request = JSON.parse(data) as JsonRpcRequest;
@@ -238,9 +241,20 @@ export class DeviceJsonRpcImpl {
         let result: unknown;
 
         switch (request.method) {
-          case 'http.request':
-            result = await this.handler.onRequest(request.params as HttpRequestParams);
+          case 'http.request': {
+            const params = request.params as HttpRequestParams;
+
+            // Find the service configuration
+            const serviceConfig = this.serviceMap.get(params.service);
+            if (!serviceConfig) {
+              const error = new Error(`Service not found: ${params.service}`) as Error & { code: number };
+              error.code = -32002; // Custom error code for service not found
+              throw error;
+            }
+
+            result = await this.handler.onRequest(params, serviceConfig);
             break;
+          }
 
           case 'http.listServices':
             // Handle listServices directly using configured services
@@ -311,11 +325,9 @@ export class DeviceJsonRpcImpl {
     this.send(response);
   }
 
-  private send(response: JsonRpcResponse): void {
-    if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
-      console.error('Cannot send response: data channel is not open');
-      return;
-    }
+  private async send(response: JsonRpcResponse): Promise<void> {
+    // Wait for channel to open if needed
+    await this.waitForOpen();
 
     const json = JSON.stringify(response);
     this.dataChannel.send(json);

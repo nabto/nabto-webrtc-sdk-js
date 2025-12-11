@@ -7,11 +7,6 @@ export type { HttpRequestHandler, HttpServiceConfig } from './impl/DeviceJsonRpc
  */
 export interface DeviceJsonRpc {
   /**
-   * Waits for the data channel to be open and ready
-   */
-  waitForOpen(): Promise<void>;
-
-  /**
    * Closes the data channel
    */
   close(): void;
@@ -20,6 +15,13 @@ export interface DeviceJsonRpc {
    * Gets the current data channel
    */
   getDataChannel(): RTCDataChannel;
+
+  /**
+   * Adds a new HTTP service configuration
+   * @param service The HTTP service configuration to add
+   * @throws Error if a service with the same name already exists
+   */
+  addService(service: HttpServiceConfig): void;
 }
 
 /**

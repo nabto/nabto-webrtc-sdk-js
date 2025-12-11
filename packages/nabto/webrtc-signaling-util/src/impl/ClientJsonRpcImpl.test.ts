@@ -32,40 +32,52 @@ function simulateError(channel: MockRTCDataChannel) {
   channel.dispatchEvent(new Event('error'));
 }
 
-test('ClientJsonRpc waitForOpen() resolves when channel is already open', async () => {
-  const channel = new MockRTCDataChannel('http', { protocol: 'nabto.http/2' });
-  channel.readyState = 'open';
-  const client = new ClientJsonRpcImpl(channel as unknown as RTCDataChannel);
-
-  await expect(client.waitForOpen()).resolves.toBeUndefined();
-});
-
-test('ClientJsonRpc waitForOpen() waits for channel to open', async () => {
+test('ClientJsonRpc automatically waits for channel to open before sending request', async () => {
   const channel = new MockRTCDataChannel('http', { protocol: 'nabto.http/2' });
   const client = new ClientJsonRpcImpl(channel as unknown as RTCDataChannel);
 
-  const openPromise = client.waitForOpen();
+  // Start the request, it will wait for channel to open
+  const listPromise = client.listServices();
 
+  // Channel not open yet, so request should be waiting
+  await new Promise(resolve => setTimeout(resolve, 10));
+  expect(channel.send).not.toHaveBeenCalled();
+
+  // Now open the channel
   simulateOpen(channel);
-  await expect(openPromise).resolves.toBeUndefined();
+
+  // Wait for the request to be sent
+  await new Promise(resolve => setTimeout(resolve, 10));
+
+  // Simulate response
+  simulateMessage(channel, JSON.stringify({
+    jsonrpc: '2.0',
+    result: { services: [] },
+    id: 1
+  }));
+
+  await expect(listPromise).resolves.toEqual({ services: [] });
+  expect(channel.send).toHaveBeenCalled();
 });
 
-test('ClientJsonRpc waitForOpen() rejects on channel error', async () => {
+test('ClientJsonRpc rejects request when channel fails to open', async () => {
   const channel = new MockRTCDataChannel('http', { protocol: 'nabto.http/2' });
   const client = new ClientJsonRpcImpl(channel as unknown as RTCDataChannel);
 
-  const openPromise = client.waitForOpen();
+  const requestPromise = client.listServices();
 
   simulateError(channel);
-  await expect(openPromise).rejects.toThrow('Data channel failed to open');
+  await expect(requestPromise).rejects.toThrow('Data channel failed to open');
 });
 
 test('ClientJsonRpc sends http.listServices request', async () => {
   const channel = new MockRTCDataChannel('http', { protocol: 'nabto.http/2' });
-  channel.readyState = 'open';
+  simulateOpen(channel);
   const client = new ClientJsonRpcImpl(channel as unknown as RTCDataChannel);
 
   const responsePromise = client.listServices();
+  // Wait for async waitForOpen to complete
+  await new Promise(resolve => setTimeout(resolve, 0));
 
   expect(channel.send).toHaveBeenCalledWith(
     JSON.stringify({
@@ -96,7 +108,7 @@ test('ClientJsonRpc sends http.listServices request', async () => {
 
 test('ClientJsonRpc sends http.request', async () => {
   const channel = new MockRTCDataChannel('http', { protocol: 'nabto.http/2' });
-  channel.readyState = 'open';
+  simulateOpen(channel);
   const client = new ClientJsonRpcImpl(channel as unknown as RTCDataChannel);
 
   const params = {
@@ -108,6 +120,8 @@ test('ClientJsonRpc sends http.request', async () => {
   };
 
   const responsePromise = client.request(params);
+  // Wait for async waitForOpen to complete
+  await new Promise(resolve => setTimeout(resolve, 0));
 
   expect(channel.send).toHaveBeenCalledWith(
     JSON.stringify({
@@ -139,10 +153,12 @@ test('ClientJsonRpc sends http.request', async () => {
 
 test('ClientJsonRpc handles error responses', async () => {
   const channel = new MockRTCDataChannel('http', { protocol: 'nabto.http/2' });
-  channel.readyState = 'open';
+  simulateOpen(channel);
   const client = new ClientJsonRpcImpl(channel as unknown as RTCDataChannel);
 
   const responsePromise = client.listServices();
+  // Wait for async waitForOpen to complete
+  await new Promise(resolve => setTimeout(resolve, 0));
 
   // Simulate error response
   simulateMessage(channel, JSON.stringify({
@@ -167,7 +183,7 @@ test('ClientJsonRpc handles error responses', async () => {
 
 test('ClientJsonRpc cancel sends notification and rejects pending request', async () => {
   const channel = new MockRTCDataChannel('http', { protocol: 'nabto.http/2' });
-  channel.readyState = 'open';
+  simulateOpen(channel);
   const client = new ClientJsonRpcImpl(channel as unknown as RTCDataChannel);
 
   const responsePromise = client.request({
@@ -175,6 +191,8 @@ test('ClientJsonRpc cancel sends notification and rejects pending request', asyn
     method: 'GET',
     target: '/'
   });
+  // Wait for async waitForOpen to complete
+  await new Promise(resolve => setTimeout(resolve, 0));
 
   // Cancel the request
   client.cancel(1);
@@ -192,11 +210,13 @@ test('ClientJsonRpc cancel sends notification and rejects pending request', asyn
 
 test('ClientJsonRpc handles multiple concurrent requests', async () => {
   const channel = new MockRTCDataChannel('http', { protocol: 'nabto.http/2' });
-  channel.readyState = 'open';
+  simulateOpen(channel);
   const client = new ClientJsonRpcImpl(channel as unknown as RTCDataChannel);
 
   const promise1 = client.listServices();
   const promise2 = client.request({ service: 'test', method: 'GET', target: '/' });
+  // Wait for async waitForOpen to complete
+  await new Promise(resolve => setTimeout(resolve, 0));
 
   // Respond to second request first
   simulateMessage(channel, JSON.stringify({
@@ -219,10 +239,12 @@ test('ClientJsonRpc handles multiple concurrent requests', async () => {
 
 test('ClientJsonRpc rejects pending requests when channel closes', async () => {
   const channel = new MockRTCDataChannel('http', { protocol: 'nabto.http/2' });
-  channel.readyState = 'open';
+  simulateOpen(channel);
   const client = new ClientJsonRpcImpl(channel as unknown as RTCDataChannel);
 
   const responsePromise = client.listServices();
+  // Wait for async waitForOpen to complete
+  await new Promise(resolve => setTimeout(resolve, 0));
 
   // Close the channel
   channel.close();
@@ -232,10 +254,12 @@ test('ClientJsonRpc rejects pending requests when channel closes', async () => {
 
 test('ClientJsonRpc close() cleans up channel and rejects pending requests', async () => {
   const channel = new MockRTCDataChannel('http', { protocol: 'nabto.http/2' });
-  channel.readyState = 'open';
+  simulateOpen(channel);
   const client = new ClientJsonRpcImpl(channel as unknown as RTCDataChannel);
 
   const responsePromise = client.listServices();
+  // Wait for async waitForOpen to complete
+  await new Promise(resolve => setTimeout(resolve, 0));
 
   client.close();
 
@@ -243,9 +267,3 @@ test('ClientJsonRpc close() cleans up channel and rejects pending requests', asy
   await expect(responsePromise).rejects.toThrow('Data channel closed');
 });
 
-test('ClientJsonRpc rejects request when channel is not open', async () => {
-  const channel = new MockRTCDataChannel('http', { protocol: 'nabto.http/2' });
-  const client = new ClientJsonRpcImpl(channel as unknown as RTCDataChannel);
-
-  await expect(client.listServices()).rejects.toThrow('Data channel is not open');
-});

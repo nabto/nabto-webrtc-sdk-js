@@ -1,15 +1,10 @@
 import { ClientJsonRpcImpl } from './impl/ClientJsonRpcImpl';
+import type { ListServicesResult, HttpRequestParams, HttpResponse } from './JsonRpcTypes';
 
 /**
  * Interface for JSON-RPC client operations
  */
 export interface ClientJsonRpc {
-  /**
-   * Waits for the data channel to be open and ready
-   * Returns a promise that resolves when the channel is open
-   */
-  waitForOpen(): Promise<void>;
-
   /**
    * Closes the data channel and rejects all pending requests
    */
@@ -17,13 +12,15 @@ export interface ClientJsonRpc {
 
   /**
    * Lists available HTTP services on the remote peer
+   * Automatically waits for the data channel to open if it's not open yet
    */
-  listServices(): Promise<import('./JsonRpcTypes').ListServicesResult>;
+  listServices(): Promise<ListServicesResult>;
 
   /**
    * Sends an HTTP request to the specified service
+   * Automatically waits for the data channel to open if it's not open yet
    */
-  request(params: import('./JsonRpcTypes').HttpRequestParams): Promise<import('./JsonRpcTypes').HttpResponse>;
+  request(params: HttpRequestParams): Promise<HttpResponse>;
 
   /**
    * Cancels a pending HTTP request by its ID

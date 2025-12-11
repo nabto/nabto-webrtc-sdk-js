@@ -31,7 +31,7 @@ export class ClientJsonRpcImpl {
    * Waits for the data channel to be open and ready
    * Returns a promise that resolves when the channel is open
    */
-  public waitForOpen(): Promise<void> {
+  private waitForOpen(): Promise<void> {
     if (this.dataChannel.readyState === 'open') {
       return Promise.resolve();
     }
@@ -116,10 +116,9 @@ export class ClientJsonRpcImpl {
     return this.dataChannel;
   }
 
-  private sendRequest(request: JsonRpcRequest): Promise<unknown> {
-    if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
-      return Promise.reject(new Error('Data channel is not open'));
-    }
+  private async sendRequest(request: JsonRpcRequest): Promise<unknown> {
+    // Wait for channel to open if it's not open yet
+    await this.waitForOpen();
 
     if (request.id === undefined) {
       // Notification, no response expected

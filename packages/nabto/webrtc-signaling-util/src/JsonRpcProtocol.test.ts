@@ -129,11 +129,25 @@ describe('JSON-RPC HTTP Protocol Tests', () => {
       }
     ], handler);
 
-    // Wait for client data channel to open
-    await clientJsonRpc.waitForOpen();
+    // Wait for data channels to open (they will automatically wait when requests are made)
+    await new Promise<void>((resolve) => {
+      let clientOpen = clientDataChannel.readyState === 'open';
+      let deviceOpen = deviceDataChannel.readyState === 'open';
 
-    // Wait for device data channel to open
-    await deviceJsonRpc.waitForOpen();
+      if (clientOpen && deviceOpen) {
+        resolve();
+        return;
+      }
+
+      const checkBoth = () => {
+        if (clientDataChannel.readyState === 'open' && deviceDataChannel.readyState === 'open') {
+          resolve();
+        }
+      };
+
+      clientDataChannel.addEventListener('open', checkBoth, { once: true });
+      deviceDataChannel.addEventListener('open', checkBoth, { once: true });
+    });
   }, 20000);
 
   afterAll(() => {

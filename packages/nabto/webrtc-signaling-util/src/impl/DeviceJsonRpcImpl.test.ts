@@ -86,7 +86,8 @@ test('DeviceJsonRpc handles http.request', async () => {
     onRequest: vi.fn().mockResolvedValue(mockResponse)
   };
 
-  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
+  const serviceConfig = { name: 'test-service', baseUrl: 'http://localhost:8080' };
+  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [serviceConfig], handler);
   simulateOpen(channel);
 
   const params: HttpRequestParams = {
@@ -108,7 +109,7 @@ test('DeviceJsonRpc handles http.request', async () => {
   // Wait for async handling
   await new Promise(resolve => setTimeout(resolve, 10));
 
-  expect(handler.onRequest).toHaveBeenCalledWith(params);
+  expect(handler.onRequest).toHaveBeenCalledWith(params, serviceConfig);
   expect(channel.send).toHaveBeenCalledWith(
     JSON.stringify({
       jsonrpc: '2.0',
@@ -155,7 +156,9 @@ test('DeviceJsonRpc handles handler errors', async () => {
     onRequest: vi.fn().mockRejectedValue(new Error('Service unavailable'))
   };
 
-  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
+  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [
+    { name: 'test', baseUrl: 'http://localhost:8080' }
+  ], handler);
   simulateOpen(channel);
 
   // Simulate request
@@ -191,7 +194,9 @@ test('DeviceJsonRpc handles handler errors with custom error code', async () => 
     onRequest: vi.fn().mockRejectedValue(customError)
   };
 
-  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
+  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [
+    { name: 'test', baseUrl: 'http://localhost:8080' }
+  ], handler);
   simulateOpen(channel);
 
   // Simulate request
@@ -283,32 +288,123 @@ test('DeviceJsonRpc close() closes the channel', () => {
   expect(channel.close).toHaveBeenCalled();
 });
 
-test('DeviceJsonRpc waitForOpen resolves when channel is already open', async () => {
+test('DeviceJsonRpc automatically waits for channel to open before sending responses', async () => {
   const channel = new MockRTCDataChannel('http', 'nabto.http/2');
-  const handler: HttpRequestHandler = {
-    onRequest: vi.fn()
-  };
 
-  const device = new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
+  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [
+    { name: 'test', baseUrl: 'http://localhost:8080' }
+  ]);
+
+  // Simulate receiving a request before channel is open
+  simulateMessage(channel, JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'http.listServices',
+    id: 1
+  }));
+
+  // Response should not be sent yet
+  await new Promise(resolve => setTimeout(resolve, 10));
+  expect(channel.send).not.toHaveBeenCalled();
+
+  // Now open the channel
   simulateOpen(channel);
 
-  await expect(device.waitForOpen()).resolves.toBeUndefined();
+  // Response should now be sent
+  await new Promise(resolve => setTimeout(resolve, 10));
+  expect(channel.send).toHaveBeenCalled();
 });
 
-test('DeviceJsonRpc waitForOpen waits for channel to open', async () => {
+test('DeviceJsonRpc addService adds a new service', async () => {
   const channel = new MockRTCDataChannel('http', 'nabto.http/2');
   const handler: HttpRequestHandler = {
-    onRequest: vi.fn()
+    onRequest: vi.fn().mockResolvedValue({ status: 200, headers: {}, body: '' })
   };
 
-  const device = new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [], handler);
-  const waitPromise = device.waitForOpen();
+  const device = new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [
+    { name: 'service1', baseUrl: 'http://localhost:8080' }
+  ], handler);
+  simulateOpen(channel);
 
-  // Simulate channel opening after a delay
-  setTimeout(() => {
-    simulateOpen(channel);
-  }, 50);
+  // Add a new service
+  device.addService({ name: 'service2', baseUrl: 'http://localhost:8081' });
 
-  await expect(waitPromise).resolves.toBeUndefined();
+  // Verify the new service appears in listServices
+  simulateMessage(channel, JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'http.listServices',
+    id: 1
+  }));
+
+  await new Promise(resolve => setTimeout(resolve, 10));
+
+  expect(channel.send).toHaveBeenCalledWith(
+    JSON.stringify({
+      jsonrpc: '2.0',
+      result: {
+        services: [
+          { name: 'service1', description: 'HTTP service at http://localhost:8080' },
+          { name: 'service2', description: 'HTTP service at http://localhost:8081' }
+        ]
+      },
+      id: 1
+    })
+  );
+
+  // Verify the new service can handle requests
+  channel.send.mockClear();
+  simulateMessage(channel, JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'http.request',
+    params: { service: 'service2', method: 'GET', target: '/test' },
+    id: 2
+  }));
+
+  await new Promise(resolve => setTimeout(resolve, 10));
+
+  expect(handler.onRequest).toHaveBeenCalledWith(
+    { service: 'service2', method: 'GET', target: '/test' },
+    { name: 'service2', baseUrl: 'http://localhost:8081' }
+  );
+});
+
+test('DeviceJsonRpc addService throws error for duplicate service names', () => {
+  const channel = new MockRTCDataChannel('http', 'nabto.http/2');
+
+  const device = new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [
+    { name: 'service1', baseUrl: 'http://localhost:8080' }
+  ]);
+
+  expect(() => {
+    device.addService({ name: 'service1', baseUrl: 'http://localhost:8081' });
+  }).toThrow('Service with name \'service1\' already exists');
+});
+
+test('DeviceJsonRpc returns error for non-existent service', async () => {
+  const channel = new MockRTCDataChannel('http', 'nabto.http/2');
+
+  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [
+    { name: 'service1', baseUrl: 'http://localhost:8080' }
+  ]);
+  simulateOpen(channel);
+
+  simulateMessage(channel, JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'http.request',
+    params: { service: 'nonexistent', method: 'GET', target: '/' },
+    id: 1
+  }));
+
+  await new Promise(resolve => setTimeout(resolve, 10));
+
+  expect(channel.send).toHaveBeenCalledWith(
+    JSON.stringify({
+      jsonrpc: '2.0',
+      error: {
+        code: -32002,
+        message: 'Service not found: nonexistent'
+      },
+      id: 1
+    })
+  );
 });
 

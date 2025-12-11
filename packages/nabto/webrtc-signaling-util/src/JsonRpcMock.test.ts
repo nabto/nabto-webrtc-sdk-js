@@ -95,6 +95,9 @@ describe('JSON-RPC with Mock DataChannels', () => {
       service: 'test',
       method: 'GET',
       target: '/api/test'
+    }, {
+      name: 'test',
+      baseUrl: 'http://localhost:8080'
     });
   });
 
@@ -124,7 +127,10 @@ describe('JSON-RPC with Mock DataChannels', () => {
 
     await clientJsonRpc.request(params);
 
-    expect(handler.onRequest).toHaveBeenCalledWith(params);
+    expect(handler.onRequest).toHaveBeenCalledWith(params, {
+      name: 'api',
+      baseUrl: 'http://localhost:8080'
+    });
   });
 
   test('Client receives error responses correctly', async () => {
@@ -158,7 +164,10 @@ describe('JSON-RPC with Mock DataChannels', () => {
         .mockResolvedValueOnce({ status: 201, headers: {}, body: btoa('response2') })
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [], handler);
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+      { name: 'a', baseUrl: 'http://localhost:8080' },
+      { name: 'b', baseUrl: 'http://localhost:8081' }
+    ], handler);
     const clientJsonRpc = createClientJsonRpc(clientChannel as any);
 
     const [list, req1, req2] = await Promise.all([
@@ -167,7 +176,7 @@ describe('JSON-RPC with Mock DataChannels', () => {
       clientJsonRpc.request({ service: 'b', method: 'GET', target: '/2' })
     ]);
 
-    expect(list.services).toEqual([]);
+    expect(list.services).toHaveLength(2);
     expect(req1.status).toBe(200);
     expect(req2.status).toBe(201);
     expect(handler.onRequest).toHaveBeenCalledTimes(2);
@@ -193,6 +202,9 @@ describe('JSON-RPC with Mock DataChannels', () => {
       method: 'GET',
       target: '/'
     }).catch(err => err); // Handle the rejection to avoid unhandled rejection warning
+
+    // Wait for request to be sent
+    await new Promise(resolve => setTimeout(resolve, 10));
 
     // Cancel the request
     clientJsonRpc.cancel(1);
@@ -226,6 +238,9 @@ describe('JSON-RPC with Mock DataChannels', () => {
       method: 'GET',
       target: '/'
     });
+
+    // Wait for request to be sent
+    await new Promise(resolve => setTimeout(resolve, 10));
 
     // Close the channel
     clientJsonRpc.close();
