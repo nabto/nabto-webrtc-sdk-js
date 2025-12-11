@@ -37,7 +37,7 @@ export interface DeviceJsonRpc {
  * // Configure services with base URLs (uses default fetch-based handler)
  * const deviceJsonRpc = createDeviceJsonRpc(dataChannel, [
  *   { name: 'api', baseUrl: 'http://localhost:8080' },
- *   { name: 'auth', baseUrl: 'https://auth.example.com', auth: { type: 'bearer', token: 'xyz' } }
+ *   { name: 'auth', baseUrl: 'https://auth.example.com', auth: { username: 'user', password: 'pass' } }
  * ]);
  *
  * @example

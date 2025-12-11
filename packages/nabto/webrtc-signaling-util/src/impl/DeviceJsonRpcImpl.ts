@@ -28,29 +28,11 @@ export interface HttpServiceConfig {
   description?: string;
 
   /**
-   * Optional authentication configuration
+   * Optional basic authentication
    */
   auth?: {
-    /**
-     * Authentication type
-     */
-    type: 'bearer' | 'basic' | 'custom';
-
-    /**
-     * For bearer tokens
-     */
-    token?: string;
-
-    /**
-     * For basic auth
-     */
-    username?: string;
-    password?: string;
-
-    /**
-     * For custom auth - custom headers to add to requests
-     */
-    headers?: Record<string, string>;
+    username: string;
+    password: string;
   };
 }
 
@@ -89,26 +71,10 @@ function createDefaultHttpRequestHandler(): HttpRequestHandler {
       // Prepare headers
       const headers: Record<string, string> = { ...params.headers };
 
-      // Add authentication headers if configured
+      // Add basic auth header if configured
       if (serviceConfig.auth) {
-        switch (serviceConfig.auth.type) {
-          case 'bearer':
-            if (serviceConfig.auth.token) {
-              headers['Authorization'] = `Bearer ${serviceConfig.auth.token}`;
-            }
-            break;
-          case 'basic':
-            if (serviceConfig.auth.username && serviceConfig.auth.password) {
-              const credentials = btoa(`${serviceConfig.auth.username}:${serviceConfig.auth.password}`);
-              headers['Authorization'] = `Basic ${credentials}`;
-            }
-            break;
-          case 'custom':
-            if (serviceConfig.auth.headers) {
-              Object.assign(headers, serviceConfig.auth.headers);
-            }
-            break;
-        }
+        const credentials = btoa(`${serviceConfig.auth.username}:${serviceConfig.auth.password}`);
+        headers['Authorization'] = `Basic ${credentials}`;
       }
 
       try {
