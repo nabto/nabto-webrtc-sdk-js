@@ -186,7 +186,7 @@ test('DeviceJsonRpc handles handler errors', async () => {
 
 test('DeviceJsonRpc handles handler errors with custom error code', async () => {
   const channel = new MockRTCDataChannel('http', 'nabto.http/2');
-  const customError = new Error('Service not found') as Error & { code: number; data: any };
+  const customError = new Error('Service not found') as Error & { code: number; data: unknown };
   customError.code = -32002;
   customError.data = { details: 'Additional info' };
 
@@ -421,7 +421,7 @@ test('DeviceJsonRpc ignores response from cancelled request', async () => {
   const channel = new MockRTCDataChannel('http', 'nabto.http/2');
 
   // Create a handler with a delayed response
-  let resolveRequest: ((value: any) => void) | null = null;
+  let resolveRequest: ((value: unknown) => void) | null = null;
   const handler: HttpRequestHandler = {
     onRequest: vi.fn().mockImplementation(() => {
       return new Promise((resolve) => {

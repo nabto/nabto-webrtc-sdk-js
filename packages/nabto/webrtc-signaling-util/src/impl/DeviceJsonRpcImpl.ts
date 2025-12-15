@@ -2,9 +2,7 @@ import type {
   JsonRpcRequest,
   JsonRpcResponse,
   HttpRequestParams,
-  HttpResponse,
-  HttpService,
-  ListServicesResult
+  HttpResponse
 } from '../JsonRpcTypes';
 
 /**
@@ -126,8 +124,8 @@ export class DeviceJsonRpcImpl {
     this.handler = handler ?? createDefaultHttpRequestHandler();
 
     // Set up event listeners
-    this.dataChannel.addEventListener('error', (event) => {
-      console.error('DeviceJsonRpc data channel error:', event);
+    this.dataChannel.addEventListener('error', (_event) => {
+      console.error('DeviceJsonRpc data channel error');
     });
 
     this.dataChannel.addEventListener('message', (event) => {
@@ -155,7 +153,7 @@ export class DeviceJsonRpcImpl {
         resolve();
       };
 
-      const onError = (event: Event) => {
+      const onError = (_event: Event) => {
         clearTimeout(timeout);
         this.dataChannel.removeEventListener('open', onOpen);
         reject(new Error('Data channel failed to open'));

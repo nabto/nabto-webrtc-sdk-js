@@ -1,6 +1,6 @@
 import { test, expect, describe, vi } from 'vitest';
 import { createClientJsonRpc, createDeviceJsonRpc, HttpRequestHandler } from './';
-import type { HttpRequestParams, HttpResponse, ListServicesResult } from './';
+import type { HttpRequestParams } from './';
 
 /**
  * Mock data channel for testing without WebRTC
@@ -56,10 +56,10 @@ describe('JSON-RPC with Mock DataChannels', () => {
     const [clientChannel, deviceChannel] = MockDataChannel.createPair();
 
     // Configure services on the device (no handler, so default will be used)
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'mock-service', baseUrl: 'http://localhost:8080', description: 'Mock service for testing' }
     ]);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     const result = await clientJsonRpc.listServices();
 
@@ -79,10 +79,10 @@ describe('JSON-RPC with Mock DataChannels', () => {
       })
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'test', baseUrl: 'http://localhost:8080' }
     ], handler);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     const response = await clientJsonRpc.request({
       service: 'test',
@@ -112,10 +112,10 @@ describe('JSON-RPC with Mock DataChannels', () => {
       })
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'api', baseUrl: 'http://localhost:8080' }
     ], handler);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     const params: HttpRequestParams = {
       service: 'api',
@@ -143,10 +143,10 @@ describe('JSON-RPC with Mock DataChannels', () => {
       ))
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'unknown', baseUrl: 'http://localhost:8080' }
     ], handler);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     await expect(clientJsonRpc.request({
       service: 'unknown',
@@ -164,11 +164,11 @@ describe('JSON-RPC with Mock DataChannels', () => {
         .mockResolvedValueOnce({ status: 201, headers: {}, body: btoa('response2') })
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'a', baseUrl: 'http://localhost:8080' },
       { name: 'b', baseUrl: 'http://localhost:8081' }
     ], handler);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     const [list, req1, req2] = await Promise.all([
       clientJsonRpc.listServices(),
@@ -192,10 +192,10 @@ describe('JSON-RPC with Mock DataChannels', () => {
       onCancel: vi.fn()
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'test', baseUrl: 'http://localhost:8080' }
     ], handler);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     const requestPromise = clientJsonRpc.request({
       service: 'test',
@@ -228,10 +228,10 @@ describe('JSON-RPC with Mock DataChannels', () => {
       )
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'test', baseUrl: 'http://localhost:8080' }
     ], handler);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     const requestPromise = clientJsonRpc.request({
       service: 'test',
@@ -255,10 +255,10 @@ describe('JSON-RPC with Mock DataChannels', () => {
       onRequest: vi.fn().mockResolvedValue({ status: 200, headers: {} })
     };
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'test', baseUrl: 'http://localhost:8080' }
     ], handler);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     await clientJsonRpc.listServices();
     await clientJsonRpc.request({ service: 'test', method: 'GET', target: '/' });
