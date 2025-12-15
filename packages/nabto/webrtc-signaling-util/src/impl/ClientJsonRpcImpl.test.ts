@@ -1,4 +1,4 @@
-import { test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { test, expect, vi } from 'vitest';
 import { ClientJsonRpcImpl } from './ClientJsonRpcImpl';
 
 class MockRTCDataChannel extends EventTarget {
@@ -175,9 +175,9 @@ test('ClientJsonRpc handles error responses', async () => {
 
   try {
     await responsePromise;
-  } catch (error: any) {
-    expect(error.code).toBe(-32002);
-    expect(error.data).toEqual({ details: 'Additional info' });
+  } catch (error: unknown) {
+    expect((error as { code: number }).code).toBe(-32002);
+    expect((error as { data: unknown }).data).toEqual({ details: 'Additional info' });
   }
 });
 

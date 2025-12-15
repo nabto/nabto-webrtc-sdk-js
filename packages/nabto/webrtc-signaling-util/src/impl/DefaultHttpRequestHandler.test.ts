@@ -1,6 +1,5 @@
 import { test, expect, describe, vi, beforeEach, afterEach } from 'vitest';
 import { DefaultHttpRequestHandler } from './DefaultHttpRequestHandler';
-import type { HttpRequestParams } from '../JsonRpcTypes';
 
 // Mock fetch globally
 const originalFetch = global.fetch;

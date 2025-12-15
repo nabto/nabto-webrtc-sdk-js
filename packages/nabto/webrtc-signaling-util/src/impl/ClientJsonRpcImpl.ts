@@ -42,7 +42,7 @@ export class ClientJsonRpcImpl {
         resolve();
       };
 
-      const onError = (event: Event) => {
+      const onError = (_event: Event) => {
         this.dataChannel.removeEventListener('open', onOpen);
         reject(new Error('Data channel failed to open'));
       };
@@ -172,7 +172,7 @@ export class ClientJsonRpcImpl {
 
   private handleClose(): void {
     // Reject all pending requests
-    for (const [id, pending] of this.pendingRequests.entries()) {
+    for (const pending of this.pendingRequests.values()) {
       pending.reject(new Error('Data channel closed'));
     }
     this.pendingRequests.clear();

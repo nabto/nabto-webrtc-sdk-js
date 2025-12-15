@@ -54,7 +54,7 @@ describe('JSON-RPC HTTP Integration Tests - With Client', () => {
     const [clientChannel, deviceChannel] = MockDataChannel.createPair();
 
     // Create device JSON-RPC with service configuration
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       {
         name: 'http-service',
         baseUrl: INTEGRATION_TEST_SERVER_URL,
@@ -63,7 +63,7 @@ describe('JSON-RPC HTTP Integration Tests - With Client', () => {
     ]);
 
     // Create client JSON-RPC
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     // Make request through JSON-RPC (target is just the path now)
     const response = await clientJsonRpc.request({
@@ -87,10 +87,10 @@ describe('JSON-RPC HTTP Integration Tests - With Client', () => {
   test('Client can make POST request with body through device', async () => {
     const [clientChannel, deviceChannel] = MockDataChannel.createPair();
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'http-service', baseUrl: INTEGRATION_TEST_SERVER_URL }
     ]);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     const testData = { test: 'data', number: 42 };
     const response = await clientJsonRpc.request({
@@ -114,10 +114,10 @@ describe('JSON-RPC HTTP Integration Tests - With Client', () => {
   test('Client can handle different HTTP status codes through device', async () => {
     const [clientChannel, deviceChannel] = MockDataChannel.createPair();
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'http-service', baseUrl: INTEGRATION_TEST_SERVER_URL }
     ]);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     const response = await clientJsonRpc.request({
       service: 'http-service',
@@ -137,10 +137,10 @@ describe('JSON-RPC HTTP Integration Tests - With Client', () => {
   test('Client can handle large responses through device', async () => {
     const [clientChannel, deviceChannel] = MockDataChannel.createPair();
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'http-service', baseUrl: INTEGRATION_TEST_SERVER_URL }
     ]);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     const response = await clientJsonRpc.request({
       service: 'http-service',
@@ -161,10 +161,10 @@ describe('JSON-RPC HTTP Integration Tests - With Client', () => {
   test('Multiple concurrent requests work through device', async () => {
     const [clientChannel, deviceChannel] = MockDataChannel.createPair();
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'http-service', baseUrl: INTEGRATION_TEST_SERVER_URL }
     ]);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     const [response1, response2] = await Promise.all([
       clientJsonRpc.request({
@@ -197,10 +197,10 @@ describe('JSON-RPC HTTP Integration Tests - With Client', () => {
   test('Client gets error for unknown service', async () => {
     const [clientChannel, deviceChannel] = MockDataChannel.createPair();
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'http-service', baseUrl: INTEGRATION_TEST_SERVER_URL }
     ]);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     await expect(
       clientJsonRpc.request({
@@ -217,7 +217,7 @@ describe('JSON-RPC HTTP Integration Tests - With Client', () => {
   test('Client can list configured services', async () => {
     const [clientChannel, deviceChannel] = MockDataChannel.createPair();
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       {
         name: 'http-service',
         baseUrl: INTEGRATION_TEST_SERVER_URL,
@@ -229,7 +229,7 @@ describe('JSON-RPC HTTP Integration Tests - With Client', () => {
         description: 'Another API service'
       }
     ]);
-    const clientJsonRpc = createClientJsonRpc(clientChannel as any);
+    const clientJsonRpc = createClientJsonRpc(clientChannel as unknown as RTCDataChannel);
 
     const result = await clientJsonRpc.listServices();
 
@@ -252,12 +252,12 @@ describe('JSON-RPC HTTP Integration Tests - Without Client', () => {
   test('Device can make GET request to HTTP server directly', async () => {
     const [clientChannel, deviceChannel] = MockDataChannel.createPair();
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'http-service', baseUrl: INTEGRATION_TEST_SERVER_URL }
     ]);
 
     // Simulate a JSON-RPC request directly on the device channel
-    const requestPromise = new Promise<any>((resolve) => {
+    const requestPromise = new Promise<unknown>((resolve) => {
       clientChannel.addEventListener('message', (event) => {
         const response = JSON.parse((event as MessageEvent).data);
         if (response.id === 1) {
@@ -292,11 +292,11 @@ describe('JSON-RPC HTTP Integration Tests - Without Client', () => {
   test('Device can make POST request to HTTP server directly', async () => {
     const [clientChannel, deviceChannel] = MockDataChannel.createPair();
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'http-service', baseUrl: INTEGRATION_TEST_SERVER_URL }
     ]);
 
-    const requestPromise = new Promise<any>((resolve) => {
+    const requestPromise = new Promise<unknown>((resolve) => {
       clientChannel.addEventListener('message', (event) => {
         const response = JSON.parse((event as MessageEvent).data);
         if (response.id === 1) {
@@ -333,11 +333,11 @@ describe('JSON-RPC HTTP Integration Tests - Without Client', () => {
   test('Device can handle HTTP errors directly', async () => {
     const [clientChannel, deviceChannel] = MockDataChannel.createPair();
 
-    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as any, [
+    const deviceJsonRpc = createDeviceJsonRpc(deviceChannel as unknown as RTCDataChannel, [
       { name: 'http-service', baseUrl: INTEGRATION_TEST_SERVER_URL }
     ]);
 
-    const requestPromise = new Promise<any>((resolve) => {
+    const requestPromise = new Promise<unknown>((resolve) => {
       clientChannel.addEventListener('message', (event) => {
         const response = JSON.parse((event as MessageEvent).data);
         if (response.id === 1) {

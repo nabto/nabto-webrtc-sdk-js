@@ -1,4 +1,4 @@
-import type { HttpRequestHandler, HttpRequestParams, HttpResponse, ListServicesResult } from '../JsonRpcTypes';
+import type { HttpRequestHandler, HttpRequestParams, HttpResponse } from '../JsonRpcTypes';
 
 export interface HttpServiceMapping {
   name: string;
@@ -65,7 +65,7 @@ export class DefaultHttpRequestHandler implements HttpRequestHandler {
     }
   }
 
-  onCancel?(requestId: string | number): void {
+  onCancel?(_requestId: string | number): void {
     // TODO: Implement request cancellation using AbortController
     // For now, this is a no-op
   }

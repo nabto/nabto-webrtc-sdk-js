@@ -131,8 +131,8 @@ describe('JSON-RPC HTTP Protocol Tests', () => {
 
     // Wait for data channels to open (they will automatically wait when requests are made)
     await new Promise<void>((resolve) => {
-      let clientOpen = clientDataChannel.readyState === 'open';
-      let deviceOpen = deviceDataChannel.readyState === 'open';
+      const clientOpen = clientDataChannel.readyState === 'open';
+      const deviceOpen = deviceDataChannel.readyState === 'open';
 
       if (clientOpen && deviceOpen) {
         resolve();
@@ -226,8 +226,8 @@ describe('JSON-RPC HTTP Protocol Tests', () => {
         method: 'GET',
         target: '/'
       });
-    } catch (error: any) {
-      expect(error.code).toBe(-32002);
+    } catch (error: unknown) {
+      expect((error as { code: number }).code).toBe(-32002);
     }
   });
 
