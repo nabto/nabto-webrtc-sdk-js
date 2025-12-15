@@ -111,6 +111,7 @@ export class DeviceJsonRpcImpl {
   private handler: HttpRequestHandler;
   private services: HttpServiceConfig[];
   private serviceMap: Map<string, HttpServiceConfig>;
+  private cancelledRequests: Set<string | number>;
 
   constructor(
     private dataChannel: RTCDataChannel,
@@ -119,6 +120,7 @@ export class DeviceJsonRpcImpl {
   ) {
     this.services = services;
     this.serviceMap = new Map(services.map(s => [s.name, s]));
+    this.cancelledRequests = new Set();
 
     // Use custom handler if provided, otherwise create default handler
     this.handler = handler ?? createDefaultHttpRequestHandler();
@@ -219,6 +221,14 @@ export class DeviceJsonRpcImpl {
             }
 
             result = await this.handler.onRequest(params, serviceConfig);
+
+            // Check if request was cancelled while waiting for response
+            if (this.cancelledRequests.has(request.id)) {
+              // Clean up and ignore the response
+              this.cancelledRequests.delete(request.id);
+              return;
+            }
+
             break;
           }
 
@@ -256,6 +266,18 @@ export class DeviceJsonRpcImpl {
   private handleNotification(request: JsonRpcRequest): void {
     if (request.method === 'http.cancel') {
       const params = request.params as { id: string | number };
+
+      // Mark request as cancelled
+      this.cancelledRequests.add(params.id);
+
+      // Send error response for the cancelled request
+      this.sendErrorResponse(
+        params.id,
+        -32800,
+        'Request cancelled by client'
+      );
+
+      // Notify handler if it supports cancellation
       if (this.handler.onCancel) {
         this.handler.onCancel(params.id);
       }

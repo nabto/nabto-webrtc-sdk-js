@@ -206,10 +206,10 @@ describe('JSON-RPC with Mock DataChannels', () => {
     // Wait for request to be sent
     await new Promise(resolve => setTimeout(resolve, 10));
 
-    // Cancel the request
+    // Cancel the request (client sends cancel notification)
     clientJsonRpc.cancel(1);
 
-    // Wait a bit for the cancel message to be processed
+    // Wait for the cancel message to be processed and error response to be sent
     await new Promise(resolve => setTimeout(resolve, 10));
 
     expect(handler.onCancel).toHaveBeenCalledWith(1);

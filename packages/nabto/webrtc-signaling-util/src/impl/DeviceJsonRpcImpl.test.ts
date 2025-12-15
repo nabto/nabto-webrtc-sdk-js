@@ -244,8 +244,17 @@ test('DeviceJsonRpc handles http.cancel notification', async () => {
   await new Promise(resolve => setTimeout(resolve, 10));
 
   expect(handler.onCancel).toHaveBeenCalledWith(42);
-  // No response should be sent for notifications
-  expect(channel.send).not.toHaveBeenCalled();
+  // Error response should be sent for the cancelled request
+  expect(channel.send).toHaveBeenCalledWith(
+    JSON.stringify({
+      jsonrpc: '2.0',
+      error: {
+        code: -32800,
+        message: 'Request cancelled by client'
+      },
+      id: 42
+    })
+  );
 });
 
 test('DeviceJsonRpc handles invalid JSON', async () => {
@@ -406,5 +415,73 @@ test('DeviceJsonRpc returns error for non-existent service', async () => {
       id: 1
     })
   );
+});
+
+test('DeviceJsonRpc ignores response from cancelled request', async () => {
+  const channel = new MockRTCDataChannel('http', 'nabto.http/2');
+
+  // Create a handler with a delayed response
+  let resolveRequest: ((value: any) => void) | null = null;
+  const handler: HttpRequestHandler = {
+    onRequest: vi.fn().mockImplementation(() => {
+      return new Promise((resolve) => {
+        resolveRequest = resolve;
+      });
+    }),
+    onCancel: vi.fn()
+  };
+
+  new DeviceJsonRpcImpl(channel as unknown as RTCDataChannel, [
+    { name: 'test', baseUrl: 'http://localhost:8080' }
+  ], handler);
+  simulateOpen(channel);
+
+  // Start a request
+  simulateMessage(channel, JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'http.request',
+    params: { service: 'test', method: 'GET', target: '/test' },
+    id: 123
+  }));
+
+  // Wait for request to be processed
+  await new Promise(resolve => setTimeout(resolve, 10));
+  expect(handler.onRequest).toHaveBeenCalled();
+
+  // Cancel the request
+  channel.send.mockClear();
+  simulateMessage(channel, JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'http.cancel',
+    params: { id: 123 }
+  }));
+
+  await new Promise(resolve => setTimeout(resolve, 10));
+
+  // Should have sent error response for cancellation
+  expect(channel.send).toHaveBeenCalledWith(
+    JSON.stringify({
+      jsonrpc: '2.0',
+      error: {
+        code: -32800,
+        message: 'Request cancelled by client'
+      },
+      id: 123
+    })
+  );
+  expect(handler.onCancel).toHaveBeenCalledWith(123);
+
+  // Now resolve the original request (simulating handler that can't cancel)
+  channel.send.mockClear();
+  resolveRequest!({
+    status: 200,
+    headers: {},
+    body: btoa('response')
+  });
+
+  await new Promise(resolve => setTimeout(resolve, 10));
+
+  // No success response should be sent since request was cancelled
+  expect(channel.send).not.toHaveBeenCalled();
 });
 
