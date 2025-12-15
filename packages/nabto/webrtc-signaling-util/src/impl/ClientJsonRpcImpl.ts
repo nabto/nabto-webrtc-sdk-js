@@ -112,7 +112,7 @@ export class ClientJsonRpcImpl {
   /**
    * Gets the current data channel
    */
-  public getDataChannel(): RTCDataChannel | null {
+  public getDataChannel(): RTCDataChannel {
     return this.dataChannel;
   }
 

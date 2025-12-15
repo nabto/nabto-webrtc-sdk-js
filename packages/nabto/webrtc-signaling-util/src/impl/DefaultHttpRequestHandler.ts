@@ -1,4 +1,5 @@
-import type { HttpRequestHandler, HttpRequestParams, HttpResponse } from '../JsonRpcTypes';
+import type { HttpRequestParams, HttpResponse } from '../JsonRpcTypes';
+import type { HttpRequestHandler } from './DeviceJsonRpcImpl';
 
 export interface HttpServiceMapping {
   name: string;
