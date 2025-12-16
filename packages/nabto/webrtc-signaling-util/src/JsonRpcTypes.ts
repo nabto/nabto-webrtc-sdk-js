@@ -61,3 +61,65 @@ export interface HttpService {
 export interface ListServicesResult {
   services: HttpService[];
 }
+
+/**
+ * Service information from rtsp.listServices
+ */
+export interface RtspService {
+  name: string;
+  description: string;
+}
+
+/**
+ * Result from rtsp.listServices
+ */
+export interface RtspListServicesResult {
+  services: RtspService[];
+}
+
+/**
+ * Digest authentication for RTSP
+ */
+export interface RtspDigestAuthentication {
+  username: string;
+  password: string;
+}
+
+/**
+ * Parameters for rtsp.createSession
+ */
+export interface RtspCreateSessionParams {
+  service: string;
+  mediaStreamId?: string;
+  digestAuthentication?: RtspDigestAuthentication;
+  target: string;
+}
+
+/**
+ * Result from rtsp.createSession
+ */
+export interface RtspCreateSessionResult {
+  session: string;
+}
+
+/**
+ * Parameters for rtsp.play
+ */
+export interface RtspPlayParams {
+  session: string;
+  target?: string;
+}
+
+/**
+ * Parameters for rtsp.pause
+ */
+export interface RtspPauseParams {
+  session: string;
+}
+
+/**
+ * Parameters for rtsp.teardown
+ */
+export interface RtspTeardownParams {
+  session: string;
+}
