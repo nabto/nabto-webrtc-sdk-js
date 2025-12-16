@@ -438,7 +438,7 @@ test('RtspClientJsonRpc ignores responses with no pending request', async () => 
   const channel = new MockRTCDataChannel('rtsp', { protocol: 'nabto.rtsp/1' });
   simulateOpen(channel);
 
-  const client = new RtspClientJsonRpcImpl(channel as unknown as RTCDataChannel);
+  void new RtspClientJsonRpcImpl(channel as unknown as RTCDataChannel);
 
   // Simulate response with unknown ID
   simulateMessage(channel, JSON.stringify({
@@ -455,7 +455,7 @@ test('RtspClientJsonRpc ignores notification responses', async () => {
   const channel = new MockRTCDataChannel('rtsp', { protocol: 'nabto.rtsp/1' });
   simulateOpen(channel);
 
-  const client = new RtspClientJsonRpcImpl(channel as unknown as RTCDataChannel);
+  void new RtspClientJsonRpcImpl(channel as unknown as RTCDataChannel);
 
   // Simulate notification (no id)
   simulateMessage(channel, JSON.stringify({
@@ -473,7 +473,7 @@ test('RtspClientJsonRpc handles invalid JSON gracefully', async () => {
 
   const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-  const client = new RtspClientJsonRpcImpl(channel as unknown as RTCDataChannel);
+  void new RtspClientJsonRpcImpl(channel as unknown as RTCDataChannel);
 
   // Simulate invalid JSON
   simulateMessage(channel, 'invalid json {');
