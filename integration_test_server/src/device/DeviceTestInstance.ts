@@ -19,6 +19,7 @@ export const TestDeviceOptionsSchema = t.Object({
   extraDeviceConnectResponseData: t.Optional(t.Boolean()),
   productIdNotFound: t.Optional(t.Boolean()),
   deviceIdNotFound: t.Optional(t.Boolean()),
+  idleTimeoutMs: t.Optional(t.Number()),
 });
 
 export type TestDeviceOptions = Static<typeof TestDeviceOptionsSchema>
@@ -40,15 +41,39 @@ class DeviceTestInstance implements TestInstance {
   wsSender?: wsSendMessageCallback
   wsClose?: wsCloseCallback
   requireAccessToken: boolean = true;
+  private idleTimeoutHandle?: ReturnType<typeof setTimeout>;
+
   constructor(public options: TestDeviceOptions) {
   }
   deviceConnected(wsSender: wsSendMessageCallback, wsClose: wsCloseCallback) {
     this.wsSender = wsSender;
     this.wsClose = wsClose;
     this.droppingDeviceMessages = false;
+    this.resetIdleTimeout();
     this.clients.forEach((client) => {
       client.handlePeerConnected();
     })
+  }
+
+  private resetIdleTimeout() {
+    if (this.idleTimeoutHandle) {
+      clearTimeout(this.idleTimeoutHandle);
+      this.idleTimeoutHandle = undefined;
+    }
+    if (!this.options.idleTimeoutMs) {
+      return;
+    }
+    this.idleTimeoutHandle = setTimeout(() => {
+      console.log(`Idle timeout triggered for test ${this.testId} after ${this.options.idleTimeoutMs}ms`);
+      this.wsClose?.(4040, "Idle timeout - no messages received");
+    }, this.options.idleTimeoutMs);
+  }
+
+  private clearIdleTimeout() {
+    if (this.idleTimeoutHandle) {
+      clearTimeout(this.idleTimeoutHandle);
+      this.idleTimeoutHandle = undefined;
+    }
   }
 
   async createClient() : Promise<string> {
@@ -114,6 +139,7 @@ class DeviceTestInstance implements TestInstance {
   }
 
   handleWsMessage(msg: Routing) {
+    this.resetIdleTimeout();
     if (this.droppingDeviceMessages) {
       return;
     }
@@ -149,7 +175,7 @@ class DeviceTestInstance implements TestInstance {
   }
 
   close() {
-
+    this.clearIdleTimeout();
   }
 }
 
