@@ -96,6 +96,7 @@ window.demoController = (function(){
         errorOccurred = false;
         try {
             updatePeerConnectionStatus(notConnectedMsg);
+            updateConnectionTypeStatus("Unknown");
         } catch (error) {
             // Silently handle missing DOM elements on WordPress
         }
@@ -155,10 +156,17 @@ window.demoController = (function(){
                     updateLoadingSpinner();
                 }
             },
+            onconnectiontypechange: type => {
+                if (!errorOccurred) {
+                    updateConnectionTypeStatus(type);
+                }
+                appendLog("Connection type: " + type);
+            },
             onerror: error => {
                 errorOccurred = true;
                 updateSignalingStatus(error);
                 updatePeerConnectionStatus(notConnectedMsg)
+                updateConnectionTypeStatus("Unknown");
                 appendLog(error);
                 disconnect();
             }
@@ -207,6 +215,13 @@ window.demoController = (function(){
     function updateSignalingStatus(input) {
         const el = document.getElementById("webrtc-status-value-signaling");
         el.innerText = formatStatusMessage(input);
+    }
+
+    function updateConnectionTypeStatus(input) {
+        const el = document.getElementById("webrtc-status-value-connection-type");
+        if (el) {
+            el.innerText = formatStatusMessage(input);
+        }
     }
 
     function appendLog(entry) {

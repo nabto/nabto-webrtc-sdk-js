@@ -8,7 +8,7 @@ class RTCConnectionHandler {
    * @param {(string | Error | unknown) => void} options.logger - The handler to call when logging a state change or error
    * @param {(Error) => void} options.onerror - The handler to call when a fatal error occurs
    */
-  constructor({ productId, deviceId, sharedSecret, ontrack, onsignalingstatechange, onpeerconnectionstatechange, onerror }) {
+  constructor({ productId, deviceId, sharedSecret, ontrack, onsignalingstatechange, onpeerconnectionstatechange, onconnectiontypechange, onerror }) {
     this.signalingClient = SDK.createSignalingClient({
       productId: productId,
       deviceId: deviceId,
@@ -18,6 +18,7 @@ class RTCConnectionHandler {
     this.ontrack = ontrack;
     this.onsignalingstatechange = onsignalingstatechange;
     this.onpeerconnectionstatechange = onpeerconnectionstatechange;
+    this.onconnectiontypechange = onconnectiontypechange;
     this.onerror = onerror;
     this.messageTransport = SDK.createClientMessageTransport(this.signalingClient, {
       securityMode: SDK.ClientMessageTransportSecurityMode.SHARED_SECRET,
@@ -63,6 +64,73 @@ class RTCConnectionHandler {
     this.pc.onconnectionstatechange = () => {
       console.log("Peer connection state changed to: " + this.pc.connectionState);
       this.onpeerconnectionstatechange(this.pc.connectionState)
+      if (this.pc.connectionState === 'connected') {
+        this.checkConnectionType();
+      }
+    }
+    this.pc.oniceconnectionstatechange = () => {
+      if (this.pc.iceConnectionState === 'connected' || this.pc.iceConnectionState === 'completed') {
+        this.checkConnectionType();
+      }
+    }
+  }
+
+  async checkConnectionType() {
+    try {
+      const stats = await this.pc.getStats();
+      let connectionType = "Unknown";
+      let selectedPair = null;
+      
+      // First, look for the transport stats to find the selected candidate pair
+      for (let report of stats.values()) {
+        if (report.type === 'transport') {
+          selectedPair = stats.get(report.selectedCandidatePairId);
+          break;
+        }
+      }
+      
+      // If no transport stats, fall back to nominated/selected candidate pair
+      if (!selectedPair) {
+        for (let report of stats.values()) {
+          if (report.type === 'candidate-pair' && (report.nominated || report.selected)) {
+            selectedPair = report;
+            break;
+          }
+        }
+      }
+      
+      // Final fallback to first succeeded pair
+      if (!selectedPair) {
+        for (let report of stats.values()) {
+          if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+            selectedPair = report;
+            break;
+          }
+        }
+      }
+      
+      if (selectedPair) {
+        const localCandidate = stats.get(selectedPair.localCandidateId);
+        const remoteCandidate = stats.get(selectedPair.remoteCandidateId);
+        
+        if (localCandidate && remoteCandidate) {
+          // Check if either candidate is a relay candidate
+          if (localCandidate.candidateType === 'relay' || remoteCandidate.candidateType === 'relay') {
+            connectionType = "Relay";
+          } else {
+            connectionType = "Direct P2P";
+          }
+        }
+      }
+      
+      if (this.onconnectiontypechange) {
+        this.onconnectiontypechange(connectionType);
+      }
+    } catch (error) {
+      console.error("Error checking connection type:", error);
+      if (this.onconnectiontypechange) {
+        this.onconnectiontypechange("Unknown");
+      }
     }
   }
 }
