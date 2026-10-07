@@ -198,7 +198,7 @@ describe("Reliability Tests", async () => {
     expect(receivedMessages).toStrictEqual(expectedMessages);
   });
 
-  test("Reliability Test 6: Test that a peer resend unacked messages when a PEER_ONLINE event is received", async () => {
+  test("Reliability Test 6: Test that a peer resend unacked messages when a PEER_CONNECTED event is received", async () => {
     // 1. Create a channel to a peer which is connected.
     // Already done in beforeEach - signalingChannel is created and connected
 
@@ -213,7 +213,7 @@ describe("Reliability Tests", async () => {
     }
 
     // 4. Reconnect the remote peer.
-    // Disconnect and reconnect the client to trigger a PEER_ONLINE event
+    // Disconnect and reconnect the client to trigger a PEER_CONNECTED event
     await testInstance.disconnectClient(clientId);
     await testInstance.connectClient(clientId);
 
