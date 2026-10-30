@@ -8,5 +8,5 @@ export type JSONValue = JSONLiteral | { [key: string]: JSONValue } | JSONValue[]
 // in zod v4 there is a json type.
 
 export const JSONValueSchema: z.ZodType<JSONValue> = z.lazy(() =>
-  z.union([literalSchema, z.array(JSONValueSchema), z.record(JSONValueSchema)])
+  z.union([literalSchema, z.array(JSONValueSchema), z.record(z.string(), JSONValueSchema)])
 );
