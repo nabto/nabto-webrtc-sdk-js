@@ -12,5 +12,11 @@
     "keywords": [],
     "author": "",
     "license": "ISC",
-    "packageManager": "pnpm@10.10.0"
+    "packageManager": "pnpm@10.10.0",
+    "pnpm": {
+        "overrides": {
+            "tsup>esbuild": "^0.28.2",
+            "metro>image-size": "^2.0.3"
+        }
+    }
 }
